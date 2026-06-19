@@ -17,6 +17,8 @@ function LoginPage() {
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
+  const [showForgot, setShowForgot] = useState(false)
+  const [forgotSent, setForgotSent] = useState(false)
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -32,57 +34,128 @@ function LoginPage() {
     setLoading(false)
   }
 
+  async function handleForgot(e: React.FormEvent) {
+    e.preventDefault()
+    setLoading(true)
+    const supabase = createClient()
+    await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/reset-password`,
+    })
+    setForgotSent(true)
+    setLoading(false)
+  }
+
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50">
-      <div className="w-full max-w-sm space-y-6 p-8 bg-white rounded-xl shadow-sm border">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold tracking-tight">LetShine Talent</h1>
-          <p className="text-sm text-gray-500 mt-1">Connectez-vous à votre espace</p>
+    <div className="min-h-screen flex items-center justify-center bg-white">
+      <div className="w-full max-w-sm">
+        {/* Logo */}
+        <div className="flex items-center justify-center gap-3 mb-8">
+          <div className="w-10 h-10 bg-gray-900 rounded-lg flex items-center justify-center">
+            <span className="text-white font-bold text-base">L</span>
+          </div>
+          <span className="font-semibold text-gray-900 text-lg">LetShine Talent</span>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-1">
-            <label className="text-sm font-medium" htmlFor="email">Email</label>
-            <input
-              id="email"
-              type="email"
-              required
-              value={email}
-              onChange={e => setEmail(e.target.value)}
-              className="w-full rounded-md border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="coach@example.com"
-            />
-          </div>
-          <div className="space-y-1">
-            <label className="text-sm font-medium" htmlFor="password">Mot de passe</label>
-            <input
-              id="password"
-              type="password"
-              required
-              value={password}
-              onChange={e => setPassword(e.target.value)}
-              className="w-full rounded-md border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="••••••••"
-            />
-          </div>
+        <div className="border border-gray-100 rounded-2xl p-8 shadow-[0_1px_8px_rgba(0,0,0,0.06)] bg-white">
+          {!showForgot ? (
+            <>
+              <div className="text-center mb-6">
+                <h1 className="text-xl font-semibold text-gray-900">Connexion</h1>
+                <p className="text-gray-400 text-xs mt-1">Accédez à votre espace de travail</p>
+              </div>
 
-          {error && (
-            <p className="text-sm text-red-600 bg-red-50 rounded-md px-3 py-2">{error}</p>
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1.5" htmlFor="email">
+                    Adresse email
+                  </label>
+                  <input
+                    id="email"
+                    type="email"
+                    required
+                    value={email}
+                    onChange={e => setEmail(e.target.value)}
+                    className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-gray-300 focus:border-gray-300 placeholder:text-gray-300"
+                    placeholder="vous@exemple.fr"
+                  />
+                </div>
+
+                <div>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label className="text-xs font-medium text-gray-700" htmlFor="password">
+                      Mot de passe
+                    </label>
+                    <button type="button" onClick={() => setShowForgot(true)}
+                      className="text-xs text-blue-600 hover:text-blue-700">
+                      Mot de passe oublié ?
+                    </button>
+                  </div>
+                  <input
+                    id="password"
+                    type="password"
+                    required
+                    value={password}
+                    onChange={e => setPassword(e.target.value)}
+                    className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-gray-300 focus:border-gray-300"
+                    placeholder="••••••••"
+                  />
+                </div>
+
+                {error && (
+                  <p className="text-xs text-red-600 bg-red-50 rounded-lg px-3 py-2">{error}</p>
+                )}
+
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="w-full bg-gray-900 hover:bg-gray-800 text-white font-medium py-2.5 px-4 rounded-lg text-sm transition-colors disabled:opacity-50 mt-1"
+                >
+                  {loading ? 'Connexion...' : 'Se connecter'}
+                </button>
+              </form>
+
+              <p className="text-center text-xs text-gray-400 mt-6">
+                Vous n'avez pas de compte ? Contactez votre administrateur.
+              </p>
+            </>
+          ) : (
+            <>
+              <div className="text-center mb-6">
+                <h1 className="text-xl font-semibold text-gray-900">Mot de passe oublié</h1>
+                <p className="text-gray-400 text-xs mt-1">On vous envoie un lien de réinitialisation</p>
+              </div>
+
+              {forgotSent ? (
+                <div className="text-center space-y-4">
+                  <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mx-auto">
+                    <span className="text-green-600 text-xl">✓</span>
+                  </div>
+                  <p className="text-xs text-gray-500">Un email a été envoyé à <strong>{email}</strong>.</p>
+                  <button onClick={() => { setShowForgot(false); setForgotSent(false) }}
+                    className="text-xs text-blue-600 hover:underline">
+                    Retour à la connexion
+                  </button>
+                </div>
+              ) : (
+                <form onSubmit={handleForgot} className="space-y-4">
+                  <div>
+                    <label className="block text-xs font-medium text-gray-700 mb-1.5">Adresse email</label>
+                    <input type="email" required value={email} onChange={e => setEmail(e.target.value)}
+                      className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-gray-300 placeholder:text-gray-300"
+                      placeholder="vous@exemple.fr" />
+                  </div>
+                  <button type="submit" disabled={loading}
+                    className="w-full bg-gray-900 hover:bg-gray-800 text-white font-medium py-2.5 px-4 rounded-lg text-sm transition-colors disabled:opacity-50">
+                    {loading ? 'Envoi...' : 'Envoyer le lien'}
+                  </button>
+                  <button type="button" onClick={() => setShowForgot(false)}
+                    className="w-full text-xs text-gray-400 hover:text-gray-600 py-1">
+                    ← Retour
+                  </button>
+                </form>
+              )}
+            </>
           )}
-
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-md text-sm transition-colors disabled:opacity-50"
-          >
-            {loading ? 'Connexion...' : 'Se connecter'}
-          </button>
-        </form>
-
-        <div className="text-center">
-          <a href="/client/login" className="text-sm text-blue-600 hover:underline">
-            Accès portail client (magic link)
-          </a>
         </div>
       </div>
     </div>

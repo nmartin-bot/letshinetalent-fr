@@ -26,6 +26,10 @@ import { Route as AdminCompaniesIndexRouteImport } from './routes/_admin/compani
 import { Route as AdminCandidatesIndexRouteImport } from './routes/_admin/candidates/index'
 import { Route as AdminAtsIndexRouteImport } from './routes/_admin/ats/index'
 import { Route as AdminAppointmentsIndexRouteImport } from './routes/_admin/appointments/index'
+import { Route as AdminTrainingIdRouteImport } from './routes/_admin/training/$id'
+import { Route as AdminLearnersIdRouteImport } from './routes/_admin/learners/$id'
+import { Route as AdminCompaniesIdRouteImport } from './routes/_admin/companies/$id'
+import { Route as AdminCandidatesIdRouteImport } from './routes/_admin/candidates/$id'
 
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
@@ -111,6 +115,26 @@ const AdminAppointmentsIndexRoute = AdminAppointmentsIndexRouteImport.update({
   path: '/appointments/',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminTrainingIdRoute = AdminTrainingIdRouteImport.update({
+  id: '/training/$id',
+  path: '/training/$id',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminLearnersIdRoute = AdminLearnersIdRouteImport.update({
+  id: '/learners/$id',
+  path: '/learners/$id',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminCompaniesIdRoute = AdminCompaniesIdRouteImport.update({
+  id: '/companies/$id',
+  path: '/companies/$id',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminCandidatesIdRoute = AdminCandidatesIdRouteImport.update({
+  id: '/candidates/$id',
+  path: '/candidates/$id',
+  getParentRoute: () => AdminRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -120,6 +144,10 @@ export interface FileRoutesByFullPath {
   '/client/dashboard': typeof ClientDashboardRoute
   '/client/login': typeof ClientLoginRoute
   '/booking/': typeof BookingIndexRoute
+  '/candidates/$id': typeof AdminCandidatesIdRoute
+  '/companies/$id': typeof AdminCompaniesIdRoute
+  '/learners/$id': typeof AdminLearnersIdRoute
+  '/training/$id': typeof AdminTrainingIdRoute
   '/appointments/': typeof AdminAppointmentsIndexRoute
   '/ats/': typeof AdminAtsIndexRoute
   '/candidates/': typeof AdminCandidatesIndexRoute
@@ -138,6 +166,10 @@ export interface FileRoutesByTo {
   '/client/dashboard': typeof ClientDashboardRoute
   '/client/login': typeof ClientLoginRoute
   '/booking': typeof BookingIndexRoute
+  '/candidates/$id': typeof AdminCandidatesIdRoute
+  '/companies/$id': typeof AdminCompaniesIdRoute
+  '/learners/$id': typeof AdminLearnersIdRoute
+  '/training/$id': typeof AdminTrainingIdRoute
   '/appointments': typeof AdminAppointmentsIndexRoute
   '/ats': typeof AdminAtsIndexRoute
   '/candidates': typeof AdminCandidatesIndexRoute
@@ -158,6 +190,10 @@ export interface FileRoutesById {
   '/client/dashboard': typeof ClientDashboardRoute
   '/client/login': typeof ClientLoginRoute
   '/booking/': typeof BookingIndexRoute
+  '/_admin/candidates/$id': typeof AdminCandidatesIdRoute
+  '/_admin/companies/$id': typeof AdminCompaniesIdRoute
+  '/_admin/learners/$id': typeof AdminLearnersIdRoute
+  '/_admin/training/$id': typeof AdminTrainingIdRoute
   '/_admin/appointments/': typeof AdminAppointmentsIndexRoute
   '/_admin/ats/': typeof AdminAtsIndexRoute
   '/_admin/candidates/': typeof AdminCandidatesIndexRoute
@@ -178,6 +214,10 @@ export interface FileRouteTypes {
     | '/client/dashboard'
     | '/client/login'
     | '/booking/'
+    | '/candidates/$id'
+    | '/companies/$id'
+    | '/learners/$id'
+    | '/training/$id'
     | '/appointments/'
     | '/ats/'
     | '/candidates/'
@@ -196,6 +236,10 @@ export interface FileRouteTypes {
     | '/client/dashboard'
     | '/client/login'
     | '/booking'
+    | '/candidates/$id'
+    | '/companies/$id'
+    | '/learners/$id'
+    | '/training/$id'
     | '/appointments'
     | '/ats'
     | '/candidates'
@@ -215,6 +259,10 @@ export interface FileRouteTypes {
     | '/client/dashboard'
     | '/client/login'
     | '/booking/'
+    | '/_admin/candidates/$id'
+    | '/_admin/companies/$id'
+    | '/_admin/learners/$id'
+    | '/_admin/training/$id'
     | '/_admin/appointments/'
     | '/_admin/ats/'
     | '/_admin/candidates/'
@@ -355,11 +403,43 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminAppointmentsIndexRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/_admin/training/$id': {
+      id: '/_admin/training/$id'
+      path: '/training/$id'
+      fullPath: '/training/$id'
+      preLoaderRoute: typeof AdminTrainingIdRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/_admin/learners/$id': {
+      id: '/_admin/learners/$id'
+      path: '/learners/$id'
+      fullPath: '/learners/$id'
+      preLoaderRoute: typeof AdminLearnersIdRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/_admin/companies/$id': {
+      id: '/_admin/companies/$id'
+      path: '/companies/$id'
+      fullPath: '/companies/$id'
+      preLoaderRoute: typeof AdminCompaniesIdRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/_admin/candidates/$id': {
+      id: '/_admin/candidates/$id'
+      path: '/candidates/$id'
+      fullPath: '/candidates/$id'
+      preLoaderRoute: typeof AdminCandidatesIdRouteImport
+      parentRoute: typeof AdminRoute
+    }
   }
 }
 
 interface AdminRouteChildren {
   AdminDashboardRoute: typeof AdminDashboardRoute
+  AdminCandidatesIdRoute: typeof AdminCandidatesIdRoute
+  AdminCompaniesIdRoute: typeof AdminCompaniesIdRoute
+  AdminLearnersIdRoute: typeof AdminLearnersIdRoute
+  AdminTrainingIdRoute: typeof AdminTrainingIdRoute
   AdminAppointmentsIndexRoute: typeof AdminAppointmentsIndexRoute
   AdminAtsIndexRoute: typeof AdminAtsIndexRoute
   AdminCandidatesIndexRoute: typeof AdminCandidatesIndexRoute
@@ -373,6 +453,10 @@ interface AdminRouteChildren {
 
 const AdminRouteChildren: AdminRouteChildren = {
   AdminDashboardRoute: AdminDashboardRoute,
+  AdminCandidatesIdRoute: AdminCandidatesIdRoute,
+  AdminCompaniesIdRoute: AdminCompaniesIdRoute,
+  AdminLearnersIdRoute: AdminLearnersIdRoute,
+  AdminTrainingIdRoute: AdminTrainingIdRoute,
   AdminAppointmentsIndexRoute: AdminAppointmentsIndexRoute,
   AdminAtsIndexRoute: AdminAtsIndexRoute,
   AdminCandidatesIndexRoute: AdminCandidatesIndexRoute,
