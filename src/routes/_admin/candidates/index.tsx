@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from '@tanstack/react-router'
 import { useState } from 'react'
-import { Plus, Search, Users, Filter, ArrowUpDown, Check, X } from 'lucide-react'
+import { Plus, Search, Users, Filter, ArrowUpDown, Check, X, Trash2 } from 'lucide-react'
 import { useCandidates } from '@/hooks/useCandidates'
 import CandidateForm from '@/components/candidates/CandidateForm'
 import PageHeader from '@/components/layout/PageHeader'
@@ -25,8 +25,23 @@ const STATUS_CONFIG = {
 
 const ghostBtn = 'flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-gray-200 text-xs text-gray-500 hover:bg-gray-50 transition-colors'
 
+const AVATAR_COLORS = [
+  'bg-blue-100 text-blue-700',
+  'bg-violet-100 text-violet-700',
+  'bg-emerald-100 text-emerald-700',
+  'bg-orange-100 text-orange-700',
+  'bg-pink-100 text-pink-700',
+  'bg-cyan-100 text-cyan-700',
+]
+function avatarColor(name: string) {
+  let h = 0
+  for (let i = 0; i < name.length; i++) h = (h * 31 + name.charCodeAt(i)) & 0xffff
+  return AVATAR_COLORS[h % AVATAR_COLORS.length]
+}
+
 function CandidatesPage() {
-  const { candidates, loading, create } = useCandidates()
+  const { candidates, loading, create, remove } = useCandidates()
+  const [selected, setSelected] = useState<Set<string>>(new Set())
   const [search, setSearch] = useState('')
   const [filterStatus, setFilterStatus] = useState('all')
   const [sortBy, setSortBy] = useState<'name_asc' | 'name_desc' | 'date_desc' | 'date_asc'>('name_asc')
@@ -121,6 +136,18 @@ function CandidatesPage() {
                 <X className="w-3 h-3" />
               </button>
             )}
+            {selected.size > 0 && (
+              <>
+                <div className="w-px h-4 bg-gray-200" />
+                <button onClick={async () => {
+                  if (!confirm(`Supprimer ${selected.size} candidat${selected.size > 1 ? 's' : ''} ?`)) return
+                  await Promise.all([...selected].map(id => remove(id)))
+                  setSelected(new Set())
+                }} className="flex items-center gap-1.5 text-xs text-red-500 hover:text-red-600 font-medium transition-colors">
+                  <Trash2 className="w-3.5 h-3.5" />Supprimer ({selected.size})
+                </button>
+              </>
+            )}
           </>
         }
         secondBarRight={
@@ -148,41 +175,55 @@ function CandidatesPage() {
             </button>
           </div>
         ) : (
-          <table className="w-full text-sm">
+          <table className="w-full text-sm border-collapse">
             <thead>
-              <tr className="border-b border-gray-100 bg-gray-50">
-                <th className="text-left px-8 py-3 text-xs font-medium text-gray-400 uppercase tracking-wide">Nom</th>
-                <th className="text-left px-4 py-3 text-xs font-medium text-gray-400 uppercase tracking-wide">Email</th>
-                <th className="text-left px-4 py-3 text-xs font-medium text-gray-400 uppercase tracking-wide">Téléphone</th>
-                <th className="text-left px-4 py-3 text-xs font-medium text-gray-400 uppercase tracking-wide">Situation</th>
-                <th className="text-left px-4 py-3 text-xs font-medium text-gray-400 uppercase tracking-wide">Statut</th>
+              <tr className="border-b border-gray-100">
+                <th className="pl-6 pr-3 py-2.5 w-10">
+                  <input type="checkbox"
+                    checked={selected.size === filtered.length && filtered.length > 0}
+                    onChange={e => setSelected(e.target.checked ? new Set(filtered.map(c => c.id)) : new Set())}
+                    className="w-3.5 h-3.5 rounded border-gray-300 accent-gray-900 cursor-pointer" />
+                </th>
+                <th className="text-left pr-6 py-2.5 text-xs font-medium text-gray-400">Candidat</th>
+                <th className="text-left px-4 py-2.5 text-xs font-medium text-gray-400">Email</th>
+                <th className="text-left px-4 py-2.5 text-xs font-medium text-gray-400">Téléphone</th>
+                <th className="text-left px-4 py-2.5 text-xs font-medium text-gray-400">Situation</th>
+                <th className="text-left px-4 py-2.5 text-xs font-medium text-gray-400 pr-6">Statut</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-100">
+            <tbody>
               {filtered.map(c => {
                 const statusCfg = STATUS_CONFIG[c.status as keyof typeof STATUS_CONFIG]
+                const isSelected = selected.has(c.id)
+                const fullName = `${c.first_name} ${c.last_name}`
                 return (
-                  <tr key={c.id} className="hover:bg-gray-50 transition-colors">
-                    <td className="px-8 py-3.5">
-                      <Link to="/candidates/$id" params={{ id: c.id }}
-                        className="flex items-center gap-3 group">
-                        <div className="w-8 h-8 bg-indigo-100 rounded-full flex items-center justify-center shrink-0">
-                          <span className="text-indigo-700 text-xs font-semibold">{initials(c.first_name, c.last_name)}</span>
+                  <tr key={c.id} className={cn('border-b border-gray-50 transition-colors', isSelected ? 'bg-blue-50/30' : 'hover:bg-gray-50/60')}>
+                    <td className="pl-6 pr-3 py-3 w-10">
+                      <input type="checkbox" checked={isSelected}
+                        onChange={e => {
+                          const next = new Set(selected)
+                          e.target.checked ? next.add(c.id) : next.delete(c.id)
+                          setSelected(next)
+                        }}
+                        className="w-3.5 h-3.5 rounded border-gray-300 accent-gray-900 cursor-pointer" />
+                    </td>
+                    <td className="pr-6 py-3">
+                      <Link to="/candidates/$id" params={{ id: c.id }} className="flex items-center gap-2.5 group/link">
+                        <div className={cn('w-7 h-7 rounded-full flex items-center justify-center shrink-0 text-xs font-semibold', avatarColor(fullName))}>
+                          {initials(c.first_name, c.last_name)}
                         </div>
-                        <span className="font-medium text-gray-900 group-hover:text-blue-600 transition-colors">
-                          {c.first_name} {c.last_name}
-                        </span>
+                        <span className="font-medium text-gray-900 group-hover/link:text-blue-600 transition-colors">{fullName}</span>
                       </Link>
                     </td>
-                    <td className="px-4 py-3.5 text-gray-500">{c.email ?? '—'}</td>
-                    <td className="px-4 py-3.5 text-gray-500">{c.phone ?? '—'}</td>
-                    <td className="px-4 py-3.5 text-gray-500">{c.current_situation ?? '—'}</td>
-                    <td className="px-4 py-3.5">
+                    <td className="px-4 py-3 text-gray-500 text-xs">{c.email ?? <span className="text-gray-300">—</span>}</td>
+                    <td className="px-4 py-3 text-gray-500 text-xs">{c.phone ?? <span className="text-gray-300">—</span>}</td>
+                    <td className="px-4 py-3 text-gray-500 text-xs">{c.current_situation ?? <span className="text-gray-300">—</span>}</td>
+                    <td className="px-4 py-3 pr-6">
                       {statusCfg ? (
-                        <span className={cn('text-xs font-medium px-2 py-1 rounded-full', statusCfg.class)}>
+                        <span className={cn('text-xs font-medium px-2 py-0.5 rounded-full border', statusCfg.class)}>
                           {statusCfg.label}
                         </span>
-                      ) : '—'}
+                      ) : <span className="text-gray-300">—</span>}
                     </td>
                   </tr>
                 )

@@ -1,10 +1,25 @@
 import { createFileRoute, Link } from '@tanstack/react-router'
 import { useState } from 'react'
-import { Plus, Search, Building2, Filter, ArrowUpDown, Check, X } from 'lucide-react'
+import { Plus, Search, Filter, ArrowUpDown, Check, X, Trash2 } from 'lucide-react'
 import { useCompanies } from '@/hooks/useCompanies'
 import CompanyForm from '@/components/companies/CompanyForm'
 import PageHeader from '@/components/layout/PageHeader'
 import { cn } from '@/lib/utils'
+
+const AVATAR_COLORS = [
+  'bg-blue-100 text-blue-700',
+  'bg-violet-100 text-violet-700',
+  'bg-emerald-100 text-emerald-700',
+  'bg-orange-100 text-orange-700',
+  'bg-pink-100 text-pink-700',
+  'bg-cyan-100 text-cyan-700',
+]
+
+function avatarColor(name: string) {
+  let h = 0
+  for (let i = 0; i < name.length; i++) h = (h * 31 + name.charCodeAt(i)) & 0xffff
+  return AVATAR_COLORS[h % AVATAR_COLORS.length]
+}
 
 export const Route = createFileRoute('/_admin/companies/')({
   component: CompaniesPage,
@@ -26,8 +41,9 @@ const STATUS_CONFIG = {
 const ghostBtn = 'flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-gray-200 text-xs text-gray-500 hover:bg-gray-50 transition-colors'
 
 function CompaniesPage() {
-  const { companies, loading, create } = useCompanies()
+  const { companies, loading, create, remove } = useCompanies()
   const [search, setSearch] = useState('')
+  const [selected, setSelected] = useState<Set<string>>(new Set())
   const [filterStatus, setFilterStatus] = useState('all')
   const [sortBy, setSortBy] = useState<'name_asc' | 'name_desc' | 'date_desc' | 'date_asc'>('name_asc')
   const [showFilter, setShowFilter] = useState(false)
@@ -114,6 +130,18 @@ function CompaniesPage() {
                 <X className="w-3 h-3" />
               </button>
             )}
+            {selected.size > 0 && (
+              <>
+                <div className="w-px h-4 bg-gray-200" />
+                <button onClick={async () => {
+                  if (!confirm(`Supprimer ${selected.size} entreprise${selected.size > 1 ? 's' : ''} ?`)) return
+                  await Promise.all([...selected].map(id => remove(id)))
+                  setSelected(new Set())
+                }} className="flex items-center gap-1.5 text-xs text-red-500 hover:text-red-600 font-medium transition-colors">
+                  <Trash2 className="w-3.5 h-3.5" />Supprimer ({selected.size})
+                </button>
+              </>
+            )}
           </>
         }
         secondBarRight={
@@ -129,53 +157,69 @@ function CompaniesPage() {
       />
 
       {/* Table */}
-      <div className="h-full overflow-auto bg-white">
+      <div className="h-full overflow-auto relative">
         {loading ? (
           <div className="text-center py-20 text-gray-400 text-sm">Chargement...</div>
         ) : filtered.length === 0 ? (
           <div className="text-center py-20">
-            <Building2 className="w-10 h-10 text-gray-200 mx-auto mb-3" />
             <p className="text-gray-400 text-sm">Aucune entreprise trouvée</p>
             <button onClick={() => setShowForm(true)} className="mt-3 text-sm text-blue-600 hover:underline">
               Créer la première entreprise
             </button>
           </div>
         ) : (
-          <table className="w-full text-sm">
+          <table className="w-full text-sm border-collapse">
             <thead>
-              <tr className="border-b border-gray-100 bg-gray-50">
-                <th className="text-left px-8 py-3 text-xs font-medium text-gray-400 uppercase tracking-wide">Nom</th>
-                <th className="text-left px-4 py-3 text-xs font-medium text-gray-400 uppercase tracking-wide">Secteur</th>
-                <th className="text-left px-4 py-3 text-xs font-medium text-gray-400 uppercase tracking-wide">Ville</th>
-                <th className="text-left px-4 py-3 text-xs font-medium text-gray-400 uppercase tracking-wide">Téléphone</th>
-                <th className="text-left px-4 py-3 text-xs font-medium text-gray-400 uppercase tracking-wide">Statut</th>
+              <tr className="border-b border-gray-100">
+                <th className="pl-6 pr-3 py-2.5 w-10">
+                  <input type="checkbox"
+                    checked={selected.size === filtered.length && filtered.length > 0}
+                    onChange={e => setSelected(e.target.checked ? new Set(filtered.map(c => c.id)) : new Set())}
+                    className="w-3.5 h-3.5 rounded border-gray-300 accent-gray-900 cursor-pointer" />
+                </th>
+                <th className="text-left pr-6 py-2.5 text-xs font-medium text-gray-400">Entreprise</th>
+                <th className="text-left px-4 py-2.5 text-xs font-medium text-gray-400">Secteur</th>
+                <th className="text-left px-4 py-2.5 text-xs font-medium text-gray-400">Ville</th>
+                <th className="text-left px-4 py-2.5 text-xs font-medium text-gray-400">Téléphone</th>
+                <th className="text-left px-4 py-2.5 text-xs font-medium text-gray-400 pr-6">Statut</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-100">
+            <tbody>
               {filtered.map(company => {
                 const statusCfg = STATUS_CONFIG[company.status as keyof typeof STATUS_CONFIG]
+                const isSelected = selected.has(company.id)
                 return (
-                  <tr key={company.id} className="hover:bg-gray-50 transition-colors">
-                    <td className="px-8 py-3.5">
+                  <tr key={company.id}
+                    className={cn('border-b border-gray-50 transition-colors', isSelected ? 'bg-blue-50/30' : 'hover:bg-gray-50/60')}>
+                    <td className="pl-6 pr-3 py-3 w-10">
+                      <input type="checkbox" checked={isSelected}
+                        onChange={e => {
+                          const next = new Set(selected)
+                          e.target.checked ? next.add(company.id) : next.delete(company.id)
+                          setSelected(next)
+                        }}
+                        className="w-3.5 h-3.5 rounded border-gray-300 accent-gray-900 cursor-pointer" />
+                    </td>
+                    <td className="pr-6 py-3">
                       <Link to="/companies/$id" params={{ id: company.id }}
-                        className="flex items-center gap-3 group">
-                        <div className="w-8 h-8 bg-blue-50 rounded-lg flex items-center justify-center shrink-0">
-                          <Building2 className="w-4 h-4 text-blue-500" />
+                        className="flex items-center gap-2.5 group/link">
+                        <div className={cn('w-7 h-7 rounded-md flex items-center justify-center shrink-0 text-xs font-semibold', avatarColor(company.name))}>
+                          {company.name[0]?.toUpperCase()}
                         </div>
-                        <span className="font-medium text-gray-900 group-hover:text-blue-600 transition-colors">
+                        <span className="font-medium text-gray-900 group-hover/link:text-blue-600 transition-colors">
                           {company.name}
                         </span>
                       </Link>
                     </td>
-                    <td className="px-4 py-3.5 text-gray-500">{company.sector ?? '—'}</td>
-                    <td className="px-4 py-3.5 text-gray-500">{company.city ?? '—'}</td>
-                    <td className="px-4 py-3.5 text-gray-500">{company.phone ?? '—'}</td>
-                    <td className="px-4 py-3.5">
+                    <td className="px-4 py-3 text-gray-500 text-xs">{company.sector ?? <span className="text-gray-300">—</span>}</td>
+                    <td className="px-4 py-3 text-gray-500 text-xs">{company.city ?? <span className="text-gray-300">—</span>}</td>
+                    <td className="px-4 py-3 text-gray-500 text-xs">{company.phone ?? <span className="text-gray-300">—</span>}</td>
+                    <td className="px-4 py-3 pr-6">
                       {statusCfg ? (
-                        <span className={cn('text-xs font-medium px-2 py-1 rounded-full', statusCfg.class)}>
+                        <span className={cn('text-xs font-medium px-2 py-0.5 rounded-full border', statusCfg.class)}>
                           {statusCfg.label}
                         </span>
-                      ) : '—'}
+                      ) : <span className="text-gray-300">—</span>}
                     </td>
                   </tr>
                 )

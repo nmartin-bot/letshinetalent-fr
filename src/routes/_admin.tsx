@@ -1,4 +1,4 @@
-import { createFileRoute, redirect, Outlet, Link } from '@tanstack/react-router'
+import { createFileRoute, redirect, Outlet, Link, useRouterState } from '@tanstack/react-router'
 import { useEffect, useState } from 'react'
 import { Bell, Settings } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
@@ -24,6 +24,8 @@ export const Route = createFileRoute('/_admin')({
 
 function AdminLayout() {
   const [initials, setInitials] = useState('–')
+  const pathname = useRouterState({ select: s => s.location.pathname })
+  const hideSecondBar = pathname.startsWith('/settings')
 
   useEffect(() => {
     createClient().auth.getUser().then(({ data }) => {
@@ -58,10 +60,12 @@ function AdminLayout() {
           </div>
         </div>
         {/* Second bar */}
-        <div className="h-12 border-b border-gray-100 flex items-center justify-between px-6 shrink-0 bg-white">
-          <div id="layout-sb-left" className="flex items-center gap-2" />
-          <div id="layout-sb-right" className="flex items-center gap-2" />
-        </div>
+        {!hideSecondBar && (
+          <div className="h-12 border-b border-gray-100 flex items-center justify-between px-6 shrink-0 bg-white">
+            <div id="layout-sb-left" className="flex items-center gap-2" />
+            <div id="layout-sb-right" className="flex items-center gap-2" />
+          </div>
+        )}
         {/* Page content */}
         <div className="flex-1 overflow-hidden">
           <Outlet />
