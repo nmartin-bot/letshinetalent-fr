@@ -1,0 +1,21 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm -v)",
+      "Bash(npx --yes create-tsrouter-app@latest . --template file-router --bundler vite --package-manager npm --add-ons tailwind)",
+      "Bash(npx --yes @tanstack/cli@latest create --help)",
+      "Bash(npx --yes @tanstack/cli@latest create . --framework react --package-manager npm --no-examples --no-git -f -y)",
+      "Bash(npm install *)",
+      "Bash(npx --yes shadcn@latest init --force -y)",
+      "Bash(pkill -f \"shadcn\")",
+      "Bash(npm run *)",
+      "Bash(npx tsc *)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:3000/)",
+      "Bash(curl -s http://localhost:3000/)",
+      "Bash(pkill -f \"vite dev\")",
+      "Bash(git -C /Users/nicolasmartin/letshinetalent.fr init)",
+      "Bash(git -C /Users/nicolasmartin/letshinetalent.fr add -A)",
+      "Bash(git -C /Users/nicolasmartin/letshinetalent.fr commit -m \"Initial setup: TanStack Start + Supabase + shadcn/ui + admin layout + SQL migrations\")"
+    ]
+  }
+}
