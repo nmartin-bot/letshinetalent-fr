@@ -2,6 +2,7 @@ import { createFileRoute } from '@tanstack/react-router'
 import { useState } from 'react'
 import { Pencil, CheckCircle, Star, TrendingUp, Calendar, MapPin, Clock, ChevronDown, Check, User, Target, FileText, Zap, ListTodo, FolderOpen } from 'lucide-react'
 import PageHeader from '@/components/layout/PageHeader'
+import Modal from '@/components/shared/Modal'
 import { useCandidate } from '@/hooks/useCandidates'
 import { useAppointments } from '@/hooks/useAppointments'
 import CandidateForm from '@/components/candidates/CandidateForm'
@@ -170,16 +171,9 @@ function CandidatePage() {
       </div>
 
       {editing && (
-        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-xl shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-            <div className="px-6 py-4 border-b">
-              <h2 className="font-semibold text-lg">Modifier {candidate.first_name} {candidate.last_name}</h2>
-            </div>
-            <div className="p-6">
-              <CandidateForm initial={candidate} onSubmit={handleUpdate} onCancel={() => setEditing(false)} />
-            </div>
-          </div>
-        </div>
+        <Modal title={`Modifier ${candidate.first_name} ${candidate.last_name}`} subtitle="Mettez à jour le profil du candidat." icon={User} onClose={() => setEditing(false)}>
+          <CandidateForm initial={candidate} onSubmit={handleUpdate} onCancel={() => setEditing(false)} />
+        </Modal>
       )}
     </>
   )

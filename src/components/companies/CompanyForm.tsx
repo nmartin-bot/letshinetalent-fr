@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { fieldLabel, fieldInput, fieldSelect, fieldTextarea, FormFooter } from '@/components/shared/Modal'
 import type { Database } from '@/types/database.types'
 
 type CompanyInsert = Database['public']['Tables']['companies']['Insert']
@@ -39,146 +40,78 @@ export default function CompanyForm({ initial = {}, onSubmit, onCancel }: Props)
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-5">
+    <form onSubmit={handleSubmit} className="space-y-4">
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div className="sm:col-span-2">
-          <label className="block text-sm font-medium text-gray-700 mb-1">Nom de l'entreprise *</label>
-          <input
-            required
-            value={values.name}
-            onChange={e => set('name', e.target.value)}
-            className="w-full rounded-md border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
+          <label className={fieldLabel}>Nom de l'entreprise *</label>
+          <input required value={values.name} onChange={e => set('name', e.target.value)}
+            placeholder="Acme Corp" className={fieldInput} />
         </div>
-
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">SIRET</label>
-          <input
-            value={values.siret ?? ''}
-            onChange={e => set('siret', e.target.value)}
-            className="w-full rounded-md border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
+          <label className={fieldLabel}>SIRET</label>
+          <input value={values.siret ?? ''} onChange={e => set('siret', e.target.value)}
+            placeholder="123 456 789 00012" className={fieldInput} />
         </div>
-
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Secteur</label>
-          <input
-            value={values.sector ?? ''}
-            onChange={e => set('sector', e.target.value)}
-            className="w-full rounded-md border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
+          <label className={fieldLabel}>Secteur</label>
+          <input value={values.sector ?? ''} onChange={e => set('sector', e.target.value)}
+            placeholder="Industrie, Services..." className={fieldInput} />
         </div>
-
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Convention collective</label>
-          <input
-            value={values.collective_agreement ?? ''}
-            onChange={e => set('collective_agreement', e.target.value)}
-            className="w-full rounded-md border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
+          <label className={fieldLabel}>Convention collective</label>
+          <input value={values.collective_agreement ?? ''} onChange={e => set('collective_agreement', e.target.value)}
+            placeholder="Métallurgie, Commerce..." className={fieldInput} />
         </div>
-
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Effectif</label>
-          <input
-            type="number"
-            value={values.headcount ?? ''}
-            onChange={e => set('headcount', e.target.value ? parseInt(e.target.value) : null)}
-            className="w-full rounded-md border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
+          <label className={fieldLabel}>Effectif</label>
+          <input type="number" value={values.headcount ?? ''} onChange={e => set('headcount', e.target.value ? parseInt(e.target.value) : null)}
+            placeholder="50" className={fieldInput} />
         </div>
-
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Téléphone</label>
-          <input
-            value={values.phone ?? ''}
-            onChange={e => set('phone', e.target.value)}
-            className="w-full rounded-md border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
+          <label className={fieldLabel}>Téléphone</label>
+          <input value={values.phone ?? ''} onChange={e => set('phone', e.target.value)}
+            placeholder="+33 1 23 45 67 89" className={fieldInput} />
         </div>
-
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
-          <input
-            type="email"
-            value={values.email ?? ''}
-            onChange={e => set('email', e.target.value)}
-            className="w-full rounded-md border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
+          <label className={fieldLabel}>Email</label>
+          <input type="email" value={values.email ?? ''} onChange={e => set('email', e.target.value)}
+            placeholder="contact@entreprise.fr" className={fieldInput} />
         </div>
-
         <div className="sm:col-span-2">
-          <label className="block text-sm font-medium text-gray-700 mb-1">Adresse</label>
-          <input
-            value={values.address ?? ''}
-            onChange={e => set('address', e.target.value)}
-            className="w-full rounded-md border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
+          <label className={fieldLabel}>Adresse</label>
+          <input value={values.address ?? ''} onChange={e => set('address', e.target.value)}
+            placeholder="12 rue de la Paix" className={fieldInput} />
         </div>
-
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Ville</label>
-          <input
-            value={values.city ?? ''}
-            onChange={e => set('city', e.target.value)}
-            className="w-full rounded-md border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
+          <label className={fieldLabel}>Ville</label>
+          <input value={values.city ?? ''} onChange={e => set('city', e.target.value)}
+            placeholder="Paris" className={fieldInput} />
         </div>
-
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Code postal</label>
-          <input
-            value={values.postal_code ?? ''}
-            onChange={e => set('postal_code', e.target.value)}
-            className="w-full rounded-md border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
+          <label className={fieldLabel}>Code postal</label>
+          <input value={values.postal_code ?? ''} onChange={e => set('postal_code', e.target.value)}
+            placeholder="75001" className={fieldInput} />
         </div>
-
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Site web</label>
-          <input
-            value={values.website ?? ''}
-            onChange={e => set('website', e.target.value)}
-            className="w-full rounded-md border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
+          <label className={fieldLabel}>Site web</label>
+          <input value={values.website ?? ''} onChange={e => set('website', e.target.value)}
+            placeholder="https://..." className={fieldInput} />
         </div>
-
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Statut</label>
-          <select
-            value={values.status ?? 'active'}
-            onChange={e => set('status', e.target.value)}
-            className="w-full rounded-md border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-          >
+          <label className={fieldLabel}>Statut</label>
+          <select value={values.status ?? 'active'} onChange={e => set('status', e.target.value)} className={fieldSelect}>
             <option value="prospect">Prospect</option>
             <option value="active">Client actif</option>
             <option value="inactive">Inactif</option>
           </select>
         </div>
-
         <div className="sm:col-span-2">
-          <label className="block text-sm font-medium text-gray-700 mb-1">Notes</label>
-          <textarea
-            value={values.notes ?? ''}
-            onChange={e => set('notes', e.target.value)}
-            rows={3}
-            className="w-full rounded-md border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
-          />
+          <label className={fieldLabel}>Notes</label>
+          <textarea value={values.notes ?? ''} onChange={e => set('notes', e.target.value)}
+            rows={3} placeholder="Informations complémentaires..." className={fieldTextarea} />
         </div>
       </div>
-
-      <div className="flex gap-3 justify-end pt-2 border-t">
-        <button type="button" onClick={onCancel} className="px-4 py-2 text-sm text-gray-600 hover:text-gray-800">
-          Annuler
-        </button>
-        <button
-          type="submit"
-          disabled={saving}
-          className="px-4 py-2 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50"
-        >
-          {saving ? 'Enregistrement...' : 'Enregistrer'}
-        </button>
-      </div>
+      <FormFooter onCancel={onCancel} saving={saving} />
     </form>
   )
 }

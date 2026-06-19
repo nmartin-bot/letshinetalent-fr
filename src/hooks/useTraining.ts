@@ -38,7 +38,13 @@ export function useTrainingCourses() {
     return { data, error }
   }
 
-  return { courses, loading, refresh: fetch, create, update }
+  async function remove(id: string) {
+    const { error } = await supabase.from('training_courses').delete().eq('id', id)
+    if (!error) setCourses(prev => prev.filter(c => c.id !== id))
+    return { error }
+  }
+
+  return { courses, loading, refresh: fetch, create, update, remove }
 }
 
 export function useTrainingCourse(id: string) {

@@ -2,6 +2,7 @@ import { createFileRoute, Link } from '@tanstack/react-router'
 import { useState } from 'react'
 import { Plus, X, UserPlus, Trash2, ExternalLink, Mail, Phone, Search } from 'lucide-react'
 import PageHeader from '@/components/layout/PageHeader'
+import EmptyState from '@/components/shared/EmptyState'
 import { useAts } from '@/hooks/useAts'
 import { cn } from '@/lib/utils'
 import type { Database } from '@/types/database.types'
@@ -147,8 +148,19 @@ function AtsPage() {
         </div>
       )}
 
+      {/* Empty state global */}
+      {!loading && applications.length === 0 && (
+        <EmptyState
+          variant="kanban"
+          title="Aucune candidature"
+          description="Ajoutez vos candidatures pour les suivre étape par étape jusqu'à l'embauche."
+          action={{ label: 'Ajouter une candidature', onClick: () => setShowForm(true) }}
+          className="flex-1 h-full"
+        />
+      )}
+
       {/* Kanban */}
-      <div className="flex gap-4 overflow-x-auto flex-1 pb-2 px-8">
+      {applications.length > 0 && <div className="flex gap-4 overflow-x-auto flex-1 pb-2 px-8">
         {COLUMNS.map(col => {
           const cards = filteredApplications.filter(a => a.status === col.id)
           return (
@@ -182,7 +194,7 @@ function AtsPage() {
             </div>
           )
         })}
-      </div>
+      </div>}
     </>
   )
 }

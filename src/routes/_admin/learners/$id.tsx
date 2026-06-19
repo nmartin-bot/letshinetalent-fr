@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from '@tanstack/react-router'
 import { useState } from 'react'
 import { Pencil, Building2, GraduationCap, ChevronDown, Check, User, BookOpen, Zap, FileText } from 'lucide-react'
+import Modal from '@/components/shared/Modal'
 import { useLearner } from '@/hooks/useLearners'
 import LearnerForm from '@/components/learners/LearnerForm'
 import EntityTimeline from '@/components/shared/EntityTimeline'
@@ -105,7 +106,7 @@ function LearnerPage() {
               <h2 className="font-bold text-gray-900 text-lg">{learner.first_name} {learner.last_name}</h2>
               {learner.function && <p className="text-sm text-gray-500 mt-0.5">{learner.function}</p>}
               {company && (
-                <span className="mt-2 inline-flex items-center gap-1 text-xs font-medium px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
+                <span className="mt-2 inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
                   <Building2 className="w-3 h-3" />{company.name}
                 </span>
               )}
@@ -133,16 +134,9 @@ function LearnerPage() {
       </div>
 
       {editing && (
-        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-xl shadow-xl w-full max-w-xl max-h-[90vh] overflow-y-auto">
-            <div className="px-6 py-4 border-b">
-              <h2 className="font-semibold text-lg">Modifier {learner.first_name} {learner.last_name}</h2>
-            </div>
-            <div className="p-6">
-              <LearnerForm initial={learner} onSubmit={handleUpdate} onCancel={() => setEditing(false)} />
-            </div>
-          </div>
-        </div>
+        <Modal title={`Modifier ${learner.first_name} ${learner.last_name}`} subtitle="Mettez à jour le profil de l'apprenant." icon={GraduationCap} onClose={() => setEditing(false)}>
+          <LearnerForm initial={learner} onSubmit={handleUpdate} onCancel={() => setEditing(false)} />
+        </Modal>
       )}
     </>
   )

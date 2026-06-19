@@ -2,6 +2,7 @@ import { createFileRoute } from '@tanstack/react-router'
 import { useState } from 'react'
 import { Plus, FileText, Building2, Euro, Calendar, Pencil, Trash2, Send, CheckCircle, XCircle, Filter, ArrowUpDown, Check, X } from 'lucide-react'
 import PageHeader from '@/components/layout/PageHeader'
+import EmptyState from '@/components/shared/EmptyState'
 import { useQuotes } from '@/hooks/useQuotes'
 import { useCompanies } from '@/hooks/useCompanies'
 import { cn } from '@/lib/utils'
@@ -182,18 +183,20 @@ function QuotesPage() {
       {/* Content */}
       <div className="h-full overflow-y-auto px-8 py-6">
 
-        {/* KPIs */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
-          {Object.entries(STATUS_CONFIG).map(([key, cfg]) => {
-            const count = quotes.filter(q => q.status === key).length
-            return (
-              <div key={key} className="bg-white rounded-xl border p-4">
-                <p className="text-sm text-gray-500">{cfg.label}</p>
-                <p className="text-2xl font-bold text-gray-900 mt-1">{count}</p>
-              </div>
-            )
-          })}
-        </div>
+        {/* KPIs — masqués si aucun devis */}
+        {quotes.length > 0 && (
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
+            {Object.entries(STATUS_CONFIG).map(([key, cfg]) => {
+              const count = quotes.filter(q => q.status === key).length
+              return (
+                <div key={key} className="bg-white rounded-xl border p-4">
+                  <p className="text-sm text-gray-500">{cfg.label}</p>
+                  <p className="text-2xl font-bold text-gray-900 mt-1">{count}</p>
+                </div>
+              )
+            })}
+          </div>
+        )}
 
         {/* Montants */}
         {(totals.accepted > 0 || totals.sent > 0) && (
@@ -217,11 +220,12 @@ function QuotesPage() {
         {loading ? (
           <p className="text-sm text-gray-400">Chargement...</p>
         ) : filtered.length === 0 ? (
-          <div className="bg-white rounded-xl border p-16 text-center">
-            <FileText className="w-10 h-10 text-gray-300 mx-auto mb-3" />
-            <p className="text-gray-500">Aucun devis</p>
-            <button onClick={openCreate} className="mt-4 text-sm text-blue-600 hover:underline">Créer le premier devis</button>
-          </div>
+          <EmptyState
+            variant="list"
+            title="Aucun devis"
+            description="Créez vos devis et suivez leur statut jusqu'à la signature."
+            action={{ label: 'Nouveau devis', onClick: openCreate }}
+          />
         ) : (
           <div className="space-y-3">
             {filtered.map(quote => {

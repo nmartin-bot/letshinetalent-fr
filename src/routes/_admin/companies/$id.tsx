@@ -1,7 +1,8 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { useState } from 'react'
-import { MapPin, Pencil, Trash2, Plus, UserCircle, Calendar, Clock, ChevronDown, Check, Users, Zap, ListTodo, FileText } from 'lucide-react'
+import { MapPin, Pencil, Trash2, Plus, UserCircle, Calendar, Clock, ChevronDown, Check, Users, Zap, ListTodo, FileText, Building2 } from 'lucide-react'
 import PageHeader from '@/components/layout/PageHeader'
+import Modal from '@/components/shared/Modal'
 import { useCompany } from '@/hooks/useCompanies'
 import { useContacts } from '@/hooks/useContacts'
 import { useAppointments } from '@/hooks/useAppointments'
@@ -145,18 +146,10 @@ function CompanyPage() {
         </div>
       </div>
 
-      {/* Modal édition */}
       {editing && (
-        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-xl shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-            <div className="px-6 py-4 border-b">
-              <h2 className="font-semibold text-lg">Modifier {company.name}</h2>
-            </div>
-            <div className="p-6">
-              <CompanyForm initial={company} onSubmit={handleUpdate} onCancel={() => setEditing(false)} />
-            </div>
-          </div>
-        </div>
+        <Modal title={`Modifier ${company.name}`} subtitle="Mettez à jour les informations de l'entreprise." icon={Building2} onClose={() => setEditing(false)} size="lg">
+          <CompanyForm initial={company} onSubmit={handleUpdate} onCancel={() => setEditing(false)} />
+        </Modal>
       )}
     </>
   )

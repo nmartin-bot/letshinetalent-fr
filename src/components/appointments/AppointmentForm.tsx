@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
+import { fieldLabel, fieldInput, fieldSelect, fieldTextarea, FormFooter } from '@/components/shared/Modal'
 import type { Database } from '@/types/database.types'
 
 type AppointmentInsert = Database['public']['Tables']['appointments']['Insert']
@@ -8,6 +9,7 @@ interface Props {
   initial?: Partial<AppointmentInsert>
   onSubmit: (values: AppointmentInsert) => Promise<void>
   onCancel: () => void
+  label?: string
 }
 
 const TYPE_LABELS = {
@@ -28,13 +30,18 @@ const STATUS_LABELS = {
 
 type EntityOption = { id: string; label: string }
 
-export default function AppointmentForm({ initial = {}, onSubmit, onCancel }: Props) {
+function toLocalDatetimeInput(d: Date) {
+  const pad = (n: number) => String(n).padStart(2, '0')
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`
+}
+
+export default function AppointmentForm({ initial = {}, onSubmit, onCancel, label }: Props) {
   const [values, setValues] = useState<AppointmentInsert>({
     entity_type: initial.entity_type ?? 'candidate',
     entity_id: initial.entity_id ?? '',
     type: initial.type ?? 'other',
     status: initial.status ?? 'confirmed',
-    starts_at: initial.starts_at ?? new Date().toISOString().slice(0, 16),
+    starts_at: initial.starts_at ? toLocalDatetimeInput(new Date(initial.starts_at)) : toLocalDatetimeInput(new Date()),
     duration_minutes: initial.duration_minutes ?? 60,
     location: initial.location ?? '',
     notes: initial.notes ?? '',
@@ -42,11 +49,11 @@ export default function AppointmentForm({ initial = {}, onSubmit, onCancel }: Pr
   const [entities, setEntities] = useState<EntityOption[]>([])
   const [saving, setSaving] = useState(false)
 
-  useEffect(() => {
-    loadEntities(values.entity_type)
-  }, [values.entity_type])
+  const isEditing = !!initial.entity_id
 
-  async function loadEntities(type: string) {
+  useEffect(() => { loadEntities(values.entity_type, isEditing) }, [values.entity_type])
+
+  async function loadEntities(type: string, keepEntityId = false) {
     const supabase = createClient()
     if (type === 'candidate') {
       const { data } = await supabase.from('candidates').select('id, first_name, last_name').order('last_name')
@@ -58,7 +65,7 @@ export default function AppointmentForm({ initial = {}, onSubmit, onCancel }: Pr
       const { data } = await supabase.from('learners').select('id, first_name, last_name').order('last_name')
       setEntities((data ?? []).map((l: { id: string; first_name: string; last_name: string }) => ({ id: l.id, label: `${l.first_name} ${l.last_name}` })))
     }
-    setValues(prev => ({ ...prev, entity_id: '' }))
+    if (!keepEntityId) setValues(prev => ({ ...prev, entity_id: '' }))
   }
 
   function set(field: keyof AppointmentInsert, value: unknown) {
@@ -77,75 +84,55 @@ export default function AppointmentForm({ initial = {}, onSubmit, onCancel }: Pr
     <form onSubmit={handleSubmit} className="space-y-4">
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Type de contact</label>
-          <select value={values.entity_type} onChange={e => { set('entity_type', e.target.value) }}
-            className="w-full rounded-md border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+          <label className={fieldLabel}>Type de contact</label>
+          <select value={values.entity_type} onChange={e => set('entity_type', e.target.value)} className={fieldSelect}>
             <option value="candidate">Candidat</option>
             <option value="company">Entreprise</option>
             <option value="learner">Apprenant</option>
           </select>
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Avec *</label>
-          <select required value={values.entity_id} onChange={e => set('entity_id', e.target.value)}
-            className="w-full rounded-md border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+          <label className={fieldLabel}>Avec *</label>
+          <select required value={values.entity_id} onChange={e => set('entity_id', e.target.value)} className={fieldSelect}>
             <option value="">— Choisir —</option>
             {entities.map(e => <option key={e.id} value={e.id}>{e.label}</option>)}
           </select>
         </div>
-
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Type de RDV</label>
-          <select value={values.type} onChange={e => set('type', e.target.value)}
-            className="w-full rounded-md border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+          <label className={fieldLabel}>Type de RDV</label>
+          <select value={values.type} onChange={e => set('type', e.target.value)} className={fieldSelect}>
             {Object.entries(TYPE_LABELS).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
           </select>
         </div>
-
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Statut</label>
-          <select value={values.status ?? 'confirmed'} onChange={e => set('status', e.target.value)}
-            className="w-full rounded-md border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+          <label className={fieldLabel}>Statut</label>
+          <select value={values.status ?? 'confirmed'} onChange={e => set('status', e.target.value)} className={fieldSelect}>
             {Object.entries(STATUS_LABELS).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
           </select>
         </div>
-
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Date et heure *</label>
+          <label className={fieldLabel}>Date et heure *</label>
           <input required type="datetime-local" value={values.starts_at as string}
-            onChange={e => set('starts_at', e.target.value)}
-            className="w-full rounded-md border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+            onChange={e => set('starts_at', e.target.value)} className={fieldInput} />
         </div>
-
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Durée (minutes)</label>
-          <select value={values.duration_minutes ?? 60} onChange={e => set('duration_minutes', parseInt(e.target.value))}
-            className="w-full rounded-md border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+          <label className={fieldLabel}>Durée</label>
+          <select value={values.duration_minutes ?? 60} onChange={e => set('duration_minutes', parseInt(e.target.value))} className={fieldSelect}>
             {[30, 45, 60, 90, 120, 180].map(d => <option key={d} value={d}>{d} min</option>)}
           </select>
         </div>
-
         <div className="col-span-2">
-          <label className="block text-sm font-medium text-gray-700 mb-1">Lieu</label>
+          <label className={fieldLabel}>Lieu</label>
           <input value={values.location ?? ''} onChange={e => set('location', e.target.value)}
-            placeholder="En ligne, Adresse, Téléphone..."
-            className="w-full rounded-md border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+            placeholder="En ligne, adresse, téléphone..." className={fieldInput} />
         </div>
-
         <div className="col-span-2">
-          <label className="block text-sm font-medium text-gray-700 mb-1">Notes</label>
+          <label className={fieldLabel}>Notes</label>
           <textarea value={values.notes ?? ''} onChange={e => set('notes', e.target.value)}
-            rows={3} className="w-full rounded-md border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none" />
+            rows={3} placeholder="Points à aborder, contexte..." className={fieldTextarea} />
         </div>
       </div>
-
-      <div className="flex gap-3 justify-end pt-2 border-t">
-        <button type="button" onClick={onCancel} className="px-4 py-2 text-sm text-gray-600 hover:text-gray-800">Annuler</button>
-        <button type="submit" disabled={saving}
-          className="px-4 py-2 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50">
-          {saving ? 'Enregistrement...' : 'Enregistrer'}
-        </button>
-      </div>
+      <FormFooter onCancel={onCancel} saving={saving} label={label ?? 'Créer le RDV'} />
     </form>
   )
 }

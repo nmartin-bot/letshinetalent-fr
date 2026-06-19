@@ -43,14 +43,21 @@ export function useAppointments(from?: string, to?: string) {
   const supabase = createClient()
   const [appointments, setAppointments] = useState<AppointmentWithLabel[]>([])
   const [loading, setLoading] = useState(true)
+  const [totalCount, setTotalCount] = useState<number | null>(null)
 
   const fetch = useCallback(async () => {
     setLoading(true)
-    let query = supabase.from('appointments').select('*').order('starts_at')
-    if (from) query = query.gte('starts_at', from)
-    if (to) query = query.lte('starts_at', to)
-    const { data } = await query as { data: Appointment[] | null }
-    const enriched = await resolveEntityLabels(data ?? [])
+    const [{ count }, periodResult] = await Promise.all([
+      supabase.from('appointments').select('*', { count: 'exact', head: true }),
+      (async () => {
+        let query = supabase.from('appointments').select('*').order('starts_at')
+        if (from) query = query.gte('starts_at', from)
+        if (to) query = query.lte('starts_at', to)
+        return query as unknown as Promise<{ data: Appointment[] | null }>
+      })(),
+    ])
+    setTotalCount(count ?? 0)
+    const enriched = await resolveEntityLabels((periodResult as { data: Appointment[] | null }).data ?? [])
     setAppointments(enriched)
     setLoading(false)
   }, [from, to])
@@ -62,6 +69,7 @@ export function useAppointments(from?: string, to?: string) {
     if (!error && data) {
       const [enriched] = await resolveEntityLabels([data])
       setAppointments(prev => [...prev, enriched].sort((a, b) => a.starts_at.localeCompare(b.starts_at)))
+      setTotalCount(prev => (prev ?? 0) + 1)
     }
     return { data, error }
   }
@@ -77,9 +85,12 @@ export function useAppointments(from?: string, to?: string) {
 
   async function remove(id: string) {
     const { error } = await supabase.from('appointments').delete().eq('id', id)
-    if (!error) setAppointments(prev => prev.filter(a => a.id !== id))
+    if (!error) {
+      setAppointments(prev => prev.filter(a => a.id !== id))
+      setTotalCount(prev => Math.max(0, (prev ?? 1) - 1))
+    }
     return { error }
   }
 
-  return { appointments, loading, refresh: fetch, create, update, remove }
+  return { appointments, loading, totalCount, refresh: fetch, create, update, remove }
 }

@@ -1,7 +1,9 @@
 import { createFileRoute, Link } from '@tanstack/react-router'
 import { useState } from 'react'
-import { Plus, Search, BookOpen, Building2, Calendar, Clock, Filter, ArrowUpDown, Check, X } from 'lucide-react'
+import { Plus, Search, BookOpen, Building2, Calendar, Clock, Filter, ArrowUpDown, Check, X, Trash2 } from 'lucide-react'
 import PageHeader from '@/components/layout/PageHeader'
+import EmptyState from '@/components/shared/EmptyState'
+import Modal, { fieldLabel, fieldInput, fieldSelect, FormFooter } from '@/components/shared/Modal'
 import { useTrainingCourses } from '@/hooks/useTraining'
 import { cn } from '@/lib/utils'
 import type { Database } from '@/types/database.types'
@@ -28,7 +30,7 @@ const STATUS_TABS = [
 const ghostBtn = 'flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-gray-200 text-xs text-gray-500 hover:bg-gray-50 transition-colors'
 
 function TrainingPage() {
-  const { courses, loading, create } = useTrainingCourses()
+  const { courses, loading, create, remove } = useTrainingCourses()
   const [search, setSearch] = useState('')
   const [filterStatus, setFilterStatus] = useState('all')
   const [sortBy, setSortBy] = useState<'title_asc' | 'title_desc' | 'date_desc' | 'date_asc'>('title_asc')
@@ -132,64 +134,69 @@ function TrainingPage() {
       {/* Content */}
       <div className="h-full overflow-y-auto px-8 py-6">
         {showForm && (
-          <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
-            <div className="bg-white rounded-xl shadow-xl w-full max-w-xl max-h-[90vh] overflow-y-auto">
-              <div className="px-6 py-4 border-b">
-                <h2 className="font-semibold text-lg">Nouvelle formation</h2>
-              </div>
-              <div className="p-6">
-                <CourseForm onSubmit={handleCreate} onCancel={() => setShowForm(false)} />
-              </div>
-            </div>
-          </div>
+          <Modal title="Nouvelle formation" subtitle="Créez un catalogue de formation et suivez les participants." icon={BookOpen} onClose={() => setShowForm(false)}>
+            <CourseForm onSubmit={handleCreate} onCancel={() => setShowForm(false)} />
+          </Modal>
         )}
 
         {loading ? (
           <div className="text-center py-16 text-gray-400">Chargement...</div>
         ) : filtered.length === 0 ? (
-          <div className="text-center py-16">
-            <BookOpen className="w-10 h-10 text-gray-300 mx-auto mb-3" />
-            <p className="text-gray-500">Aucune formation trouvée</p>
-          </div>
+          <EmptyState
+            variant="cards"
+            title="Aucune formation"
+            description="Créez vos catalogues de formations pour les associer à vos apprenants."
+            action={{ label: 'Nouvelle formation', onClick: () => setShowForm(true) }}
+          />
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
             {filtered.map(course => {
               const status = STATUS_CONFIG[course.status as keyof typeof STATUS_CONFIG] ?? STATUS_CONFIG.planned
               return (
-                <Link key={course.id} to="/training/$id" params={{ id: course.id }}
-                  className="bg-white rounded-xl border border-gray-200 p-5 hover:border-blue-300 hover:shadow-sm transition-all group">
-                  <div className="flex items-start justify-between mb-3">
-                    <div className="w-10 h-10 bg-emerald-50 rounded-lg flex items-center justify-center shrink-0">
-                      <BookOpen className="w-5 h-5 text-emerald-600" />
+                <div key={course.id} className="relative group/card">
+                  <Link to="/training/$id" params={{ id: course.id }}
+                    className="block bg-white rounded-xl border border-gray-200 p-5 hover:border-blue-300 hover:shadow-sm transition-all group">
+                    <div className="flex items-start justify-between mb-3">
+                      <div className="w-10 h-10 bg-emerald-50 rounded-lg flex items-center justify-center shrink-0">
+                        <BookOpen className="w-5 h-5 text-emerald-600" />
+                      </div>
+                      <span className={cn('text-xs font-medium px-2 py-0.5 rounded-full', status.class)}>
+                        {status.label}
+                      </span>
                     </div>
-                    <span className={cn('text-xs font-medium px-2 py-0.5 rounded-full', status.class)}>
-                      {status.label}
-                    </span>
-                  </div>
-                  <h3 className="font-semibold text-gray-900 group-hover:text-blue-600 transition-colors mb-1 line-clamp-2">
-                    {course.title}
-                  </h3>
-                  {course.type && <p className="text-xs text-gray-500 mb-3">{course.type}</p>}
-                  <div className="space-y-1">
-                    {course.companies && (
-                      <div className="flex items-center gap-1.5 text-xs text-gray-400">
-                        <Building2 className="w-3 h-3" />{course.companies.name}
-                      </div>
-                    )}
-                    {course.start_date && (
-                      <div className="flex items-center gap-1.5 text-xs text-gray-400">
-                        <Calendar className="w-3 h-3" />
-                        {new Date(course.start_date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' })}
-                        {course.end_date && ` → ${new Date(course.end_date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' })}`}
-                      </div>
-                    )}
-                    {course.total_hours && (
-                      <div className="flex items-center gap-1.5 text-xs text-gray-400">
-                        <Clock className="w-3 h-3" />{course.total_hours}h
-                      </div>
-                    )}
-                  </div>
-                </Link>
+                    <h3 className="font-semibold text-gray-900 group-hover:text-blue-600 transition-colors mb-1 line-clamp-2">
+                      {course.title}
+                    </h3>
+                    {course.type && <p className="text-xs text-gray-500 mb-3">{course.type}</p>}
+                    <div className="space-y-1">
+                      {course.companies && (
+                        <div className="flex items-center gap-1.5 text-xs text-gray-400">
+                          <Building2 className="w-3 h-3" />{course.companies.name}
+                        </div>
+                      )}
+                      {course.start_date && (
+                        <div className="flex items-center gap-1.5 text-xs text-gray-400">
+                          <Calendar className="w-3 h-3" />
+                          {new Date(course.start_date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' })}
+                          {course.end_date && ` → ${new Date(course.end_date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' })}`}
+                        </div>
+                      )}
+                      {course.total_hours && (
+                        <div className="flex items-center gap-1.5 text-xs text-gray-400">
+                          <Clock className="w-3 h-3" />{course.total_hours}h
+                        </div>
+                      )}
+                    </div>
+                  </Link>
+                  <button
+                    onClick={async () => {
+                      if (!confirm(`Supprimer "${course.title}" ?`)) return
+                      await remove(course.id)
+                    }}
+                    className="absolute top-3 right-3 p-1.5 rounded-lg text-gray-300 hover:text-red-500 hover:bg-red-50 opacity-0 group-hover/card:opacity-100 transition-all">
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
+                </div>
               )
             })}
           </div>
@@ -238,56 +245,50 @@ function CourseForm({ onSubmit, onCancel, initial }: {
     <form onSubmit={handleSubmit} className="space-y-4">
       <div className="grid grid-cols-2 gap-4">
         <div className="col-span-2">
-          <label className="block text-sm font-medium text-gray-700 mb-1">Titre *</label>
+          <label className={fieldLabel}>Titre *</label>
           <input required value={values.title} onChange={e => set('title', e.target.value)}
-            className="w-full rounded-md border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+            className={fieldInput} />
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Type</label>
+          <label className={fieldLabel}>Type</label>
           <input value={values.type ?? ''} onChange={e => set('type', e.target.value)}
             placeholder="Ex : Présentiel, E-learning..."
-            className="w-full rounded-md border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+            className={fieldInput} />
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Statut</label>
+          <label className={fieldLabel}>Statut</label>
           <select value={values.status ?? 'planned'} onChange={e => set('status', e.target.value)}
-            className="w-full rounded-md border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+            className={fieldSelect}>
             <option value="planned">Planifiée</option>
             <option value="ongoing">En cours</option>
             <option value="completed">Terminée</option>
           </select>
         </div>
         <div className="col-span-2">
-          <label className="block text-sm font-medium text-gray-700 mb-1">Entreprise cliente</label>
+          <label className={fieldLabel}>Entreprise cliente</label>
           <select value={values.company_id ?? ''} onChange={e => set('company_id', e.target.value || null)}
-            className="w-full rounded-md border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+            className={fieldSelect}>
             <option value="">— Aucune —</option>
             {companies.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
           </select>
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Date de début</label>
+          <label className={fieldLabel}>Date de début</label>
           <input type="date" value={values.start_date ?? ''} onChange={e => set('start_date', e.target.value || null)}
-            className="w-full rounded-md border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+            className={fieldInput} />
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Date de fin</label>
+          <label className={fieldLabel}>Date de fin</label>
           <input type="date" value={values.end_date ?? ''} onChange={e => set('end_date', e.target.value || null)}
-            className="w-full rounded-md border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+            className={fieldInput} />
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Nombre d'heures total</label>
+          <label className={fieldLabel}>Nombre d'heures total</label>
           <input type="number" value={values.total_hours ?? ''} onChange={e => set('total_hours', e.target.value ? parseInt(e.target.value) : null)}
-            className="w-full rounded-md border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+            className={fieldInput} />
         </div>
       </div>
-      <div className="flex gap-3 justify-end pt-2 border-t">
-        <button type="button" onClick={onCancel} className="px-4 py-2 text-sm text-gray-600">Annuler</button>
-        <button type="submit" disabled={saving}
-          className="px-4 py-2 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50">
-          {saving ? 'Enregistrement...' : 'Enregistrer'}
-        </button>
-      </div>
+      <FormFooter onCancel={onCancel} saving={saving} />
     </form>
   )
 }

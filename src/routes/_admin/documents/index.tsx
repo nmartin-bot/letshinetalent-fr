@@ -4,6 +4,7 @@ import { FileText, Eye, Download, Trash2, File, Image, Search, ArrowUpDown, Filt
 import { useDocuments } from '@/hooks/useDocuments'
 import { cn } from '@/lib/utils'
 import PageHeader from '@/components/layout/PageHeader'
+import EmptyState from '@/components/shared/EmptyState'
 
 export const Route = createFileRoute('/_admin/documents/')({
   component: DocumentsPage,
@@ -152,11 +153,12 @@ function DocumentsPage() {
         {loading ? (
           <p className="text-sm text-gray-400">Chargement...</p>
         ) : filtered.length === 0 ? (
-          <div className="bg-white rounded-xl border p-16 text-center">
-            <FileText className="w-10 h-10 text-gray-300 mx-auto mb-3" />
-            <p className="text-gray-500">Aucun document trouvé</p>
-            <p className="text-sm text-gray-400 mt-1">Les documents sont ajoutés depuis les fiches entreprises, candidats et apprenants.</p>
-          </div>
+          <EmptyState
+            variant="table"
+            title="Aucun document"
+            description="Les documents sont ajoutés depuis les fiches entreprises, candidats et apprenants."
+            ghostOpacity={0.7}
+          />
         ) : (
           <div className="bg-white rounded-xl border overflow-hidden">
             <table className="w-full text-sm">

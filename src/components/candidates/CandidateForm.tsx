@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { fieldLabel, fieldInput, fieldSelect, fieldTextarea, FormFooter } from '@/components/shared/Modal'
 import type { Database } from '@/types/database.types'
 
 type CandidateInsert = Database['public']['Tables']['candidates']['Insert']
@@ -37,60 +38,50 @@ export default function CandidateForm({ initial = {}, onSubmit, onCancel }: Prop
     <form onSubmit={handleSubmit} className="space-y-4">
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Prénom *</label>
+          <label className={fieldLabel}>Prénom *</label>
           <input required value={values.first_name} onChange={e => set('first_name', e.target.value)}
-            className="w-full rounded-md border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+            placeholder="Marie" className={fieldInput} />
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Nom *</label>
+          <label className={fieldLabel}>Nom *</label>
           <input required value={values.last_name} onChange={e => set('last_name', e.target.value)}
-            className="w-full rounded-md border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+            placeholder="Dupont" className={fieldInput} />
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+          <label className={fieldLabel}>Email</label>
           <input type="email" value={values.email ?? ''} onChange={e => set('email', e.target.value)}
-            className="w-full rounded-md border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+            placeholder="marie.dupont@email.fr" className={fieldInput} />
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Téléphone</label>
+          <label className={fieldLabel}>Téléphone</label>
           <input value={values.phone ?? ''} onChange={e => set('phone', e.target.value)}
-            className="w-full rounded-md border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+            placeholder="+33 6 12 34 56 78" className={fieldInput} />
         </div>
         <div className="col-span-2">
-          <label className="block text-sm font-medium text-gray-700 mb-1">Adresse</label>
+          <label className={fieldLabel}>Adresse</label>
           <input value={values.address ?? ''} onChange={e => set('address', e.target.value)}
-            className="w-full rounded-md border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+            placeholder="12 rue de la Paix, 75001 Paris" className={fieldInput} />
         </div>
         <div className="col-span-2">
-          <label className="block text-sm font-medium text-gray-700 mb-1">Situation actuelle</label>
+          <label className={fieldLabel}>Situation actuelle</label>
           <input value={values.current_situation ?? ''} onChange={e => set('current_situation', e.target.value)}
-            placeholder="Ex : En poste, En recherche active, Cadre licencié..."
-            className="w-full rounded-md border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+            placeholder="Ex : En poste, En recherche active, Cadre licencié..." className={fieldInput} />
         </div>
         <div className="col-span-2">
-          <label className="block text-sm font-medium text-gray-700 mb-1">Objectif professionnel</label>
+          <label className={fieldLabel}>Objectif professionnel</label>
           <textarea value={values.objective ?? ''} onChange={e => set('objective', e.target.value)}
-            rows={3} placeholder="Quel est l'objectif du candidat ?"
-            className="w-full rounded-md border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none" />
+            rows={3} placeholder="Quel est l'objectif du candidat ?" className={fieldTextarea} />
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Statut</label>
-          <select value={values.status ?? 'active'} onChange={e => set('status', e.target.value)}
-            className="w-full rounded-md border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+          <label className={fieldLabel}>Statut</label>
+          <select value={values.status ?? 'active'} onChange={e => set('status', e.target.value)} className={fieldSelect}>
             <option value="active">En cours</option>
             <option value="completed">Terminé</option>
             <option value="paused">En pause</option>
           </select>
         </div>
       </div>
-
-      <div className="flex gap-3 justify-end pt-2 border-t">
-        <button type="button" onClick={onCancel} className="px-4 py-2 text-sm text-gray-600 hover:text-gray-800">Annuler</button>
-        <button type="submit" disabled={saving}
-          className="px-4 py-2 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50">
-          {saving ? 'Enregistrement...' : 'Enregistrer'}
-        </button>
-      </div>
+      <FormFooter onCancel={onCancel} saving={saving} />
     </form>
   )
 }

@@ -4,6 +4,9 @@ import { Plus, Search, Filter, ArrowUpDown, Check, X, Trash2 } from 'lucide-reac
 import { useCompanies } from '@/hooks/useCompanies'
 import CompanyForm from '@/components/companies/CompanyForm'
 import PageHeader from '@/components/layout/PageHeader'
+import EmptyState from '@/components/shared/EmptyState'
+import Modal from '@/components/shared/Modal'
+import { Building2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 const AVATAR_COLORS = [
@@ -161,12 +164,13 @@ function CompaniesPage() {
         {loading ? (
           <div className="text-center py-20 text-gray-400 text-sm">Chargement...</div>
         ) : filtered.length === 0 ? (
-          <div className="text-center py-20">
-            <p className="text-gray-400 text-sm">Aucune entreprise trouvée</p>
-            <button onClick={() => setShowForm(true)} className="mt-3 text-sm text-blue-600 hover:underline">
-              Créer la première entreprise
-            </button>
-          </div>
+          <EmptyState
+            variant="table"
+            title="Aucune entreprise"
+            description="Ajoutez vos entreprises partenaires pour gérer vos contacts et rendez-vous."
+            action={{ label: 'Nouvelle entreprise', onClick: () => setShowForm(true) }}
+            ghostOpacity={0.7}
+          />
         ) : (
           <table className="w-full text-sm border-collapse">
             <thead>
@@ -229,19 +233,10 @@ function CompaniesPage() {
         )}
       </div>
 
-      {/* Modal création */}
       {showForm && (
-        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-xl shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-            <div className="px-6 py-4 border-b flex items-center justify-between">
-              <h2 className="font-semibold text-base">Nouvelle entreprise</h2>
-              <button onClick={() => setShowForm(false)} className="text-gray-400 hover:text-gray-600 text-xl leading-none">&times;</button>
-            </div>
-            <div className="p-6">
-              <CompanyForm onSubmit={handleCreate} onCancel={() => setShowForm(false)} />
-            </div>
-          </div>
-        </div>
+        <Modal title="Nouvelle entreprise" subtitle="Ajoutez une entreprise partenaire à votre CRM." icon={Building2} onClose={() => setShowForm(false)} size="lg">
+          <CompanyForm onSubmit={handleCreate} onCancel={() => setShowForm(false)} />
+        </Modal>
       )}
     </>
   )
