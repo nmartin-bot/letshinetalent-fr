@@ -5,6 +5,8 @@ import { useCandidates } from '@/hooks/useCandidates'
 import CandidateForm from '@/components/candidates/CandidateForm'
 import PageHeader from '@/components/layout/PageHeader'
 import EmptyState from '@/components/shared/EmptyState'
+import ConfirmDialog from '@/components/shared/ConfirmDialog'
+import HelpTooltip from '@/components/shared/HelpTooltip'
 import Modal from '@/components/shared/Modal'
 import { UserRound } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -51,6 +53,7 @@ function CandidatesPage() {
   const [showFilter, setShowFilter] = useState(false)
   const [showSort, setShowSort] = useState(false)
   const [showForm, setShowForm] = useState(false)
+  const [confirmBulkDelete, setConfirmBulkDelete] = useState(false)
 
   const filtered = [...candidates]
     .filter(c => {
@@ -142,11 +145,8 @@ function CandidatesPage() {
             {selected.size > 0 && (
               <>
                 <div className="w-px h-4 bg-gray-200" />
-                <button onClick={async () => {
-                  if (!confirm(`Supprimer ${selected.size} candidat${selected.size > 1 ? 's' : ''} ?`)) return
-                  await Promise.all([...selected].map(id => remove(id)))
-                  setSelected(new Set())
-                }} className="flex items-center gap-1.5 text-xs text-red-500 hover:text-red-600 font-medium transition-colors">
+                <button onClick={() => setConfirmBulkDelete(true)}
+                  className="flex items-center gap-1.5 text-xs text-red-500 hover:text-red-600 font-medium transition-colors">
                   <Trash2 className="w-3.5 h-3.5" />Supprimer ({selected.size})
                 </button>
               </>
@@ -155,6 +155,22 @@ function CandidatesPage() {
         }
         secondBarRight={
           <>
+            <HelpTooltip
+              id="candidates-table"
+              title="Gérer vos candidats"
+              description="Cochez les cases pour sélectionner plusieurs candidats et les supprimer en lot. Cliquez sur une ligne pour ouvrir la fiche détaillée avec les onglets coaching, CV, agenda et documents."
+              visual={
+                <div className="space-y-1">
+                  {[true, false, false].map((checked, i) => (
+                    <div key={i} className={`flex items-center gap-2 px-2 py-1 rounded ${checked ? 'bg-gray-100' : ''}`}>
+                      <div className={`w-3 h-3 rounded border ${checked ? 'bg-gray-800 border-gray-800' : 'border-gray-300'} shrink-0`} />
+                      <div className="h-2 rounded bg-gray-200 flex-1" />
+                      <div className="w-12 h-2 rounded bg-gray-100" />
+                    </div>
+                  ))}
+                </div>
+              }
+            />
             <span className="text-xs text-gray-400">{filtered.length} candidat{filtered.length > 1 ? 's' : ''}</span>
             <div className="w-px h-4 bg-gray-200" />
             <button onClick={() => setShowForm(true)}
@@ -235,6 +251,17 @@ function CandidatesPage() {
           </table>
         )}
       </div>
+
+      {confirmBulkDelete && (
+        <ConfirmDialog
+          title={`Supprimer ${selected.size} candidat${selected.size > 1 ? 's' : ''} ?`}
+          description={`${selected.size} fiche${selected.size > 1 ? 's' : ''} candidat${selected.size > 1 ? 's' : ''} seront définitivement supprimées.`}
+          confirmLabel="Supprimer"
+          icon={Trash2}
+          onConfirm={async () => { await Promise.all([...selected].map(id => remove(id))); setSelected(new Set()); setConfirmBulkDelete(false) }}
+          onCancel={() => setConfirmBulkDelete(false)}
+        />
+      )}
 
       {showForm && (
         <Modal title="Nouveau candidat" subtitle="Créez une fiche pour suivre le parcours de coaching." icon={UserRound} onClose={() => setShowForm(false)}>

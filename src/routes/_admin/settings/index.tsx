@@ -10,7 +10,7 @@ export const Route = createFileRoute('/_admin/settings/')({
   component: SettingsPage,
 })
 
-type Section = 'profil' | 'general' | 'securite'
+type Section = 'profil' | 'general' | 'securite' | 'donnees'
 
 const NAV = [
   {
@@ -23,7 +23,10 @@ const NAV = [
   },
   {
     section: 'SÉCURITÉ',
-    items: [{ id: 'securite' as Section, label: 'Confidentialité' }],
+    items: [
+      { id: 'securite' as Section, label: 'Confidentialité' },
+      { id: 'donnees' as Section, label: 'Données' },
+    ],
   },
 ]
 
@@ -62,6 +65,7 @@ function SettingsPage() {
         {active === 'profil' && <ProfilSection />}
         {active === 'general' && <GeneralSection />}
         {active === 'securite' && <SecuriteSection />}
+        {active === 'donnees' && <DonneesSection />}
       </div>
     </div>
     </div>
@@ -210,14 +214,12 @@ function GeneralSection() {
 }
 
 function SecuriteSection() {
-  const { user } = useAuth()
   const supabase = createClient()
   const [newPwd, setNewPwd] = useState('')
   const [confirmPwd, setConfirmPwd] = useState('')
   const [showPwd, setShowPwd] = useState(false)
   const [pwdSaving, setPwdSaving] = useState(false)
   const [pwdMsg, setPwdMsg] = useState<{ type: 'ok' | 'error'; text: string } | null>(null)
-  const [deleteConfirm, setDeleteConfirm] = useState('')
 
   async function handleChangePwd(e: React.FormEvent) {
     e.preventDefault()
@@ -279,12 +281,24 @@ function SecuriteSection() {
           <span className="text-[11px] font-medium text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full">Bientôt</span>
         </div>
       </div>
+    </div>
+  )
+}
+
+function DonneesSection() {
+  const { user } = useAuth()
+  const supabase = createClient()
+  const [deleteConfirm, setDeleteConfirm] = useState('')
+
+  return (
+    <div className="space-y-10">
+      <h1 className="text-xl font-semibold text-gray-900">Données</h1>
 
       {/* Export */}
-      <div className="border-t border-gray-100 pt-8">
+      <div>
         <div className="flex items-center gap-2 mb-1">
           <Download className="w-4 h-4 text-gray-500" />
-          <span className="text-sm font-medium text-gray-900">Mes données</span>
+          <span className="text-sm font-medium text-gray-900">Exporter mes données</span>
         </div>
         <p className="text-xs text-gray-400 mb-4">Téléchargez vos données personnelles à tout moment.</p>
         <button className="text-sm border border-gray-200 hover:bg-gray-50 px-3 py-1.5 rounded-lg transition-colors text-gray-700">
@@ -295,16 +309,16 @@ function SecuriteSection() {
       {/* Zone dangereuse */}
       <div className="border-t border-gray-100 pt-8">
         <div className="flex items-center gap-2 mb-4">
-          <AlertTriangle className="w-4 h-4 text-red-500" />
-          <span className="text-sm font-medium text-red-500">Zone dangereuse</span>
+          <AlertTriangle className="w-4 h-4 text-rose-600" />
+          <span className="text-sm font-medium text-rose-600">Zone dangereuse</span>
         </div>
-        <div className="border border-red-200 rounded-xl p-5">
-          <p className="text-sm font-medium text-gray-900 mb-1">Supprimer mon compte</p>
-          <p className="text-xs text-gray-400 mb-4">Cette action est irréversible. Toutes vos données associées seront définitivement perdues.</p>
+        <div className="border border-rose-200 bg-rose-50 rounded-xl p-5">
+          <p className="text-sm font-medium text-rose-900 mb-1">Supprimer mon compte</p>
+          <p className="text-xs text-rose-700/70 mb-4">Cette action est irréversible. Toutes vos données associées seront définitivement perdues.</p>
           <div className="flex items-center gap-3 flex-wrap">
             <input value={deleteConfirm} onChange={e => setDeleteConfirm(e.target.value)}
               placeholder='Tapez "SUPPRIMER" pour confirmer'
-              className="text-sm border border-gray-200 px-3 py-1.5 rounded-lg focus:outline-none focus:ring-1 focus:ring-red-300 w-64 placeholder:text-gray-300" />
+              className="text-sm border border-rose-200 bg-white px-3 py-1.5 rounded-lg focus:outline-none focus:ring-1 focus:ring-rose-300 w-64 placeholder:text-rose-300" />
             {deleteConfirm === 'SUPPRIMER' && (
               <button
                 onClick={async () => { await supabase.auth.signOut(); window.location.href = '/login' }}
@@ -316,7 +330,6 @@ function SecuriteSection() {
         </div>
       </div>
 
-      {/* Info utilisateur */}
       {user && (
         <div className="border-t border-gray-100 pt-6 text-[11px] text-gray-300">
           Compte créé le {new Date(user.created_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}

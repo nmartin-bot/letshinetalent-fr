@@ -5,6 +5,8 @@ import { useCompanies } from '@/hooks/useCompanies'
 import CompanyForm from '@/components/companies/CompanyForm'
 import PageHeader from '@/components/layout/PageHeader'
 import EmptyState from '@/components/shared/EmptyState'
+import ConfirmDialog from '@/components/shared/ConfirmDialog'
+import HelpTooltip from '@/components/shared/HelpTooltip'
 import Modal from '@/components/shared/Modal'
 import { Building2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -52,6 +54,7 @@ function CompaniesPage() {
   const [showFilter, setShowFilter] = useState(false)
   const [showSort, setShowSort] = useState(false)
   const [showForm, setShowForm] = useState(false)
+  const [confirmBulkDelete, setConfirmBulkDelete] = useState(false)
 
   const filtered = [...companies]
     .filter(c => {
@@ -136,11 +139,8 @@ function CompaniesPage() {
             {selected.size > 0 && (
               <>
                 <div className="w-px h-4 bg-gray-200" />
-                <button onClick={async () => {
-                  if (!confirm(`Supprimer ${selected.size} entreprise${selected.size > 1 ? 's' : ''} ?`)) return
-                  await Promise.all([...selected].map(id => remove(id)))
-                  setSelected(new Set())
-                }} className="flex items-center gap-1.5 text-xs text-red-500 hover:text-red-600 font-medium transition-colors">
+                <button onClick={() => setConfirmBulkDelete(true)}
+                  className="flex items-center gap-1.5 text-xs text-red-500 hover:text-red-600 font-medium transition-colors">
                   <Trash2 className="w-3.5 h-3.5" />Supprimer ({selected.size})
                 </button>
               </>
@@ -149,6 +149,30 @@ function CompaniesPage() {
         }
         secondBarRight={
           <>
+            <HelpTooltip
+              id="companies-table"
+              title="Gestion des entreprises"
+              description="Chaque entreprise peut être liée à des contacts, des rendez-vous et des devis. Cliquez sur une ligne pour accéder à la fiche complète avec tous les onglets."
+              visual={
+                <div className="space-y-1.5">
+                  <div className="flex gap-2 items-center px-1">
+                    <div className="w-6 h-6 rounded bg-gray-200 shrink-0" />
+                    <div className="flex-1 h-2 rounded bg-gray-200" />
+                    <div className="w-10 h-2 rounded bg-emerald-100" />
+                  </div>
+                  <div className="flex gap-2 items-center px-1">
+                    <div className="w-6 h-6 rounded bg-gray-100 shrink-0" />
+                    <div className="flex-1 h-2 rounded bg-gray-100" />
+                    <div className="w-10 h-2 rounded bg-blue-100" />
+                  </div>
+                  <div className="flex gap-2 items-center px-1">
+                    <div className="w-6 h-6 rounded bg-gray-100 shrink-0" />
+                    <div className="flex-1 h-2 rounded bg-gray-100" />
+                    <div className="w-10 h-2 rounded bg-gray-100" />
+                  </div>
+                </div>
+              }
+            />
             <span className="text-xs text-gray-400">{filtered.length} entreprise{filtered.length > 1 ? 's' : ''}</span>
             <div className="w-px h-4 bg-gray-200" />
             <button onClick={() => setShowForm(true)}
@@ -232,6 +256,17 @@ function CompaniesPage() {
           </table>
         )}
       </div>
+
+      {confirmBulkDelete && (
+        <ConfirmDialog
+          title={`Supprimer ${selected.size} entreprise${selected.size > 1 ? 's' : ''} ?`}
+          description={`${selected.size} entreprise${selected.size > 1 ? 's' : ''} seront définitivement supprimées.`}
+          confirmLabel="Supprimer"
+          icon={Trash2}
+          onConfirm={async () => { await Promise.all([...selected].map(id => remove(id))); setSelected(new Set()); setConfirmBulkDelete(false) }}
+          onCancel={() => setConfirmBulkDelete(false)}
+        />
+      )}
 
       {showForm && (
         <Modal title="Nouvelle entreprise" subtitle="Ajoutez une entreprise partenaire à votre CRM." icon={Building2} onClose={() => setShowForm(false)} size="lg">

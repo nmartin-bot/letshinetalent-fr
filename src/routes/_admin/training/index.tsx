@@ -3,6 +3,8 @@ import { useState } from 'react'
 import { Plus, Search, BookOpen, Building2, Calendar, Clock, Filter, ArrowUpDown, Check, X, Trash2 } from 'lucide-react'
 import PageHeader from '@/components/layout/PageHeader'
 import EmptyState from '@/components/shared/EmptyState'
+import ConfirmDialog from '@/components/shared/ConfirmDialog'
+import HelpTooltip from '@/components/shared/HelpTooltip'
 import Modal, { fieldLabel, fieldInput, fieldSelect, FormFooter } from '@/components/shared/Modal'
 import { useTrainingCourses } from '@/hooks/useTraining'
 import { cn } from '@/lib/utils'
@@ -37,6 +39,7 @@ function TrainingPage() {
   const [showFilter, setShowFilter] = useState(false)
   const [showSort, setShowSort] = useState(false)
   const [showForm, setShowForm] = useState(false)
+  const [confirmDeleteCourse, setConfirmDeleteCourse] = useState<{ id: string; title: string } | null>(null)
 
   const filtered = [...courses]
     .filter(c => {
@@ -121,6 +124,24 @@ function TrainingPage() {
         }
         secondBarRight={
           <>
+            <HelpTooltip
+              id="training-catalog"
+              title="Catalogue de formations"
+              description="Créez vos formations et associez-y des apprenants depuis leurs fiches individuelles. Survolez une carte pour faire apparaître le bouton de suppression."
+              visual={
+                <div className="grid grid-cols-3 gap-1.5">
+                  {[['bg-emerald-100', 'bg-emerald-50'], ['bg-violet-100', 'bg-violet-50'], ['bg-blue-100', 'bg-blue-50']].map(([header, body], i) => (
+                    <div key={i} className="rounded-lg overflow-hidden border border-gray-100">
+                      <div className={`h-5 ${header}`} />
+                      <div className={`p-1 ${body} space-y-1`}>
+                        <div className="h-1.5 rounded bg-white/70 w-full" />
+                        <div className="h-1.5 rounded bg-white/70 w-3/4" />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              }
+            />
             <span className="text-xs text-gray-400">{filtered.length} formation{filtered.length > 1 ? 's' : ''}</span>
             <div className="w-px h-4 bg-gray-200" />
             <button onClick={() => setShowForm(true)}
@@ -133,6 +154,17 @@ function TrainingPage() {
 
       {/* Content */}
       <div className="h-full overflow-y-auto px-8 py-6">
+        {confirmDeleteCourse && (
+          <ConfirmDialog
+            title={`Supprimer "${confirmDeleteCourse.title}" ?`}
+            description="Cette formation sera définitivement supprimée du catalogue."
+            confirmLabel="Supprimer"
+            icon={Trash2}
+            onConfirm={async () => { await remove(confirmDeleteCourse.id); setConfirmDeleteCourse(null) }}
+            onCancel={() => setConfirmDeleteCourse(null)}
+          />
+        )}
+
         {showForm && (
           <Modal title="Nouvelle formation" subtitle="Créez un catalogue de formation et suivez les participants." icon={BookOpen} onClose={() => setShowForm(false)}>
             <CourseForm onSubmit={handleCreate} onCancel={() => setShowForm(false)} />
@@ -189,10 +221,7 @@ function TrainingPage() {
                     </div>
                   </Link>
                   <button
-                    onClick={async () => {
-                      if (!confirm(`Supprimer "${course.title}" ?`)) return
-                      await remove(course.id)
-                    }}
+                    onClick={() => setConfirmDeleteCourse({ id: course.id, title: course.title })}
                     className="absolute top-3 right-3 p-1.5 rounded-lg text-gray-300 hover:text-red-500 hover:bg-red-50 opacity-0 group-hover/card:opacity-100 transition-all">
                     <Trash2 className="w-3.5 h-3.5" />
                   </button>

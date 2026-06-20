@@ -143,6 +143,9 @@ export interface Database {
           current_situation: string | null
           objective: string | null
           status: 'active' | 'completed' | 'paused'
+          company_id: string | null
+          program_start_date: string | null
+          program_notes: string | null
           created_at: string
         }
         Insert: {
@@ -155,6 +158,9 @@ export interface Database {
           current_situation?: string | null
           objective?: string | null
           status?: 'active' | 'completed' | 'paused'
+          company_id?: string | null
+          program_start_date?: string | null
+          program_notes?: string | null
           created_at?: string
         }
         Update: {
@@ -167,6 +173,9 @@ export interface Database {
           current_situation?: string | null
           objective?: string | null
           status?: 'active' | 'completed' | 'paused'
+          company_id?: string | null
+          program_start_date?: string | null
+          program_notes?: string | null
           created_at?: string
         }
       }

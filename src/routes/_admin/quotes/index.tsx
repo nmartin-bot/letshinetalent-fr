@@ -3,6 +3,9 @@ import { useState } from 'react'
 import { Plus, FileText, Building2, Euro, Calendar, Pencil, Trash2, Send, CheckCircle, XCircle, Filter, ArrowUpDown, Check, X } from 'lucide-react'
 import PageHeader from '@/components/layout/PageHeader'
 import EmptyState from '@/components/shared/EmptyState'
+import ConfirmDialog from '@/components/shared/ConfirmDialog'
+import Modal, { fieldLabel, fieldInput, fieldSelect, fieldTextarea, FormFooter } from '@/components/shared/Modal'
+import HelpTooltip from '@/components/shared/HelpTooltip'
 import { useQuotes } from '@/hooks/useQuotes'
 import { useCompanies } from '@/hooks/useCompanies'
 import { cn } from '@/lib/utils'
@@ -47,6 +50,7 @@ function QuotesPage() {
   const [sortBy, setSortBy] = useState<'date_desc' | 'date_asc' | 'amount_desc' | 'amount_asc'>('date_desc')
   const [showFilter, setShowFilter] = useState(false)
   const [showSort, setShowSort] = useState(false)
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null)
 
   function openCreate() {
     setForm(EMPTY_FORM)
@@ -87,8 +91,7 @@ function QuotesPage() {
   }
 
   async function handleDelete(id: string) {
-    if (!confirm('Supprimer ce devis ?')) return
-    await remove(id)
+    setConfirmDeleteId(id)
   }
 
   async function changeStatus(id: string, status: string) {
@@ -170,6 +173,21 @@ function QuotesPage() {
         }
         secondBarRight={
           <>
+            <HelpTooltip
+              id="quotes-statuts"
+              title="Cycle de vie d'un devis"
+              description="Un devis suit le parcours : Brouillon → Envoyé → Accepté ou Refusé. Changez le statut depuis la liste en cliquant sur les boutons d'action."
+              visual={
+                <div className="flex items-center gap-1">
+                  {[['Brouillon', 'bg-gray-100 text-gray-500'], ['Envoyé', 'bg-blue-100 text-blue-600'], ['Accepté', 'bg-emerald-100 text-emerald-700']].map(([label, cls], i) => (
+                    <div key={label} className="flex items-center gap-1">
+                      <span className={`text-[9px] font-semibold px-1.5 py-0.5 rounded-full ${cls}`}>{label}</span>
+                      {i < 2 && <span className="text-[9px] text-gray-300">→</span>}
+                    </div>
+                  ))}
+                </div>
+              }
+            />
             <span className="text-xs text-gray-400">{filtered.length} devis</span>
             <div className="w-px h-4 bg-gray-200" />
             <button onClick={openCreate}
@@ -290,66 +308,62 @@ function QuotesPage() {
         )}
 
         {/* Modal formulaire */}
+        {confirmDeleteId && (
+          <ConfirmDialog
+            title="Supprimer ce devis ?"
+            description="Le devis sera définitivement supprimé de votre liste."
+            confirmLabel="Supprimer"
+            icon={Trash2}
+            onConfirm={async () => { await remove(confirmDeleteId); setConfirmDeleteId(null) }}
+            onCancel={() => setConfirmDeleteId(null)}
+          />
+        )}
+
         {showForm && (
-          <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
-            <div className="bg-white rounded-xl shadow-xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
-              <div className="px-6 py-4 border-b">
-                <h2 className="font-semibold text-lg">{editing ? 'Modifier le devis' : 'Nouveau devis'}</h2>
+          <Modal
+            title={editing ? 'Modifier le devis' : 'Nouveau devis'}
+            subtitle="Créez ou mettez à jour un devis pour une entreprise."
+            onClose={() => setShowForm(false)}
+          >
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div>
+                <label className={fieldLabel}>Entreprise</label>
+                <select value={form.company_id} onChange={e => setForm(p => ({ ...p, company_id: e.target.value }))} className={fieldSelect}>
+                  <option value="">— Sélectionner —</option>
+                  {companies.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                </select>
               </div>
-              <form onSubmit={handleSubmit} className="p-6 space-y-4">
+              <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Entreprise</label>
-                  <select value={form.company_id} onChange={e => setForm(p => ({ ...p, company_id: e.target.value }))}
-                    className="w-full rounded-md border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
-                    <option value="">— Sélectionner —</option>
-                    {companies.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-                  </select>
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Référence</label>
-                    <input value={form.reference} onChange={e => setForm(p => ({ ...p, reference: e.target.value }))}
-                      placeholder="DEV-2024-001"
-                      className="w-full rounded-md border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Valable jusqu'au</label>
-                    <input type="date" value={form.valid_until} onChange={e => setForm(p => ({ ...p, valid_until: e.target.value }))}
-                      className="w-full rounded-md border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
-                  </div>
+                  <label className={fieldLabel}>Référence</label>
+                  <input value={form.reference} onChange={e => setForm(p => ({ ...p, reference: e.target.value }))}
+                    placeholder="DEV-2024-001" className={fieldInput} />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Description / Objet</label>
-                  <textarea value={form.description} onChange={e => setForm(p => ({ ...p, description: e.target.value }))}
-                    rows={3} placeholder="Formation CPF, coaching bilan de compétences..."
-                    className="w-full rounded-md border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none" />
+                  <label className={fieldLabel}>Valable jusqu'au</label>
+                  <input type="date" value={form.valid_until} onChange={e => setForm(p => ({ ...p, valid_until: e.target.value }))} className={fieldInput} />
                 </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Montant HT (€)</label>
-                    <input type="number" step="0.01" value={form.amount_ht} onChange={e => setForm(p => ({ ...p, amount_ht: e.target.value }))}
-                      placeholder="0.00"
-                      className="w-full rounded-md border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Montant TTC (€)</label>
-                    <input type="number" step="0.01" value={form.amount_ttc} onChange={e => setForm(p => ({ ...p, amount_ttc: e.target.value }))}
-                      placeholder="0.00"
-                      className="w-full rounded-md border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
-                  </div>
+              </div>
+              <div>
+                <label className={fieldLabel}>Description / Objet</label>
+                <textarea value={form.description} onChange={e => setForm(p => ({ ...p, description: e.target.value }))}
+                  rows={3} placeholder="Formation CPF, coaching bilan de compétences..." className={fieldTextarea} />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className={fieldLabel}>Montant HT (€)</label>
+                  <input type="number" step="0.01" value={form.amount_ht} onChange={e => setForm(p => ({ ...p, amount_ht: e.target.value }))}
+                    placeholder="0.00" className={fieldInput} />
                 </div>
-                <div className="flex gap-3 justify-end pt-2">
-                  <button type="button" onClick={() => setShowForm(false)} className="px-4 py-2 text-sm text-gray-600 border rounded-lg hover:bg-gray-50">
-                    Annuler
-                  </button>
-                  <button type="submit" disabled={saving}
-                    className="px-4 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50">
-                    {saving ? 'Enregistrement...' : editing ? 'Enregistrer' : 'Créer'}
-                  </button>
+                <div>
+                  <label className={fieldLabel}>Montant TTC (€)</label>
+                  <input type="number" step="0.01" value={form.amount_ttc} onChange={e => setForm(p => ({ ...p, amount_ttc: e.target.value }))}
+                    placeholder="0.00" className={fieldInput} />
                 </div>
-              </form>
-            </div>
-          </div>
+              </div>
+              <FormFooter onCancel={() => setShowForm(false)} saving={saving} label={editing ? 'Enregistrer' : 'Créer le devis'} />
+            </form>
+          </Modal>
         )}
       </div>
     </>

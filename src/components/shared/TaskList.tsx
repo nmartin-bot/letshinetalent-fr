@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Plus, Trash2, AlertCircle, CheckCircle2, Circle } from 'lucide-react'
 import { useTasks } from '@/hooks/useTasks'
 import { cn } from '@/lib/utils'
+import Modal, { fieldLabel, fieldInput, fieldSelect, FormFooter } from '@/components/shared/Modal'
 
 const PRIORITY_CONFIG = {
   high: { label: 'Urgent', class: 'text-red-600 bg-red-50 border-red-200' },
@@ -36,39 +37,45 @@ export default function TaskList({ entityType, entityId }: { entityType: string;
           Tâches
           {pending.length > 0 && <span className="ml-2 text-xs font-medium bg-orange-100 text-orange-600 px-1.5 py-0.5 rounded-full">{pending.length}</span>}
         </h3>
-        <button onClick={() => setShowForm(v => !v)}
-          className="flex items-center gap-1.5 text-sm text-blue-600 hover:text-blue-700 font-medium">
-          <Plus className="w-4 h-4" />Ajouter
+        <button onClick={() => setShowForm(true)}
+          className="flex items-center gap-1.5 text-xs text-gray-500 hover:text-gray-700 font-medium">
+          <Plus className="w-3.5 h-3.5" />Ajouter
         </button>
       </div>
 
       {showForm && (
-        <form onSubmit={handleCreate} className="bg-gray-50 border rounded-lg p-4 space-y-3">
-          <input
-            required
-            value={form.title}
-            onChange={e => setForm(p => ({ ...p, title: e.target.value }))}
-            placeholder="Description de la tâche..."
-            className="w-full rounded-md border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
-          <div className="flex gap-3">
-            <select value={form.priority} onChange={e => setForm(p => ({ ...p, priority: e.target.value as typeof form.priority }))}
-              className="rounded-md border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
-              <option value="low">Faible</option>
-              <option value="medium">Normal</option>
-              <option value="high">Urgent</option>
-            </select>
-            <input type="date" value={form.due_date} onChange={e => setForm(p => ({ ...p, due_date: e.target.value }))}
-              className="flex-1 rounded-md border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
-          </div>
-          <div className="flex gap-2 justify-end">
-            <button type="button" onClick={() => setShowForm(false)} className="text-sm text-gray-500 px-3 py-1.5">Annuler</button>
-            <button type="submit" disabled={saving}
-              className="text-sm bg-blue-600 text-white px-3 py-1.5 rounded-md hover:bg-blue-700 disabled:opacity-50">
-              {saving ? 'Enregistrement...' : 'Ajouter'}
-            </button>
-          </div>
-        </form>
+        <Modal title="Nouvelle tâche" onClose={() => setShowForm(false)} size="sm">
+          <form onSubmit={handleCreate} className="space-y-3">
+            <div>
+              <label className={fieldLabel}>Description</label>
+              <input
+                required
+                autoFocus
+                value={form.title}
+                onChange={e => setForm(p => ({ ...p, title: e.target.value }))}
+                placeholder="Description de la tâche..."
+                className={fieldInput}
+              />
+            </div>
+            <div className="flex gap-3">
+              <div className="flex-1">
+                <label className={fieldLabel}>Priorité</label>
+                <select value={form.priority} onChange={e => setForm(p => ({ ...p, priority: e.target.value as typeof form.priority }))}
+                  className={fieldSelect}>
+                  <option value="low">Faible</option>
+                  <option value="medium">Normal</option>
+                  <option value="high">Urgent</option>
+                </select>
+              </div>
+              <div className="flex-1">
+                <label className={fieldLabel}>Échéance</label>
+                <input type="date" value={form.due_date} onChange={e => setForm(p => ({ ...p, due_date: e.target.value }))}
+                  className={fieldInput} />
+              </div>
+            </div>
+            <FormFooter onCancel={() => setShowForm(false)} saving={saving} label="Ajouter" />
+          </form>
+        </Modal>
       )}
 
       {loading ? (

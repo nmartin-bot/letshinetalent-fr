@@ -5,6 +5,7 @@ import Modal from '@/components/shared/Modal'
 import { useLearner } from '@/hooks/useLearners'
 import LearnerForm from '@/components/learners/LearnerForm'
 import EntityTimeline from '@/components/shared/EntityTimeline'
+import DocumentManager from '@/components/shared/DocumentManager'
 import PageHeader from '@/components/layout/PageHeader'
 import { cn } from '@/lib/utils'
 import type { Database } from '@/types/database.types'
@@ -125,11 +126,11 @@ function LearnerPage() {
         </div>
 
         {/* Right panel */}
-        <div className="flex-1 overflow-y-auto p-6">
+        <div className={cn('flex-1 overflow-y-auto', tab === 'docs' ? '' : 'p-6')}>
           {tab === 'profil' && <ProfilTab learner={learner} companyName={company?.name} />}
           {tab === 'formations' && <FormationsTab learnerId={id} />}
           {tab === 'activite' && <EntityTimeline entityType="learner" entityId={id} />}
-          {tab === 'docs' && <p className="text-sm text-gray-400 text-center py-8">Gestion documentaire — bientôt disponible</p>}
+          {tab === 'docs' && <DocumentManager entityType="learner" entityId={id} />}
         </div>
       </div>
 

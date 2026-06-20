@@ -3,6 +3,9 @@ import { useState } from 'react'
 import { Plus, X, UserPlus, Trash2, ExternalLink, Mail, Phone, Search } from 'lucide-react'
 import PageHeader from '@/components/layout/PageHeader'
 import EmptyState from '@/components/shared/EmptyState'
+import ConfirmDialog from '@/components/shared/ConfirmDialog'
+import Modal, { fieldLabel, fieldInput, fieldSelect, fieldTextarea, FormFooter } from '@/components/shared/Modal'
+import HelpTooltip from '@/components/shared/HelpTooltip'
 import { useAts } from '@/hooks/useAts'
 import { cn } from '@/lib/utils'
 import type { Database } from '@/types/database.types'
@@ -36,6 +39,7 @@ function AtsPage() {
   const [selected, setSelected] = useState<Application | null>(null)
   const [converting, setConverting] = useState(false)
   const [search, setSearch] = useState('')
+  const [confirmConvert, setConfirmConvert] = useState<Application | null>(null)
 
   const filteredApplications = search
     ? applications.filter(a =>
@@ -45,10 +49,15 @@ function AtsPage() {
     : applications
 
   async function handleConvert(app: Application) {
-    if (!confirm(`Convertir ${app.first_name} ${app.last_name} en fiche candidat ?`)) return
+    setConfirmConvert(app)
+  }
+
+  async function doConvert() {
+    if (!confirmConvert) return
     setConverting(true)
-    await convertToCandidate(app)
+    await convertToCandidate(confirmConvert)
     setSelected(null)
+    setConfirmConvert(null)
     setConverting(false)
   }
 
@@ -68,6 +77,24 @@ function AtsPage() {
         }
         secondBarRight={
           <>
+            <HelpTooltip
+              id="ats-pipeline"
+              title="Pipeline de candidatures"
+              description="Glissez les cartes entre les colonnes pour faire avancer une candidature. Cliquez sur 'Convertir' pour créer automatiquement une fiche candidat."
+              visual={
+                <div className="flex gap-1.5">
+                  {['Nouveau', 'Entretien', 'Offre'].map((col, i) => (
+                    <div key={col} className="flex-1">
+                      <p className="text-[9px] font-semibold text-gray-400 mb-1 uppercase tracking-wide">{col}</p>
+                      <div className={`rounded bg-gray-100 p-1.5 space-y-1 ${i === 0 ? 'opacity-100' : i === 1 ? 'opacity-60' : 'opacity-30'}`}>
+                        <div className="h-5 rounded bg-white border border-gray-200" />
+                        {i === 0 && <div className="h-5 rounded bg-white border border-gray-200" />}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              }
+            />
             <span className="text-xs text-gray-400">{applications.length} candidature{applications.length > 1 ? 's' : ''}</span>
             <div className="w-px h-4 bg-gray-200" />
             <button onClick={() => setShowForm(true)}
@@ -77,6 +104,18 @@ function AtsPage() {
           </>
         }
       />
+
+      {confirmConvert && (
+        <ConfirmDialog
+          title={`Convertir ${confirmConvert.first_name} ${confirmConvert.last_name} ?`}
+          description="Une fiche candidat sera créée à partir de cette candidature."
+          confirmLabel={converting ? 'Conversion...' : 'Convertir'}
+          icon={UserPlus}
+          warning="La candidature sera archivée après conversion."
+          onConfirm={doConvert}
+          onCancel={() => setConfirmConvert(null)}
+        />
+      )}
 
       {/* Modal ajout */}
       {showForm && <AddForm onSubmit={async v => { await create(v); setShowForm(false) }} onCancel={() => setShowForm(false)} />}
@@ -219,67 +258,53 @@ function AddForm({ onSubmit, onCancel }: {
   }
 
   return (
-    <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-xl shadow-xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
-        <div className="px-6 py-4 border-b flex items-center justify-between">
-          <h2 className="font-semibold text-lg">Ajouter une candidature</h2>
-          <button onClick={onCancel} className="text-gray-400 hover:text-gray-600"><X className="w-5 h-5" /></button>
+    <Modal title="Nouvelle candidature" subtitle="Ajoutez manuellement une candidature à suivre." onClose={onCancel}>
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label className={fieldLabel}>Prénom *</label>
+            <input required value={values.first_name} onChange={e => set('first_name', e.target.value)}
+              placeholder="Marie" className={fieldInput} />
+          </div>
+          <div>
+            <label className={fieldLabel}>Nom *</label>
+            <input required value={values.last_name} onChange={e => set('last_name', e.target.value)}
+              placeholder="Dupont" className={fieldInput} />
+          </div>
+          <div>
+            <label className={fieldLabel}>Email</label>
+            <input type="email" value={values.email} onChange={e => set('email', e.target.value)}
+              placeholder="marie@email.com" className={fieldInput} />
+          </div>
+          <div>
+            <label className={fieldLabel}>Téléphone</label>
+            <input value={values.phone} onChange={e => set('phone', e.target.value)}
+              placeholder="06 00 00 00 00" className={fieldInput} />
+          </div>
+          <div>
+            <label className={fieldLabel}>Poste visé</label>
+            <input value={values.position} onChange={e => set('position', e.target.value)}
+              placeholder="Développeur web" className={fieldInput} />
+          </div>
+          <div>
+            <label className={fieldLabel}>Source</label>
+            <select value={values.source} onChange={e => set('source', e.target.value)} className={fieldSelect}>
+              {Object.entries(SOURCE_LABELS).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
+            </select>
+          </div>
+          <div className="col-span-2">
+            <label className={fieldLabel}>Lien CV</label>
+            <input value={values.cv_url} onChange={e => set('cv_url', e.target.value)}
+              placeholder="https://..." className={fieldInput} />
+          </div>
+          <div className="col-span-2">
+            <label className={fieldLabel}>Notes</label>
+            <textarea value={values.notes} onChange={e => set('notes', e.target.value)}
+              rows={3} placeholder="Contexte, motivations..." className={fieldTextarea} />
+          </div>
         </div>
-        <form onSubmit={handleSubmit} className="p-6 space-y-4">
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Prénom *</label>
-              <input required value={values.first_name} onChange={e => set('first_name', e.target.value)}
-                className="w-full rounded-md border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Nom *</label>
-              <input required value={values.last_name} onChange={e => set('last_name', e.target.value)}
-                className="w-full rounded-md border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
-              <input type="email" value={values.email} onChange={e => set('email', e.target.value)}
-                className="w-full rounded-md border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Téléphone</label>
-              <input value={values.phone} onChange={e => set('phone', e.target.value)}
-                className="w-full rounded-md border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Poste visé</label>
-              <input value={values.position} onChange={e => set('position', e.target.value)}
-                className="w-full rounded-md border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Source</label>
-              <select value={values.source} onChange={e => set('source', e.target.value)}
-                className="w-full rounded-md border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
-                {Object.entries(SOURCE_LABELS).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
-              </select>
-            </div>
-            <div className="col-span-2">
-              <label className="block text-sm font-medium text-gray-700 mb-1">Lien CV</label>
-              <input value={values.cv_url} onChange={e => set('cv_url', e.target.value)}
-                placeholder="https://..."
-                className="w-full rounded-md border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
-            </div>
-            <div className="col-span-2">
-              <label className="block text-sm font-medium text-gray-700 mb-1">Notes</label>
-              <textarea value={values.notes} onChange={e => set('notes', e.target.value)} rows={3}
-                className="w-full rounded-md border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none" />
-            </div>
-          </div>
-          <div className="flex gap-3 justify-end pt-2 border-t">
-            <button type="button" onClick={onCancel} className="px-4 py-2 text-sm text-gray-600">Annuler</button>
-            <button type="submit" disabled={saving}
-              className="px-4 py-2 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50">
-              {saving ? 'Enregistrement...' : 'Ajouter'}
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
+        <FormFooter onCancel={onCancel} saving={saving} label="Ajouter la candidature" />
+      </form>
+    </Modal>
   )
 }

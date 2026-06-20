@@ -4,6 +4,8 @@ import { ChevronLeft, ChevronRight, Plus, Clock, MapPin, Trash2, Pencil } from '
 import PageHeader from '@/components/layout/PageHeader'
 import EmptyState from '@/components/shared/EmptyState'
 import Modal from '@/components/shared/Modal'
+import ConfirmDialog from '@/components/shared/ConfirmDialog'
+import HelpTooltip from '@/components/shared/HelpTooltip'
 import { useAppointments, type AppointmentWithLabel } from '@/hooks/useAppointments'
 import AppointmentForm from '@/components/appointments/AppointmentForm'
 import { cn } from '@/lib/utils'
@@ -15,14 +17,6 @@ export const Route = createFileRoute('/_admin/appointments/')({
 type ViewMode = 'week' | 'month'
 type Appointment = AppointmentWithLabel
 
-const TYPE_COLORS: Record<string, string> = {
-  coaching_1: 'bg-blue-100 text-blue-700 border-blue-200',
-  coaching_2: 'bg-indigo-100 text-indigo-700 border-indigo-200',
-  coaching_3: 'bg-purple-100 text-purple-700 border-purple-200',
-  training: 'bg-emerald-100 text-emerald-700 border-emerald-200',
-  company: 'bg-orange-100 text-orange-700 border-orange-200',
-  other: 'bg-gray-100 text-gray-600 border-gray-200',
-}
 
 const TYPE_LABELS: Record<string, string> = {
   coaching_1: 'Coaching 1',
@@ -76,6 +70,7 @@ function AgendaPage() {
   const [showForm, setShowForm] = useState(false)
   const [selected, setSelected] = useState<Appointment | null>(null)
   const [editing, setEditing] = useState<Appointment | null>(null)
+  const [confirmDelete, setConfirmDelete] = useState<Appointment | null>(null)
 
   const periodStart = useMemo(() =>
     mode === 'week' ? startOfWeek(anchor) : startOfMonth(anchor),
@@ -115,10 +110,15 @@ function AgendaPage() {
     setSelected(null)
   }
 
-  async function handleDelete(id: string) {
-    if (!confirm('Supprimer ce rendez-vous ?')) return
-    await remove(id)
+  async function handleDelete(appt: Appointment) {
     setSelected(null)
+    setConfirmDelete(appt)
+  }
+
+  async function confirmDeleteAppt() {
+    if (!confirmDelete) return
+    await remove(confirmDelete.id)
+    setConfirmDelete(null)
   }
 
   const days = useMemo(() => {
@@ -181,6 +181,27 @@ function AgendaPage() {
               ))}
             </div>
             <div className="w-px h-4 bg-gray-200" />
+            <HelpTooltip
+              id="agenda-week"
+              title="Calendrier semaine"
+              description="Chaque bloc représente un rendez-vous. Les couleurs indiquent le type (coaching, formation, entreprise). Cliquez sur un bloc pour voir le détail ou le modifier."
+              visual={
+                <div className="space-y-1">
+                  <div className="flex gap-1">
+                    {['L', 'M', 'M', 'J', 'V'].map((d, i) => (
+                      <div key={i} className="flex-1 text-center text-[9px] font-semibold text-gray-400">{d}</div>
+                    ))}
+                  </div>
+                  <div className="flex gap-1 h-12">
+                    {[null, 'rose', null, 'violet', null].map((color, i) => (
+                      <div key={i} className="flex-1 rounded bg-gray-100 relative overflow-hidden">
+                        {color && <div className={`absolute inset-x-0.5 top-1 bottom-1 rounded bg-${color}-100 border border-${color}-200`} />}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              }
+            />
             <button onClick={() => setShowForm(true)}
               className="flex items-center gap-1.5 bg-gray-900 hover:bg-gray-800 text-white px-3 py-1.5 rounded-lg text-xs font-medium transition-colors">
               <Plus className="w-3.5 h-3.5" />Nouveau RDV
@@ -197,6 +218,17 @@ function AgendaPage() {
         </Modal>
       )}
 
+      {confirmDelete && (
+        <ConfirmDialog
+          title="Supprimer ce rendez-vous ?"
+          description={`Le rendez-vous avec ${confirmDelete.entityLabel} sera définitivement supprimé.`}
+          confirmLabel="Supprimer"
+          icon={Trash2}
+          onConfirm={confirmDeleteAppt}
+          onCancel={() => setConfirmDelete(null)}
+        />
+      )}
+
       {editing && (
         <Modal title="Modifier le rendez-vous" subtitle="Mettez à jour les informations du RDV." onClose={() => setEditing(null)}>
           <AppointmentForm initial={editing} onSubmit={handleUpdate} onCancel={() => setEditing(null)} label="Enregistrer" />
@@ -204,50 +236,81 @@ function AgendaPage() {
       )}
 
       {/* Modal détail RDV */}
-      {selected && (
-        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4" onClick={() => setSelected(null)}>
-          <div className="bg-white rounded-xl shadow-xl w-full max-w-sm p-6" onClick={e => e.stopPropagation()}>
-            <div className="flex items-start justify-between mb-4">
-              <div>
-                <span className={cn('text-xs font-medium px-2 py-0.5 rounded-full border', TYPE_COLORS[selected.type])}>
-                  {TYPE_LABELS[selected.type]}
-                </span>
-                <h3 className="font-semibold mt-2 text-gray-900">{selected.entityLabel} —
-                  {new Date(selected.starts_at).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })}
-                </h3>
-              </div>
-              <div className="flex items-center gap-1 ml-3 shrink-0">
-                <button onClick={() => { setEditing(selected); setSelected(null) }} className="p-1.5 text-gray-300 hover:text-gray-700 rounded-lg hover:bg-gray-50">
-                  <Pencil className="w-4 h-4" />
-                </button>
-                <button onClick={() => handleDelete(selected.id)} className="p-1.5 text-gray-300 hover:text-red-500 rounded-lg hover:bg-red-50">
-                  <Trash2 className="w-4 h-4" />
-                </button>
-              </div>
-            </div>
-            <div className="space-y-2 text-sm text-gray-600">
-              <div className="flex items-center gap-2">
-                <Clock className="w-4 h-4 text-gray-400" />
-                {new Date(selected.starts_at).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
-                {' '}— {selected.duration_minutes} min
-              </div>
-              {selected.location && (
-                <div className="flex items-center gap-2">
-                  <MapPin className="w-4 h-4 text-gray-400" />
-                  {selected.location}
+      {selected && (() => {
+        const colors = EVENT_COLORS[selected.type] ?? EVENT_COLORS.other
+        const start = new Date(selected.starts_at)
+        const end = new Date(start.getTime() + selected.duration_minutes * 60000)
+        const initials = entityInitials(selected.entityLabel)
+        const statusLabels: Record<string, string> = { pending: 'En attente', confirmed: 'Confirmé', cancelled: 'Annulé', done: 'Effectué' }
+        return (
+          <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4" onClick={() => setSelected(null)}>
+            <div className="bg-white rounded-xl shadow-xl w-full max-w-sm overflow-hidden" onClick={e => e.stopPropagation()}>
+              {/* Header coloré */}
+              <div className={cn('px-5 pt-5 pb-4', colors.card)}>
+                <div className="flex items-start justify-between">
+                  <p className={cn('text-[10px] font-semibold uppercase tracking-widest mb-2', colors.label)}>
+                    {TYPE_LABELS[selected.type] ?? selected.type}
+                  </p>
+                  <div className="flex items-center gap-1 -mt-1 -mr-1">
+                    <button onClick={() => { setEditing(selected); setSelected(null) }}
+                      className="p-1.5 rounded-lg text-gray-400 hover:text-gray-700 hover:bg-white/60 transition-colors">
+                      <Pencil className="w-3.5 h-3.5" />
+                    </button>
+                    <button onClick={() => handleDelete(selected)}
+                      className="p-1.5 rounded-lg text-gray-400 hover:text-red-500 hover:bg-white/60 transition-colors">
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                    <button onClick={() => setSelected(null)}
+                      className="p-1.5 rounded-lg text-gray-400 hover:text-gray-700 hover:bg-white/60 transition-colors">
+                      <span className="text-sm leading-none">×</span>
+                    </button>
+                  </div>
                 </div>
-              )}
-              <div className="flex items-center gap-2">
-                <span className={cn('w-2 h-2 rounded-full', STATUS_DOT[selected.status])} />
-                <span className="capitalize">{selected.status}</span>
+                <h3 className="font-semibold text-gray-900 text-base leading-snug">{selected.entityLabel}</h3>
+                <p className="text-xs text-gray-500 mt-0.5 capitalize">
+                  {start.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })}
+                </p>
+                {/* Avatars */}
+                <div className="flex items-center gap-1.5 mt-3">
+                  <span className={cn('w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-bold border-2 border-white shadow-sm', colors.adminAvatar)}>A</span>
+                  <span className={cn('w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-bold border-2 border-white shadow-sm', colors.entityAvatar)}>{initials}</span>
+                </div>
+              </div>
+              {/* Corps */}
+              <div className="px-5 py-4 space-y-0">
+                <div className="flex items-center justify-between py-2.5 border-b border-gray-50">
+                  <div className="flex items-center gap-2 text-xs text-gray-400">
+                    <Clock className="w-3.5 h-3.5" />Horaire
+                  </div>
+                  <span className="text-xs text-gray-900 font-medium">
+                    {start.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })} – {end.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })} · {selected.duration_minutes} min
+                  </span>
+                </div>
+                {selected.location && (
+                  <div className="flex items-center justify-between py-2.5 border-b border-gray-50">
+                    <div className="flex items-center gap-2 text-xs text-gray-400">
+                      <MapPin className="w-3.5 h-3.5" />Lieu
+                    </div>
+                    <span className="text-xs text-gray-900">{selected.location}</span>
+                  </div>
+                )}
+                <div className="flex items-center justify-between py-2.5 border-b border-gray-50">
+                  <div className="flex items-center gap-2 text-xs text-gray-400">
+                    <span className={cn('w-2 h-2 rounded-full', STATUS_DOT[selected.status])} />Statut
+                  </div>
+                  <span className="text-xs text-gray-900">{statusLabels[selected.status] ?? selected.status}</span>
+                </div>
+                {selected.notes && (
+                  <div className="pt-3">
+                    <p className="text-[10px] font-medium text-gray-400 uppercase tracking-wide mb-1.5">Notes</p>
+                    <p className="text-xs text-gray-600 bg-gray-50 rounded-lg p-3 leading-relaxed">{selected.notes}</p>
+                  </div>
+                )}
               </div>
             </div>
-            {selected.notes && (
-              <p className="mt-3 text-sm text-gray-600 bg-gray-50 rounded-lg p-3">{selected.notes}</p>
-            )}
           </div>
-        </div>
-      )}
+        )
+      })()}
 
       {!loading && totalCount === 0 ? (
         <EmptyState
@@ -406,13 +469,13 @@ function MonthView({ days, appointments, onSelect, today, periodStart }: {
           const isToday = isSameDay(day, today)
           const isCurrentMonth = day.getMonth() === periodStart.getMonth()
           return (
-            <div key={day.toISOString()} className={cn('p-2 min-h-[90px]', !isCurrentMonth && 'bg-gray-50/60')}>
-              <p className={cn('text-xs font-medium w-6 h-6 flex items-center justify-center rounded-full mb-1.5 ml-auto',
+            <div key={day.toISOString()} className={cn('flex flex-col p-2', !isCurrentMonth && 'bg-gray-50/60')}>
+              <p className={cn('text-xs font-medium w-6 h-6 flex items-center justify-center rounded-full mb-1.5 ml-auto shrink-0',
                 isToday ? 'bg-blue-600 text-white' : isCurrentMonth ? 'text-gray-700' : 'text-gray-300')}>
                 {day.getDate()}
               </p>
-              <div className="space-y-1">
-                {dayAppts.slice(0, 3).map(appt => {
+              <div className="overflow-y-auto space-y-1 flex-1 scrollbar-none">
+                {dayAppts.map(appt => {
                   const colors = EVENT_COLORS[appt.type] ?? EVENT_COLORS.other
                   return (
                     <button key={appt.id} onClick={() => onSelect(appt)}
@@ -421,9 +484,6 @@ function MonthView({ days, appointments, onSelect, today, periodStart }: {
                     </button>
                   )
                 })}
-                {dayAppts.length > 3 && (
-                  <p className="text-[10px] text-gray-400 pl-1 font-medium">+ {dayAppts.length - 3} autres</p>
-                )}
               </div>
             </div>
           )

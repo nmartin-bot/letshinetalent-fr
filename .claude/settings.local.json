@@ -62,7 +62,18 @@
       "Bash(git -C /Users/nicolasmartin/letshinetalent.fr log --oneline -3)",
       "Bash(grep -n \"emerald\\\\|badge\\\\|inline-flex\\\\|rounded-full\" /Users/nicolasmartin/letshinetalent.fr/src/routes/_admin/learners/\\\\$id.tsx | head -10)",
       "Bash(grep -n \"inline-flex\\\\|rounded-full\\\\|px-2\\\\|border\" /Users/nicolasmartin/letshinetalent.fr/src/routes/_admin/candidates/\\\\$id.tsx | grep -i \"status\\\\|badge\\\\|border border-\" | head -5)",
-      "Bash(grep -n \"inline-flex\\\\|px-2 py-0.5\\\\|rounded-full.*border\" /Users/nicolasmartin/letshinetalent.fr/src/routes/_admin/candidates/\\\\$id.tsx | head -5)"
+      "Bash(grep -n \"inline-flex\\\\|px-2 py-0.5\\\\|rounded-full.*border\" /Users/nicolasmartin/letshinetalent.fr/src/routes/_admin/candidates/\\\\$id.tsx | head -5)",
+      "Bash(grep -E '$id')",
+      "Bash(grep -n \"documents\\\\|Documents\\\\|onglet\\\\|tabs\\\\|tab\" /Users/nicolasmartin/letshinetalent.fr/src/routes/_admin/candidates/\\\\$id.tsx | head -30)",
+      "Bash(grep -n \"docs\\\\|DocumentManager\\\\|Documents\" /Users/nicolasmartin/letshinetalent.fr/src/routes/_admin/learners/\\\\$id.tsx | head -20)",
+      "Bash(grep -n \"CvTab\\\\|cv_version\\\\|cvVersion\\\\|uploadCv\\\\|CvTab\" /Users/nicolasmartin/letshinetalent.fr/src/routes/_admin/candidates/\\\\$id.tsx | head -30)",
+      "Bash(grep -n \"overflow-y-auto p-6\\\\|tab === 'docs'\\\\|DocumentManager\" /Users/nicolasmartin/letshinetalent.fr/src/routes/_admin/learners/\\\\$id.tsx | head -15)",
+      "Bash(grep -n \"overflow-y-auto p-6\\\\|tab === 'docs'\\\\|DocumentManager\\\\|tab ===\" /Users/nicolasmartin/letshinetalent.fr/src/routes/_admin/companies/\\\\$id.tsx 2>/dev/null | head -15)",
+      "Bash(grep -n \"^import { cn\\\\|import.*cn\" /Users/nicolasmartin/letshinetalent.fr/src/routes/_admin/companies/\\\\$id.tsx | head -3)",
+      "Bash(grep -n \"ConfirmDialog\\\\|fieldLabel\\\\|fieldInput\\\\|FormFooter\" /Users/nicolasmartin/letshinetalent.fr/src/routes/_admin/candidates/\\\\$id.tsx | head -5)",
+      "Bash(git remote *)",
+      "Bash(git push *)",
+      "Bash(git commit *)"
     ]
   }
 }

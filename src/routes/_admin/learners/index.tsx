@@ -5,6 +5,8 @@ import { useLearners } from '@/hooks/useLearners'
 import LearnerForm from '@/components/learners/LearnerForm'
 import PageHeader from '@/components/layout/PageHeader'
 import EmptyState from '@/components/shared/EmptyState'
+import ConfirmDialog from '@/components/shared/ConfirmDialog'
+import HelpTooltip from '@/components/shared/HelpTooltip'
 import Modal from '@/components/shared/Modal'
 import { GraduationCap } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -40,6 +42,7 @@ function LearnersPage() {
   const [showFilter, setShowFilter] = useState(false)
   const [showSort, setShowSort] = useState(false)
   const [showForm, setShowForm] = useState(false)
+  const [confirmBulkDelete, setConfirmBulkDelete] = useState(false)
 
   const filtered = [...learners]
     .filter(l => {
@@ -131,11 +134,8 @@ function LearnersPage() {
             {selected.size > 0 && (
               <>
                 <div className="w-px h-4 bg-gray-200" />
-                <button onClick={async () => {
-                  if (!confirm(`Supprimer ${selected.size} apprenant${selected.size > 1 ? 's' : ''} ?`)) return
-                  await Promise.all([...selected].map(id => remove(id)))
-                  setSelected(new Set())
-                }} className="flex items-center gap-1.5 text-xs text-red-500 hover:text-red-600 font-medium transition-colors">
+                <button onClick={() => setConfirmBulkDelete(true)}
+                  className="flex items-center gap-1.5 text-xs text-red-500 hover:text-red-600 font-medium transition-colors">
                   <Trash2 className="w-3.5 h-3.5" />Supprimer ({selected.size})
                 </button>
               </>
@@ -144,6 +144,22 @@ function LearnersPage() {
         }
         secondBarRight={
           <>
+            <HelpTooltip
+              id="learners-table"
+              title="Gestion des apprenants"
+              description="Les apprenants sont liés à une entreprise et peuvent être inscrits à des formations. Leur fiche regroupe profil, formations suivies, activité et documents."
+              visual={
+                <div className="space-y-1">
+                  {[['bg-violet-100', 'bg-violet-50'], ['bg-gray-100', 'bg-gray-50'], ['bg-gray-100', 'bg-gray-50']].map(([avatar, badge], i) => (
+                    <div key={i} className="flex gap-2 items-center px-1">
+                      <div className={`w-5 h-5 rounded-full ${avatar} shrink-0`} />
+                      <div className="flex-1 h-2 rounded bg-gray-200" />
+                      <div className={`w-14 h-2 rounded ${badge}`} />
+                    </div>
+                  ))}
+                </div>
+              }
+            />
             <span className="text-xs text-gray-400">{filtered.length} apprenant{filtered.length > 1 ? 's' : ''}</span>
             <div className="w-px h-4 bg-gray-200" />
             <button onClick={() => setShowForm(true)}
@@ -220,6 +236,17 @@ function LearnersPage() {
           </table>
         )}
       </div>
+
+      {confirmBulkDelete && (
+        <ConfirmDialog
+          title={`Supprimer ${selected.size} apprenant${selected.size > 1 ? 's' : ''} ?`}
+          description={`${selected.size} fiche${selected.size > 1 ? 's' : ''} apprenant${selected.size > 1 ? 's' : ''} seront définitivement supprimées.`}
+          confirmLabel="Supprimer"
+          icon={Trash2}
+          onConfirm={async () => { await Promise.all([...selected].map(id => remove(id))); setSelected(new Set()); setConfirmBulkDelete(false) }}
+          onCancel={() => setConfirmBulkDelete(false)}
+        />
+      )}
 
       {showForm && (
         <Modal title="Nouvel apprenant" subtitle="Ajoutez un apprenant et associez-le à une formation." icon={GraduationCap} onClose={() => setShowForm(false)}>

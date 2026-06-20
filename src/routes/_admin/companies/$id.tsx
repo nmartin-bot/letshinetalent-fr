@@ -137,7 +137,7 @@ function CompanyPage() {
         </div>
 
         {/* Right panel */}
-        <div className="flex-1 overflow-y-auto p-6">
+        <div className={cn('flex-1 overflow-y-auto', tab === 'docs' ? '' : 'p-6')}>
           {tab === 'contacts' && <ContactsTab companyId={id} />}
           {tab === 'rdv' && <RdvTab companyId={id} />}
           {tab === 'activite' && <EntityTimeline entityType="company" entityId={id} />}

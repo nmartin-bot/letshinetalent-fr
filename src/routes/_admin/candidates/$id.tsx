@@ -1,8 +1,10 @@
 import { createFileRoute } from '@tanstack/react-router'
-import { useState } from 'react'
-import { Pencil, CheckCircle, Star, TrendingUp, Calendar, MapPin, Clock, ChevronDown, Check, User, Target, FileText, Zap, ListTodo, FolderOpen } from 'lucide-react'
+import { useState, useRef } from 'react'
+import { Pencil, CheckCircle, Star, TrendingUp, Calendar, MapPin, Clock, ChevronDown, Check, User, Target, FileText, Zap, ListTodo, FolderOpen, Upload, ArrowUp, ArrowDown, Minus, Eye, Download, Trash2 } from 'lucide-react'
 import PageHeader from '@/components/layout/PageHeader'
 import Modal from '@/components/shared/Modal'
+import EmptyState from '@/components/shared/EmptyState'
+import ConfirmDialog from '@/components/shared/ConfirmDialog'
 import { useCandidate } from '@/hooks/useCandidates'
 import { useAppointments } from '@/hooks/useAppointments'
 import CandidateForm from '@/components/candidates/CandidateForm'
@@ -51,7 +53,7 @@ const INTERVIEW_CRITERIA = [
 
 function CandidatePage() {
   const { id } = Route.useParams()
-  const { candidate, sessions, cvVersions, loading, update, upsertSession } = useCandidate(id)
+  const { candidate, sessions, cvVersions, loading, update, upsertSession, uploadCvVersion, removeCvVersion } = useCandidate(id)
   const [tab, setTab] = useState<Tab>('profil')
   const [showTabMenu, setShowTabMenu] = useState(false)
   const [editing, setEditing] = useState(false)
@@ -136,13 +138,36 @@ function CandidatePage() {
         {/* Left panel */}
         <div className="w-72 shrink-0 border-r border-gray-100 overflow-y-auto bg-white">
           <div className="p-6">
-            <div className="mb-6">
+            <div className="mb-5">
               <h2 className="font-bold text-gray-900 text-lg">{candidate.first_name} {candidate.last_name}</h2>
               {candidate.current_situation && <p className="text-sm text-gray-500 mt-0.5">{candidate.current_situation}</p>}
               {STATUS_CONFIG[candidate.status as keyof typeof STATUS_CONFIG] && (
                 <span className={cn('mt-2 inline-flex text-xs font-medium px-2 py-0.5 rounded-full border', STATUS_CONFIG[candidate.status as keyof typeof STATUS_CONFIG].class)}>
                   {STATUS_CONFIG[candidate.status as keyof typeof STATUS_CONFIG].label}
                 </span>
+              )}
+            </div>
+
+            {/* Programme */}
+            <div className="bg-violet-50 rounded-xl p-3.5 mb-5 border border-violet-100">
+              <p className="text-[10px] font-semibold text-violet-500 uppercase tracking-wide mb-2.5">Programme coaching</p>
+              <div className="flex items-center gap-1.5 mb-2">
+                {([1, 2, 3] as const).map(n => {
+                  const done = sessions.find(s => s.session_number === n)?.status === 'done'
+                  return (
+                    <div key={n} className="flex-1">
+                      <div className={cn('h-1.5 rounded-full', done ? 'bg-violet-500' : 'bg-violet-200')} />
+                    </div>
+                  )
+                })}
+              </div>
+              <p className="text-xs text-violet-600">
+                {sessions.filter(s => s.status === 'done').length}/3 sessions complétées
+              </p>
+              {candidate.program_start_date && (
+                <p className="text-[10px] text-violet-400 mt-1">
+                  Démarré le {new Date(candidate.program_start_date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' })}
+                </p>
               )}
             </div>
 
@@ -159,10 +184,10 @@ function CandidatePage() {
         </div>
 
         {/* Right panel */}
-        <div className="flex-1 overflow-y-auto p-6">
+        <div className={cn('flex-1 overflow-y-auto', tab === 'cv' || tab === 'docs' ? '' : 'p-6')}>
           {tab === 'profil' && <ProfilTab candidate={candidate} />}
-          {tab === 'coaching' && <CoachingTab candidateId={id} sessions={sessions} upsertSession={upsertSession} />}
-          {tab === 'cv' && <CvTab cvVersions={cvVersions} />}
+          {tab === 'coaching' && <CoachingTab candidateId={id} sessions={sessions} cvVersions={cvVersions} upsertSession={upsertSession} uploadCvVersion={uploadCvVersion} />}
+          {tab === 'cv' && <CvTab cvVersions={cvVersions} uploadCvVersion={uploadCvVersion} removeCvVersion={removeCvVersion} />}
           {tab === 'rdv' && <RdvTab candidateId={id} />}
           {tab === 'activite' && <EntityTimeline entityType="candidate" entityId={id} />}
           {tab === 'taches' && <TaskList entityType="candidate" entityId={id} />}
@@ -198,16 +223,20 @@ function ProfilTab({ candidate }: { candidate: Database['public']['Tables']['can
   )
 }
 
-function CoachingTab({ candidateId, sessions, upsertSession }: {
+function CoachingTab({ candidateId, sessions, cvVersions, upsertSession, uploadCvVersion }: {
   candidateId: string
   sessions: Database['public']['Tables']['coaching_sessions']['Row'][]
+  cvVersions: Database['public']['Tables']['cv_versions']['Row'][]
   upsertSession: (s: Database['public']['Tables']['coaching_sessions']['Insert']) => Promise<{ data: unknown; error: unknown }>
+  uploadCvVersion: (file: File, score?: number | null) => Promise<{ data: unknown; error: unknown }>
 }) {
   const [editingSession, setEditingSession] = useState<number | null>(null)
   const [notes, setNotes] = useState('')
   const [score, setScore] = useState('')
   const [grid, setGrid] = useState<Record<string, number>>({})
   const [saving, setSaving] = useState(false)
+  const [uploadingCv, setUploadingCv] = useState(false)
+  const cvFileRef = useRef<HTMLInputElement>(null)
 
   function getSession(num: 1 | 2 | 3) {
     return sessions.find(s => s.session_number === num) ?? null
@@ -226,6 +255,12 @@ function CoachingTab({ candidateId, sessions, upsertSession }: {
   function gridScore() {
     const vals = INTERVIEW_CRITERIA.map(c => grid[c.key] ?? 0)
     return Math.round(vals.reduce((a, b) => a + b, 0) / INTERVIEW_CRITERIA.length * 5)
+  }
+
+  async function handleCvUpload(file: File) {
+    setUploadingCv(true)
+    await uploadCvVersion(file, null)
+    setUploadingCv(false)
   }
 
   async function handleSave(num: 1 | 2 | 3) {
@@ -247,6 +282,8 @@ function CoachingTab({ candidateId, sessions, upsertSession }: {
 
   // Progression
   const scored = sessions.filter(s => s.score != null).sort((a, b) => a.session_number - b.session_number)
+  const session2Grid = getSession(2)?.evaluation_grid as Record<string, number> | null
+  const session3Grid = getSession(3)?.evaluation_grid as Record<string, number> | null
 
   return (
     <div className="space-y-6">
@@ -289,6 +326,7 @@ function CoachingTab({ candidateId, sessions, upsertSession }: {
 
           return (
             <div key={num} className={cn('rounded-xl border p-5', isDone ? 'border-green-200 bg-green-50/40' : 'border-gray-200')}>
+              {/* Header */}
               <div className="flex items-start justify-between">
                 <div className="flex items-center gap-3">
                   <div className={cn('w-8 h-8 rounded-full flex items-center justify-center shrink-0 font-bold text-sm',
@@ -313,6 +351,22 @@ function CoachingTab({ candidateId, sessions, upsertSession }: {
                 </div>
               </div>
 
+              {/* Session 1 — CV versions résumé */}
+              {num === 1 && !isEditing && cvVersions.length > 0 && (
+                <div className="mt-3 pl-11 space-y-1.5">
+                  {cvVersions.slice(0, 3).map(cv => (
+                    <div key={cv.id} className="flex items-center gap-2 bg-white rounded-lg px-3 py-2 border text-xs">
+                      <span className="font-semibold text-blue-600 shrink-0">v{cv.version_number}</span>
+                      <span className="text-gray-400 shrink-0">{cv.stage ?? ''}</span>
+                      <span className="flex-1" />
+                      {cv.score != null && <span className="font-semibold text-amber-600">{cv.score}/100</span>}
+                      <a href={cv.file_url} target="_blank" rel="noreferrer" className="text-blue-500 hover:underline">Voir</a>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Sessions 2/3 — grille résumé */}
               {!isEditing && isDone && hasGrid && savedGrid && (
                 <div className="mt-3 pl-11 grid grid-cols-2 sm:grid-cols-3 gap-2">
                   {INTERVIEW_CRITERIA.map(c => (
@@ -324,12 +378,71 @@ function CoachingTab({ candidateId, sessions, upsertSession }: {
                 </div>
               )}
 
+              {/* Session 3 — comparaison avec session 2 */}
+              {num === 3 && !isEditing && isDone && session2Grid && session3Grid && (
+                <div className="mt-4 pl-11">
+                  <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Progression S2 → S3</p>
+                  <div className="space-y-1.5">
+                    {INTERVIEW_CRITERIA.map(c => {
+                      const s2 = session2Grid[c.key] ?? 0
+                      const s3 = session3Grid[c.key] ?? 0
+                      const delta = s3 - s2
+                      return (
+                        <div key={c.key} className="flex items-center gap-3 bg-white rounded-lg px-3 py-2 border text-xs">
+                          <span className="text-gray-600 flex-1 truncate">{c.label}</span>
+                          <span className="text-gray-400 shrink-0">{s2}/20</span>
+                          <span className="text-gray-300">→</span>
+                          <span className="font-semibold text-gray-900 shrink-0">{s3}/20</span>
+                          <span className={cn('flex items-center gap-0.5 font-semibold shrink-0 w-12 justify-end',
+                            delta > 0 ? 'text-green-600' : delta < 0 ? 'text-red-500' : 'text-gray-400')}>
+                            {delta > 0 ? <ArrowUp className="w-3 h-3" /> : delta < 0 ? <ArrowDown className="w-3 h-3" /> : <Minus className="w-3 h-3" />}
+                            {delta > 0 ? '+' : ''}{delta}
+                          </span>
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
+              )}
+
               {session?.notes && !isEditing && (
                 <p className="text-sm text-gray-600 mt-3 pl-11 whitespace-pre-wrap">{session.notes}</p>
               )}
 
+              {/* Formulaire d'édition */}
               {isEditing && (
                 <div className="mt-4 pl-11 space-y-4">
+                  {/* Session 1 : upload CV */}
+                  {num === 1 && (
+                    <div>
+                      <p className="text-xs font-semibold text-gray-700 mb-2 uppercase tracking-wide">CV du candidat</p>
+                      <div className="space-y-2">
+                        {cvVersions.map(cv => (
+                          <div key={cv.id} className="flex items-center gap-2 bg-gray-50 rounded-lg px-3 py-2 border text-xs">
+                            <span className="font-semibold text-blue-600">v{cv.version_number}</span>
+                            <span className="text-gray-500 flex-1 truncate">{cv.stage}</span>
+                            {cv.score != null && <span className="text-amber-600 font-semibold">{cv.score}/100</span>}
+                            <a href={cv.file_url} target="_blank" rel="noreferrer" className="text-blue-500 hover:underline">Voir</a>
+                          </div>
+                        ))}
+                        <button onClick={() => cvFileRef.current?.click()} disabled={uploadingCv}
+                          className="flex items-center gap-2 w-full px-3 py-2 rounded-lg border border-dashed border-gray-300 text-xs text-gray-500 hover:border-blue-400 hover:text-blue-600 hover:bg-blue-50 transition-colors">
+                          <Upload className="w-3.5 h-3.5" />
+                          {uploadingCv ? 'Envoi en cours...' : `Importer ${cvVersions.length > 0 ? 'une nouvelle version' : 'le CV initial'}`}
+                        </button>
+                        <input ref={cvFileRef} type="file" accept=".pdf,.doc,.docx" className="hidden"
+                          onChange={e => { const f = e.target.files?.[0]; if (f) handleCvUpload(f) }} />
+                      </div>
+                      <div className="mt-3">
+                        <p className="text-xs font-semibold text-gray-700 mb-1 uppercase tracking-wide">Score CV /100</p>
+                        <input type="number" min="0" max="100" value={score} onChange={e => setScore(e.target.value)}
+                          placeholder="Ex : 72"
+                          className="w-28 rounded-md border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Sessions 2/3 : grille entretien */}
                   {hasGrid && (
                     <div>
                       <p className="text-xs font-semibold text-gray-700 mb-2 uppercase tracking-wide">Grille d'évaluation entretien</p>
@@ -371,15 +484,6 @@ function CoachingTab({ candidateId, sessions, upsertSession }: {
                       className="w-full rounded-md border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none" />
                   </div>
 
-                  {!hasGrid && (
-                    <div>
-                      <p className="text-xs font-semibold text-gray-700 mb-1 uppercase tracking-wide">Score CV</p>
-                      <input type="number" min="0" max="100" value={score} onChange={e => setScore(e.target.value)}
-                        placeholder="Score /100"
-                        className="w-28 rounded-md border px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
-                    </div>
-                  )}
-
                   <div className="flex items-center gap-3">
                     <button onClick={() => handleSave(num)} disabled={saving}
                       className="text-sm bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50 font-medium">
@@ -399,36 +503,166 @@ function CoachingTab({ candidateId, sessions, upsertSession }: {
   )
 }
 
-function CvTab({ cvVersions }: { cvVersions: Database['public']['Tables']['cv_versions']['Row'][] }) {
-  if (cvVersions.length === 0) {
-    return <p className="text-sm text-gray-400 text-center py-8">Aucune version de CV enregistrée</p>
+const STAGE_LABELS: Record<string, string> = { initial: 'CV initial', revised: 'Version retravaillée', final: 'Version finale' }
+const STAGE_COLORS: Record<string, string> = { initial: 'bg-gray-100 text-gray-600', revised: 'bg-blue-100 text-blue-700', final: 'bg-green-100 text-green-700' }
+
+function CvTab({ cvVersions, uploadCvVersion, removeCvVersion }: {
+  cvVersions: Database['public']['Tables']['cv_versions']['Row'][]
+  uploadCvVersion: (file: File, score?: number | null) => Promise<{ data: unknown; error: unknown }>
+  removeCvVersion: (id: string) => Promise<void>
+}) {
+  const fileRef = useRef<HTMLInputElement>(null)
+  const [uploading, setUploading] = useState(false)
+  const [selected, setSelected] = useState<Set<string>>(new Set())
+  const [confirmDelete, setConfirmDelete] = useState<Database['public']['Tables']['cv_versions']['Row'] | null>(null)
+  const [confirmBulkDelete, setConfirmBulkDelete] = useState(false)
+
+  async function handleUpload(file: File) {
+    setUploading(true)
+    await uploadCvVersion(file, null)
+    setUploading(false)
   }
 
   return (
-    <div className="space-y-3">
-      <h3 className="font-semibold text-gray-900">Versions du CV</h3>
-      {cvVersions.map(cv => (
-        <div key={cv.id} className="flex items-center gap-4 p-4 rounded-lg border">
-          <div className="w-10 h-10 bg-blue-50 rounded-lg flex items-center justify-center shrink-0">
-            <span className="text-sm font-bold text-blue-600">v{cv.version_number}</span>
-          </div>
-          <div className="flex-1">
-            <p className="text-sm font-medium text-gray-900">Version {cv.version_number} — {cv.stage ?? 'N/A'}</p>
-            {cv.analyzed_at && <p className="text-xs text-gray-400">Analysé le {new Date(cv.analyzed_at).toLocaleDateString('fr-FR')}</p>}
-          </div>
-          {cv.score && (
-            <span className="flex items-center gap-1 text-sm font-semibold text-amber-600">
-              <Star className="w-4 h-4 fill-amber-400 text-amber-400" />{cv.score}/100
-            </span>
-          )}
-          {cv.file_url && (
-            <a href={cv.file_url} target="_blank" rel="noreferrer"
-              className="text-xs text-blue-600 hover:underline font-medium">
-              Voir le CV
-            </a>
+    <div className="flex flex-col">
+      {/* Header bar */}
+      <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
+        <div className="flex items-center gap-2">
+          <span className="text-xs font-medium text-gray-500">
+            {cvVersions.length > 0 ? `${cvVersions.length} version${cvVersions.length > 1 ? 's' : ''}` : 'CV'}
+          </span>
+          {selected.size > 0 && (
+            <>
+              <div className="w-px h-4 bg-gray-200" />
+              <button onClick={() => setConfirmBulkDelete(true)}
+                className="flex items-center gap-1.5 text-xs text-red-500 hover:text-red-600 font-medium transition-colors">
+                <Trash2 className="w-3.5 h-3.5" />Supprimer ({selected.size})
+              </button>
+            </>
           )}
         </div>
-      ))}
+        <button onClick={() => fileRef.current?.click()} disabled={uploading}
+          className="flex items-center gap-1.5 bg-gray-900 hover:bg-gray-800 text-white px-3 py-1.5 rounded-lg text-xs font-medium transition-colors disabled:opacity-50">
+          <Upload className="w-3.5 h-3.5" />{uploading ? 'Envoi...' : 'Importer'}
+        </button>
+        <input ref={fileRef} type="file" accept=".pdf,.doc,.docx" className="hidden"
+          onChange={e => { const f = e.target.files?.[0]; if (f) handleUpload(f) }} />
+      </div>
+
+      {cvVersions.length === 0 ? (
+        <EmptyState
+          variant="list"
+          title="Aucun CV importé"
+          description="Importez le CV initial du candidat pour démarrer le suivi des versions."
+          action={{ label: 'Importer un CV', onClick: () => fileRef.current?.click() }}
+        />
+      ) : (
+        <table className="w-full border-collapse">
+          <thead>
+            <tr className="border-b border-gray-100">
+              <th className="pl-6 pr-3 py-2.5 w-10">
+                <input type="checkbox"
+                  checked={selected.size === cvVersions.length && cvVersions.length > 0}
+                  onChange={e => setSelected(e.target.checked ? new Set(cvVersions.map(c => c.id)) : new Set())}
+                  className="w-3.5 h-3.5 rounded border-gray-300 accent-gray-900 cursor-pointer" />
+              </th>
+              <th className="text-left pr-4 py-2.5 text-xs font-medium text-gray-400">Version</th>
+              <th className="text-left px-4 py-2.5 text-xs font-medium text-gray-400">Stade</th>
+              <th className="text-left px-4 py-2.5 text-xs font-medium text-gray-400">Score</th>
+              <th className="text-left px-4 py-2.5 text-xs font-medium text-gray-400">Date</th>
+              <th className="pr-6 py-2.5" />
+            </tr>
+          </thead>
+          <tbody>
+            {cvVersions.map(cv => {
+              const isSelected = selected.has(cv.id)
+              return (
+                <tr key={cv.id} className={cn('border-b border-gray-50 transition-colors group', isSelected ? 'bg-blue-50/30' : 'hover:bg-gray-50/60')}>
+                  <td className="pl-6 pr-3 py-3 w-10">
+                    <input type="checkbox" checked={isSelected}
+                      onChange={e => {
+                        const next = new Set(selected)
+                        e.target.checked ? next.add(cv.id) : next.delete(cv.id)
+                        setSelected(next)
+                      }}
+                      className="w-3.5 h-3.5 rounded border-gray-300 accent-gray-900 cursor-pointer" />
+                  </td>
+                  <td className="pr-4 py-3">
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 bg-blue-50 rounded-lg flex items-center justify-center shrink-0 border border-blue-100">
+                        <span className="text-xs font-bold text-blue-600">v{cv.version_number}</span>
+                      </div>
+                      <span className="text-sm font-medium text-gray-900">Version {cv.version_number}</span>
+                    </div>
+                  </td>
+                  <td className="px-4 py-3">
+                    {cv.stage ? (
+                      <span className={cn('text-xs font-medium px-2 py-0.5 rounded-full', STAGE_COLORS[cv.stage] ?? 'bg-gray-100 text-gray-600')}>
+                        {STAGE_LABELS[cv.stage] ?? cv.stage}
+                      </span>
+                    ) : <span className="text-gray-300 text-xs">—</span>}
+                  </td>
+                  <td className="px-4 py-3">
+                    {cv.score != null ? (
+                      <span className="flex items-center gap-1 text-sm font-bold text-amber-600">
+                        <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />{cv.score}/100
+                      </span>
+                    ) : <span className="text-gray-300 text-xs">—</span>}
+                  </td>
+                  <td className="px-4 py-3 text-xs text-gray-400">
+                    {cv.analyzed_at
+                      ? new Date(cv.analyzed_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' })
+                      : '—'}
+                  </td>
+                  <td className="pr-6 py-3">
+                    <div className="flex items-center gap-1 justify-end opacity-0 group-hover:opacity-100 transition-opacity">
+                      <a href={cv.file_url} target="_blank" rel="noreferrer"
+                        className="p-1.5 text-gray-400 hover:text-blue-600 rounded-lg hover:bg-blue-50 transition-colors">
+                        <Eye className="w-3.5 h-3.5" />
+                      </a>
+                      <a href={cv.file_url} download={`cv_v${cv.version_number}.pdf`}
+                        className="p-1.5 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100 transition-colors">
+                        <Download className="w-3.5 h-3.5" />
+                      </a>
+                      <button
+                        className="p-1.5 text-gray-300 hover:text-red-500 rounded-lg hover:bg-red-50 transition-colors"
+                        onClick={() => setConfirmDelete(cv)}>
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              )
+            })}
+          </tbody>
+        </table>
+      )}
+
+      {confirmDelete && (
+        <ConfirmDialog
+          title={`Supprimer la version ${confirmDelete.version_number} ?`}
+          description="Ce fichier CV sera définitivement supprimé."
+          confirmLabel="Supprimer"
+          icon={Trash2}
+          onCancel={() => setConfirmDelete(null)}
+          onConfirm={async () => { await removeCvVersion(confirmDelete.id); setConfirmDelete(null) }}
+        />
+      )}
+
+      {confirmBulkDelete && (
+        <ConfirmDialog
+          title={`Supprimer ${selected.size} version${selected.size > 1 ? 's' : ''} ?`}
+          description="Ces fichiers CV seront définitivement supprimés."
+          confirmLabel="Supprimer"
+          icon={Trash2}
+          onCancel={() => setConfirmBulkDelete(false)}
+          onConfirm={async () => {
+            await Promise.all([...selected].map(id => removeCvVersion(id)))
+            setSelected(new Set())
+            setConfirmBulkDelete(false)
+          }}
+        />
+      )}
     </div>
   )
 }

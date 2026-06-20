@@ -49,13 +49,18 @@ export function useDocuments(entityType?: string, entityId?: string) {
     return { data, error }
   }
 
+  async function rename(id: string, name: string) {
+    const { data, error } = await supabase.from('documents').update({ name } as never).eq('id', id).select().single() as { data: Document | null; error: unknown }
+    if (!error && data) setDocuments(prev => prev.map(d => d.id === id ? data : d))
+    return { error }
+  }
+
   async function getSignedUrl(filePath: string) {
     const { data } = await supabase.storage.from(BUCKET).createSignedUrl(filePath, 3600)
     return data?.signedUrl ?? null
   }
 
   async function remove(id: string, fileUrl: string) {
-    // Extract storage path from public URL
     const marker = `/storage/v1/object/public/${BUCKET}/`
     const idx = fileUrl.indexOf(marker)
     if (idx !== -1) {
@@ -67,5 +72,21 @@ export function useDocuments(entityType?: string, entityId?: string) {
     return { error }
   }
 
-  return { documents, loading, uploading, upload, remove, getSignedUrl, refresh: fetch }
+  return { documents, loading, uploading, upload, rename, remove, getSignedUrl, refresh: fetch }
+}
+
+export type EntityOption = { id: string; label: string; type: string }
+
+export async function loadAllEntities(): Promise<EntityOption[]> {
+  const supabase = createClient()
+  const [{ data: candidates }, { data: companies }, { data: learners }] = await Promise.all([
+    supabase.from('candidates').select('id, first_name, last_name').order('last_name'),
+    supabase.from('companies').select('id, name').order('name'),
+    supabase.from('learners').select('id, first_name, last_name').order('last_name'),
+  ])
+  return [
+    ...(candidates ?? []).map((c: { id: string; first_name: string; last_name: string }) => ({ id: c.id, label: `${c.first_name} ${c.last_name}`, type: 'candidate' })),
+    ...(companies ?? []).map((c: { id: string; name: string }) => ({ id: c.id, label: c.name, type: 'company' })),
+    ...(learners ?? []).map((l: { id: string; first_name: string; last_name: string }) => ({ id: l.id, label: `${l.first_name} ${l.last_name}`, type: 'learner' })),
+  ]
 }
