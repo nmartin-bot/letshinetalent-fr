@@ -46,7 +46,7 @@ function ClientLoginPage() {
     const { data: { session }, error: signInError } = await supabase.auth.signInWithPassword({ email, password })
 
     if (signInError || !session) {
-      setError('Email ou mot de passe incorrect.')
+      setError(signInError?.message || 'Email ou mot de passe incorrect.')
       setLoading(false)
       return
     }
