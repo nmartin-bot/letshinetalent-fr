@@ -33,9 +33,11 @@ function LoginPage() {
     setError(null)
     setLoading(true)
     const supabase = createClient()
+    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
+    console.log('[debug] supabase url:', supabaseUrl)
     const { data: { session }, error } = await supabase.auth.signInWithPassword({ email, password })
     if (error || !session) {
-      setError(error?.message || 'Email ou mot de passe incorrect.')
+      setError(`[${supabaseUrl ?? 'UNDEFINED'}] ${error?.message || 'Email ou mot de passe incorrect.'}`)
       setLoading(false)
       return
     }
