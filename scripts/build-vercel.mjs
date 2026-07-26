@@ -20,8 +20,19 @@ const { cp } = await import('fs/promises')
 await cp('dist/client', '.vercel/output/static', { recursive: true })
 
 // 5. Write entry that wraps the server with the Vercel Node.js adapter
+//    ws is imported statically so esbuild bundles it, then we set it as
+//    globalThis.WebSocket BEFORE server.js loads (via dynamic import) so
+//    Supabase Realtime doesn't throw on Node.js < 22.
 await writeFile('_vercel_entry_tmp.mjs', `
-import server from './dist/server/server.js'
+import ws from 'ws'
+
+// Polyfill WebSocket for Node.js < 22 before any module that needs it loads
+if (typeof globalThis.WebSocket === 'undefined') {
+  globalThis.WebSocket = ws
+}
+
+// Dynamic import so server.js (and Supabase) loads AFTER the polyfill above
+const { default: server } = await import('./dist/server/server.js')
 
 export default async function handler(req, res) {
   const proto = req.headers['x-forwarded-proto'] || 'https'
