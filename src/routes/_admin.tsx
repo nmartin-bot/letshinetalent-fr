@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react'
 import { Bell, Settings } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import AdminSidebar from '@/components/layout/AdminSidebar'
+import { ThemeProvider } from '@/contexts/ThemeContext'
 
 export const Route = createFileRoute('/_admin')({
   beforeLoad: async () => {
@@ -26,7 +27,6 @@ function AdminLayout() {
   const [initials, setInitials] = useState('–')
   const pathname = useRouterState({ select: s => s.location.pathname })
   const hideSecondBar = pathname.startsWith('/settings')
-
   useEffect(() => {
     createClient().auth.getUser().then(({ data }) => {
       const email = data.user?.email ?? ''
@@ -41,6 +41,7 @@ function AdminLayout() {
   }, [])
 
   return (
+    <ThemeProvider>
     <div className="flex h-screen bg-white overflow-hidden">
       <AdminSidebar />
       <main className="flex-1 flex flex-col overflow-hidden">
@@ -48,13 +49,13 @@ function AdminLayout() {
         <div className="h-12 border-b border-gray-100 flex items-center justify-between px-6 shrink-0 bg-white">
           <div id="layout-breadcrumb" className="flex items-center gap-1.5 text-sm min-w-0" />
           <div className="flex items-center gap-1 shrink-0">
-            <button className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-colors">
+            <button className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-colors dark:text-amber-400 dark:hover:bg-gray-100">
               <Bell className="w-4 h-4" />
             </button>
-            <Link to="/settings" className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-colors">
+            <Link to="/settings" className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-colors dark:text-amber-400 dark:hover:bg-gray-100">
               <Settings className="w-4 h-4" />
             </Link>
-            <div className="w-7 h-7 rounded-full bg-gray-900 flex items-center justify-center text-white text-xs font-semibold ml-1 uppercase">
+            <div className="w-7 h-7 rounded-full bg-gray-900 dark:bg-gray-100 flex items-center justify-center text-white dark:text-amber-400 text-xs font-semibold ml-1 uppercase">
               {initials}
             </div>
           </div>
@@ -72,5 +73,6 @@ function AdminLayout() {
         </div>
       </main>
     </div>
+    </ThemeProvider>
   )
 }

@@ -35,8 +35,13 @@ export function useCandidates() {
   }
 
   async function remove(id: string) {
-    const { error } = await supabase.from('candidates').delete().eq('id', id)
-    if (!error) setCandidates(prev => prev.filter(c => c.id !== id))
+    const { error } = await supabase.rpc('delete_entity_full', { p_entity_type: 'candidate', p_entity_id: id } as never)
+    if (error) {
+      console.error('delete_entity_full error:', error)
+      await supabase.from('documents').delete().eq('entity_type', 'candidate').eq('entity_id', id)
+      await supabase.from('candidates').delete().eq('id', id)
+    }
+    setCandidates(prev => prev.filter(c => c.id !== id))
   }
 
   return { candidates, loading, refresh: fetch, create, update, remove }

@@ -58,11 +58,6 @@ export default function CompanyForm({ initial = {}, onSubmit, onCancel }: Props)
             placeholder="Industrie, Services..." className={fieldInput} />
         </div>
         <div>
-          <label className={fieldLabel}>Convention collective</label>
-          <input value={values.collective_agreement ?? ''} onChange={e => set('collective_agreement', e.target.value)}
-            placeholder="Métallurgie, Commerce..." className={fieldInput} />
-        </div>
-        <div>
           <label className={fieldLabel}>Effectif</label>
           <input type="number" value={values.headcount ?? ''} onChange={e => set('headcount', e.target.value ? parseInt(e.target.value) : null)}
             placeholder="50" className={fieldInput} />
@@ -71,11 +66,6 @@ export default function CompanyForm({ initial = {}, onSubmit, onCancel }: Props)
           <label className={fieldLabel}>Téléphone</label>
           <input value={values.phone ?? ''} onChange={e => set('phone', e.target.value)}
             placeholder="+33 1 23 45 67 89" className={fieldInput} />
-        </div>
-        <div>
-          <label className={fieldLabel}>Email</label>
-          <input type="email" value={values.email ?? ''} onChange={e => set('email', e.target.value)}
-            placeholder="contact@entreprise.fr" className={fieldInput} />
         </div>
         <div className="sm:col-span-2">
           <label className={fieldLabel}>Adresse</label>
@@ -93,9 +83,9 @@ export default function CompanyForm({ initial = {}, onSubmit, onCancel }: Props)
             placeholder="75001" className={fieldInput} />
         </div>
         <div>
-          <label className={fieldLabel}>Site web</label>
-          <input value={values.website ?? ''} onChange={e => set('website', e.target.value)}
-            placeholder="https://..." className={fieldInput} />
+          <label className={fieldLabel}>Email</label>
+          <input type="email" value={values.email ?? ''} onChange={e => set('email', e.target.value)}
+            placeholder="contact@entreprise.fr" className={fieldInput} />
         </div>
         <div>
           <label className={fieldLabel}>Statut</label>

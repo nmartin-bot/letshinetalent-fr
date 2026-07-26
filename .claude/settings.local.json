@@ -73,7 +73,9 @@
       "Bash(grep -n \"ConfirmDialog\\\\|fieldLabel\\\\|fieldInput\\\\|FormFooter\" /Users/nicolasmartin/letshinetalent.fr/src/routes/_admin/candidates/\\\\$id.tsx | head -5)",
       "Bash(git remote *)",
       "Bash(git push *)",
-      "Bash(git commit *)"
+      "Bash(git commit *)",
+      "Read(//private/tmp/**)",
+      "Bash(unzip -o \"/Users/nicolasmartin/Desktop/Documents_section.docx\" -d docx_extract)"
     ]
   }
 }

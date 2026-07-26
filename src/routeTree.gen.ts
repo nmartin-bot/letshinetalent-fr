@@ -9,14 +9,30 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as OutilsRouteImport } from './routes/outils'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as ClientRouteImport } from './routes/client'
+import { Route as CandidatureRouteImport } from './routes/candidature'
 import { Route as AdminRouteImport } from './routes/_admin'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as OutilsIndexRouteImport } from './routes/outils/index'
 import { Route as BookingIndexRouteImport } from './routes/booking/index'
+import { Route as OutilsLoginRouteImport } from './routes/outils/login'
+import { Route as OutilsLettreRouteImport } from './routes/outils/lettre'
+import { Route as OutilsCvRouteImport } from './routes/outils/cv'
+import { Route as OutilsAnalyseRouteImport } from './routes/outils/analyse'
+import { Route as ClientOutilsRouteImport } from './routes/client/outils'
 import { Route as ClientLoginRouteImport } from './routes/client/login'
+import { Route as ClientEntrepriseRouteImport } from './routes/client/entreprise'
+import { Route as ClientDocumentsRouteImport } from './routes/client/documents'
 import { Route as ClientDashboardRouteImport } from './routes/client/dashboard'
+import { Route as ClientChangerMotDePasseRouteImport } from './routes/client/changer-mot-de-passe'
+import { Route as ClientCandidatRouteImport } from './routes/client/candidat'
+import { Route as ClientApprenantRouteImport } from './routes/client/apprenant'
 import { Route as AdminDashboardRouteImport } from './routes/_admin/dashboard'
+import { Route as ClientEntrepriseIndexRouteImport } from './routes/client/entreprise/index'
+import { Route as ClientCandidatIndexRouteImport } from './routes/client/candidat/index'
+import { Route as ClientApprenantIndexRouteImport } from './routes/client/apprenant/index'
 import { Route as AdminTrainingIndexRouteImport } from './routes/_admin/training/index'
 import { Route as AdminSettingsIndexRouteImport } from './routes/_admin/settings/index'
 import { Route as AdminQuotesIndexRouteImport } from './routes/_admin/quotes/index'
@@ -26,11 +42,26 @@ import { Route as AdminCompaniesIndexRouteImport } from './routes/_admin/compani
 import { Route as AdminCandidatesIndexRouteImport } from './routes/_admin/candidates/index'
 import { Route as AdminAtsIndexRouteImport } from './routes/_admin/ats/index'
 import { Route as AdminAppointmentsIndexRouteImport } from './routes/_admin/appointments/index'
+import { Route as ClientOutilsLettreRouteImport } from './routes/client/outils/lettre'
+import { Route as ClientOutilsCvRouteImport } from './routes/client/outils/cv'
+import { Route as ClientOutilsAnalyseRouteImport } from './routes/client/outils/analyse'
+import { Route as ClientEntrepriseDocumentsRouteImport } from './routes/client/entreprise/documents'
+import { Route as ClientEntrepriseAgendaRouteImport } from './routes/client/entreprise/agenda'
+import { Route as ClientCandidatDocumentsRouteImport } from './routes/client/candidat/documents'
+import { Route as ClientCandidatAgendaRouteImport } from './routes/client/candidat/agenda'
+import { Route as ClientApprenantFormationsRouteImport } from './routes/client/apprenant/formations'
+import { Route as ClientApprenantDocumentsRouteImport } from './routes/client/apprenant/documents'
+import { Route as ClientApprenantAgendaRouteImport } from './routes/client/apprenant/agenda'
 import { Route as AdminTrainingIdRouteImport } from './routes/_admin/training/$id'
 import { Route as AdminLearnersIdRouteImport } from './routes/_admin/learners/$id'
 import { Route as AdminCompaniesIdRouteImport } from './routes/_admin/companies/$id'
 import { Route as AdminCandidatesIdRouteImport } from './routes/_admin/candidates/$id'
 
+const OutilsRoute = OutilsRouteImport.update({
+  id: '/outils',
+  path: '/outils',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
@@ -39,6 +70,11 @@ const LoginRoute = LoginRouteImport.update({
 const ClientRoute = ClientRouteImport.update({
   id: '/client',
   path: '/client',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CandidatureRoute = CandidatureRouteImport.update({
+  id: '/candidature',
+  path: '/candidature',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdminRoute = AdminRouteImport.update({
@@ -50,14 +86,54 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const OutilsIndexRoute = OutilsIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => OutilsRoute,
+} as any)
 const BookingIndexRoute = BookingIndexRouteImport.update({
   id: '/booking/',
   path: '/booking/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const OutilsLoginRoute = OutilsLoginRouteImport.update({
+  id: '/login',
+  path: '/login',
+  getParentRoute: () => OutilsRoute,
+} as any)
+const OutilsLettreRoute = OutilsLettreRouteImport.update({
+  id: '/lettre',
+  path: '/lettre',
+  getParentRoute: () => OutilsRoute,
+} as any)
+const OutilsCvRoute = OutilsCvRouteImport.update({
+  id: '/cv',
+  path: '/cv',
+  getParentRoute: () => OutilsRoute,
+} as any)
+const OutilsAnalyseRoute = OutilsAnalyseRouteImport.update({
+  id: '/analyse',
+  path: '/analyse',
+  getParentRoute: () => OutilsRoute,
+} as any)
+const ClientOutilsRoute = ClientOutilsRouteImport.update({
+  id: '/outils',
+  path: '/outils',
+  getParentRoute: () => ClientRoute,
+} as any)
 const ClientLoginRoute = ClientLoginRouteImport.update({
   id: '/login',
   path: '/login',
+  getParentRoute: () => ClientRoute,
+} as any)
+const ClientEntrepriseRoute = ClientEntrepriseRouteImport.update({
+  id: '/entreprise',
+  path: '/entreprise',
+  getParentRoute: () => ClientRoute,
+} as any)
+const ClientDocumentsRoute = ClientDocumentsRouteImport.update({
+  id: '/documents',
+  path: '/documents',
   getParentRoute: () => ClientRoute,
 } as any)
 const ClientDashboardRoute = ClientDashboardRouteImport.update({
@@ -65,10 +141,40 @@ const ClientDashboardRoute = ClientDashboardRouteImport.update({
   path: '/dashboard',
   getParentRoute: () => ClientRoute,
 } as any)
+const ClientChangerMotDePasseRoute = ClientChangerMotDePasseRouteImport.update({
+  id: '/changer-mot-de-passe',
+  path: '/changer-mot-de-passe',
+  getParentRoute: () => ClientRoute,
+} as any)
+const ClientCandidatRoute = ClientCandidatRouteImport.update({
+  id: '/candidat',
+  path: '/candidat',
+  getParentRoute: () => ClientRoute,
+} as any)
+const ClientApprenantRoute = ClientApprenantRouteImport.update({
+  id: '/apprenant',
+  path: '/apprenant',
+  getParentRoute: () => ClientRoute,
+} as any)
 const AdminDashboardRoute = AdminDashboardRouteImport.update({
   id: '/dashboard',
   path: '/dashboard',
   getParentRoute: () => AdminRoute,
+} as any)
+const ClientEntrepriseIndexRoute = ClientEntrepriseIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => ClientEntrepriseRoute,
+} as any)
+const ClientCandidatIndexRoute = ClientCandidatIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => ClientCandidatRoute,
+} as any)
+const ClientApprenantIndexRoute = ClientApprenantIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => ClientApprenantRoute,
 } as any)
 const AdminTrainingIndexRoute = AdminTrainingIndexRouteImport.update({
   id: '/training/',
@@ -115,6 +221,59 @@ const AdminAppointmentsIndexRoute = AdminAppointmentsIndexRouteImport.update({
   path: '/appointments/',
   getParentRoute: () => AdminRoute,
 } as any)
+const ClientOutilsLettreRoute = ClientOutilsLettreRouteImport.update({
+  id: '/lettre',
+  path: '/lettre',
+  getParentRoute: () => ClientOutilsRoute,
+} as any)
+const ClientOutilsCvRoute = ClientOutilsCvRouteImport.update({
+  id: '/cv',
+  path: '/cv',
+  getParentRoute: () => ClientOutilsRoute,
+} as any)
+const ClientOutilsAnalyseRoute = ClientOutilsAnalyseRouteImport.update({
+  id: '/analyse',
+  path: '/analyse',
+  getParentRoute: () => ClientOutilsRoute,
+} as any)
+const ClientEntrepriseDocumentsRoute =
+  ClientEntrepriseDocumentsRouteImport.update({
+    id: '/documents',
+    path: '/documents',
+    getParentRoute: () => ClientEntrepriseRoute,
+  } as any)
+const ClientEntrepriseAgendaRoute = ClientEntrepriseAgendaRouteImport.update({
+  id: '/agenda',
+  path: '/agenda',
+  getParentRoute: () => ClientEntrepriseRoute,
+} as any)
+const ClientCandidatDocumentsRoute = ClientCandidatDocumentsRouteImport.update({
+  id: '/documents',
+  path: '/documents',
+  getParentRoute: () => ClientCandidatRoute,
+} as any)
+const ClientCandidatAgendaRoute = ClientCandidatAgendaRouteImport.update({
+  id: '/agenda',
+  path: '/agenda',
+  getParentRoute: () => ClientCandidatRoute,
+} as any)
+const ClientApprenantFormationsRoute =
+  ClientApprenantFormationsRouteImport.update({
+    id: '/formations',
+    path: '/formations',
+    getParentRoute: () => ClientApprenantRoute,
+  } as any)
+const ClientApprenantDocumentsRoute =
+  ClientApprenantDocumentsRouteImport.update({
+    id: '/documents',
+    path: '/documents',
+    getParentRoute: () => ClientApprenantRoute,
+  } as any)
+const ClientApprenantAgendaRoute = ClientApprenantAgendaRouteImport.update({
+  id: '/agenda',
+  path: '/agenda',
+  getParentRoute: () => ClientApprenantRoute,
+} as any)
 const AdminTrainingIdRoute = AdminTrainingIdRouteImport.update({
   id: '/training/$id',
   path: '/training/$id',
@@ -138,16 +297,39 @@ const AdminCandidatesIdRoute = AdminCandidatesIdRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/candidature': typeof CandidatureRoute
   '/client': typeof ClientRouteWithChildren
   '/login': typeof LoginRoute
+  '/outils': typeof OutilsRouteWithChildren
   '/dashboard': typeof AdminDashboardRoute
+  '/client/apprenant': typeof ClientApprenantRouteWithChildren
+  '/client/candidat': typeof ClientCandidatRouteWithChildren
+  '/client/changer-mot-de-passe': typeof ClientChangerMotDePasseRoute
   '/client/dashboard': typeof ClientDashboardRoute
+  '/client/documents': typeof ClientDocumentsRoute
+  '/client/entreprise': typeof ClientEntrepriseRouteWithChildren
   '/client/login': typeof ClientLoginRoute
+  '/client/outils': typeof ClientOutilsRouteWithChildren
+  '/outils/analyse': typeof OutilsAnalyseRoute
+  '/outils/cv': typeof OutilsCvRoute
+  '/outils/lettre': typeof OutilsLettreRoute
+  '/outils/login': typeof OutilsLoginRoute
   '/booking/': typeof BookingIndexRoute
+  '/outils/': typeof OutilsIndexRoute
   '/candidates/$id': typeof AdminCandidatesIdRoute
   '/companies/$id': typeof AdminCompaniesIdRoute
   '/learners/$id': typeof AdminLearnersIdRoute
   '/training/$id': typeof AdminTrainingIdRoute
+  '/client/apprenant/agenda': typeof ClientApprenantAgendaRoute
+  '/client/apprenant/documents': typeof ClientApprenantDocumentsRoute
+  '/client/apprenant/formations': typeof ClientApprenantFormationsRoute
+  '/client/candidat/agenda': typeof ClientCandidatAgendaRoute
+  '/client/candidat/documents': typeof ClientCandidatDocumentsRoute
+  '/client/entreprise/agenda': typeof ClientEntrepriseAgendaRoute
+  '/client/entreprise/documents': typeof ClientEntrepriseDocumentsRoute
+  '/client/outils/analyse': typeof ClientOutilsAnalyseRoute
+  '/client/outils/cv': typeof ClientOutilsCvRoute
+  '/client/outils/lettre': typeof ClientOutilsLettreRoute
   '/appointments/': typeof AdminAppointmentsIndexRoute
   '/ats/': typeof AdminAtsIndexRoute
   '/candidates/': typeof AdminCandidatesIndexRoute
@@ -157,19 +339,41 @@ export interface FileRoutesByFullPath {
   '/quotes/': typeof AdminQuotesIndexRoute
   '/settings/': typeof AdminSettingsIndexRoute
   '/training/': typeof AdminTrainingIndexRoute
+  '/client/apprenant/': typeof ClientApprenantIndexRoute
+  '/client/candidat/': typeof ClientCandidatIndexRoute
+  '/client/entreprise/': typeof ClientEntrepriseIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/candidature': typeof CandidatureRoute
   '/client': typeof ClientRouteWithChildren
   '/login': typeof LoginRoute
   '/dashboard': typeof AdminDashboardRoute
+  '/client/changer-mot-de-passe': typeof ClientChangerMotDePasseRoute
   '/client/dashboard': typeof ClientDashboardRoute
+  '/client/documents': typeof ClientDocumentsRoute
   '/client/login': typeof ClientLoginRoute
+  '/client/outils': typeof ClientOutilsRouteWithChildren
+  '/outils/analyse': typeof OutilsAnalyseRoute
+  '/outils/cv': typeof OutilsCvRoute
+  '/outils/lettre': typeof OutilsLettreRoute
+  '/outils/login': typeof OutilsLoginRoute
   '/booking': typeof BookingIndexRoute
+  '/outils': typeof OutilsIndexRoute
   '/candidates/$id': typeof AdminCandidatesIdRoute
   '/companies/$id': typeof AdminCompaniesIdRoute
   '/learners/$id': typeof AdminLearnersIdRoute
   '/training/$id': typeof AdminTrainingIdRoute
+  '/client/apprenant/agenda': typeof ClientApprenantAgendaRoute
+  '/client/apprenant/documents': typeof ClientApprenantDocumentsRoute
+  '/client/apprenant/formations': typeof ClientApprenantFormationsRoute
+  '/client/candidat/agenda': typeof ClientCandidatAgendaRoute
+  '/client/candidat/documents': typeof ClientCandidatDocumentsRoute
+  '/client/entreprise/agenda': typeof ClientEntrepriseAgendaRoute
+  '/client/entreprise/documents': typeof ClientEntrepriseDocumentsRoute
+  '/client/outils/analyse': typeof ClientOutilsAnalyseRoute
+  '/client/outils/cv': typeof ClientOutilsCvRoute
+  '/client/outils/lettre': typeof ClientOutilsLettreRoute
   '/appointments': typeof AdminAppointmentsIndexRoute
   '/ats': typeof AdminAtsIndexRoute
   '/candidates': typeof AdminCandidatesIndexRoute
@@ -179,21 +383,47 @@ export interface FileRoutesByTo {
   '/quotes': typeof AdminQuotesIndexRoute
   '/settings': typeof AdminSettingsIndexRoute
   '/training': typeof AdminTrainingIndexRoute
+  '/client/apprenant': typeof ClientApprenantIndexRoute
+  '/client/candidat': typeof ClientCandidatIndexRoute
+  '/client/entreprise': typeof ClientEntrepriseIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/_admin': typeof AdminRouteWithChildren
+  '/candidature': typeof CandidatureRoute
   '/client': typeof ClientRouteWithChildren
   '/login': typeof LoginRoute
+  '/outils': typeof OutilsRouteWithChildren
   '/_admin/dashboard': typeof AdminDashboardRoute
+  '/client/apprenant': typeof ClientApprenantRouteWithChildren
+  '/client/candidat': typeof ClientCandidatRouteWithChildren
+  '/client/changer-mot-de-passe': typeof ClientChangerMotDePasseRoute
   '/client/dashboard': typeof ClientDashboardRoute
+  '/client/documents': typeof ClientDocumentsRoute
+  '/client/entreprise': typeof ClientEntrepriseRouteWithChildren
   '/client/login': typeof ClientLoginRoute
+  '/client/outils': typeof ClientOutilsRouteWithChildren
+  '/outils/analyse': typeof OutilsAnalyseRoute
+  '/outils/cv': typeof OutilsCvRoute
+  '/outils/lettre': typeof OutilsLettreRoute
+  '/outils/login': typeof OutilsLoginRoute
   '/booking/': typeof BookingIndexRoute
+  '/outils/': typeof OutilsIndexRoute
   '/_admin/candidates/$id': typeof AdminCandidatesIdRoute
   '/_admin/companies/$id': typeof AdminCompaniesIdRoute
   '/_admin/learners/$id': typeof AdminLearnersIdRoute
   '/_admin/training/$id': typeof AdminTrainingIdRoute
+  '/client/apprenant/agenda': typeof ClientApprenantAgendaRoute
+  '/client/apprenant/documents': typeof ClientApprenantDocumentsRoute
+  '/client/apprenant/formations': typeof ClientApprenantFormationsRoute
+  '/client/candidat/agenda': typeof ClientCandidatAgendaRoute
+  '/client/candidat/documents': typeof ClientCandidatDocumentsRoute
+  '/client/entreprise/agenda': typeof ClientEntrepriseAgendaRoute
+  '/client/entreprise/documents': typeof ClientEntrepriseDocumentsRoute
+  '/client/outils/analyse': typeof ClientOutilsAnalyseRoute
+  '/client/outils/cv': typeof ClientOutilsCvRoute
+  '/client/outils/lettre': typeof ClientOutilsLettreRoute
   '/_admin/appointments/': typeof AdminAppointmentsIndexRoute
   '/_admin/ats/': typeof AdminAtsIndexRoute
   '/_admin/candidates/': typeof AdminCandidatesIndexRoute
@@ -203,21 +433,47 @@ export interface FileRoutesById {
   '/_admin/quotes/': typeof AdminQuotesIndexRoute
   '/_admin/settings/': typeof AdminSettingsIndexRoute
   '/_admin/training/': typeof AdminTrainingIndexRoute
+  '/client/apprenant/': typeof ClientApprenantIndexRoute
+  '/client/candidat/': typeof ClientCandidatIndexRoute
+  '/client/entreprise/': typeof ClientEntrepriseIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/candidature'
     | '/client'
     | '/login'
+    | '/outils'
     | '/dashboard'
+    | '/client/apprenant'
+    | '/client/candidat'
+    | '/client/changer-mot-de-passe'
     | '/client/dashboard'
+    | '/client/documents'
+    | '/client/entreprise'
     | '/client/login'
+    | '/client/outils'
+    | '/outils/analyse'
+    | '/outils/cv'
+    | '/outils/lettre'
+    | '/outils/login'
     | '/booking/'
+    | '/outils/'
     | '/candidates/$id'
     | '/companies/$id'
     | '/learners/$id'
     | '/training/$id'
+    | '/client/apprenant/agenda'
+    | '/client/apprenant/documents'
+    | '/client/apprenant/formations'
+    | '/client/candidat/agenda'
+    | '/client/candidat/documents'
+    | '/client/entreprise/agenda'
+    | '/client/entreprise/documents'
+    | '/client/outils/analyse'
+    | '/client/outils/cv'
+    | '/client/outils/lettre'
     | '/appointments/'
     | '/ats/'
     | '/candidates/'
@@ -227,19 +483,41 @@ export interface FileRouteTypes {
     | '/quotes/'
     | '/settings/'
     | '/training/'
+    | '/client/apprenant/'
+    | '/client/candidat/'
+    | '/client/entreprise/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/candidature'
     | '/client'
     | '/login'
     | '/dashboard'
+    | '/client/changer-mot-de-passe'
     | '/client/dashboard'
+    | '/client/documents'
     | '/client/login'
+    | '/client/outils'
+    | '/outils/analyse'
+    | '/outils/cv'
+    | '/outils/lettre'
+    | '/outils/login'
     | '/booking'
+    | '/outils'
     | '/candidates/$id'
     | '/companies/$id'
     | '/learners/$id'
     | '/training/$id'
+    | '/client/apprenant/agenda'
+    | '/client/apprenant/documents'
+    | '/client/apprenant/formations'
+    | '/client/candidat/agenda'
+    | '/client/candidat/documents'
+    | '/client/entreprise/agenda'
+    | '/client/entreprise/documents'
+    | '/client/outils/analyse'
+    | '/client/outils/cv'
+    | '/client/outils/lettre'
     | '/appointments'
     | '/ats'
     | '/candidates'
@@ -249,20 +527,46 @@ export interface FileRouteTypes {
     | '/quotes'
     | '/settings'
     | '/training'
+    | '/client/apprenant'
+    | '/client/candidat'
+    | '/client/entreprise'
   id:
     | '__root__'
     | '/'
     | '/_admin'
+    | '/candidature'
     | '/client'
     | '/login'
+    | '/outils'
     | '/_admin/dashboard'
+    | '/client/apprenant'
+    | '/client/candidat'
+    | '/client/changer-mot-de-passe'
     | '/client/dashboard'
+    | '/client/documents'
+    | '/client/entreprise'
     | '/client/login'
+    | '/client/outils'
+    | '/outils/analyse'
+    | '/outils/cv'
+    | '/outils/lettre'
+    | '/outils/login'
     | '/booking/'
+    | '/outils/'
     | '/_admin/candidates/$id'
     | '/_admin/companies/$id'
     | '/_admin/learners/$id'
     | '/_admin/training/$id'
+    | '/client/apprenant/agenda'
+    | '/client/apprenant/documents'
+    | '/client/apprenant/formations'
+    | '/client/candidat/agenda'
+    | '/client/candidat/documents'
+    | '/client/entreprise/agenda'
+    | '/client/entreprise/documents'
+    | '/client/outils/analyse'
+    | '/client/outils/cv'
+    | '/client/outils/lettre'
     | '/_admin/appointments/'
     | '/_admin/ats/'
     | '/_admin/candidates/'
@@ -272,18 +576,30 @@ export interface FileRouteTypes {
     | '/_admin/quotes/'
     | '/_admin/settings/'
     | '/_admin/training/'
+    | '/client/apprenant/'
+    | '/client/candidat/'
+    | '/client/entreprise/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AdminRoute: typeof AdminRouteWithChildren
+  CandidatureRoute: typeof CandidatureRoute
   ClientRoute: typeof ClientRouteWithChildren
   LoginRoute: typeof LoginRoute
+  OutilsRoute: typeof OutilsRouteWithChildren
   BookingIndexRoute: typeof BookingIndexRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/outils': {
+      id: '/outils'
+      path: '/outils'
+      fullPath: '/outils'
+      preLoaderRoute: typeof OutilsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/login': {
       id: '/login'
       path: '/login'
@@ -296,6 +612,13 @@ declare module '@tanstack/react-router' {
       path: '/client'
       fullPath: '/client'
       preLoaderRoute: typeof ClientRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/candidature': {
+      id: '/candidature'
+      path: '/candidature'
+      fullPath: '/candidature'
+      preLoaderRoute: typeof CandidatureRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_admin': {
@@ -312,6 +635,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/outils/': {
+      id: '/outils/'
+      path: '/'
+      fullPath: '/outils/'
+      preLoaderRoute: typeof OutilsIndexRouteImport
+      parentRoute: typeof OutilsRoute
+    }
     '/booking/': {
       id: '/booking/'
       path: '/booking'
@@ -319,11 +649,60 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof BookingIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/outils/login': {
+      id: '/outils/login'
+      path: '/login'
+      fullPath: '/outils/login'
+      preLoaderRoute: typeof OutilsLoginRouteImport
+      parentRoute: typeof OutilsRoute
+    }
+    '/outils/lettre': {
+      id: '/outils/lettre'
+      path: '/lettre'
+      fullPath: '/outils/lettre'
+      preLoaderRoute: typeof OutilsLettreRouteImport
+      parentRoute: typeof OutilsRoute
+    }
+    '/outils/cv': {
+      id: '/outils/cv'
+      path: '/cv'
+      fullPath: '/outils/cv'
+      preLoaderRoute: typeof OutilsCvRouteImport
+      parentRoute: typeof OutilsRoute
+    }
+    '/outils/analyse': {
+      id: '/outils/analyse'
+      path: '/analyse'
+      fullPath: '/outils/analyse'
+      preLoaderRoute: typeof OutilsAnalyseRouteImport
+      parentRoute: typeof OutilsRoute
+    }
+    '/client/outils': {
+      id: '/client/outils'
+      path: '/outils'
+      fullPath: '/client/outils'
+      preLoaderRoute: typeof ClientOutilsRouteImport
+      parentRoute: typeof ClientRoute
+    }
     '/client/login': {
       id: '/client/login'
       path: '/login'
       fullPath: '/client/login'
       preLoaderRoute: typeof ClientLoginRouteImport
+      parentRoute: typeof ClientRoute
+    }
+    '/client/entreprise': {
+      id: '/client/entreprise'
+      path: '/entreprise'
+      fullPath: '/client/entreprise'
+      preLoaderRoute: typeof ClientEntrepriseRouteImport
+      parentRoute: typeof ClientRoute
+    }
+    '/client/documents': {
+      id: '/client/documents'
+      path: '/documents'
+      fullPath: '/client/documents'
+      preLoaderRoute: typeof ClientDocumentsRouteImport
       parentRoute: typeof ClientRoute
     }
     '/client/dashboard': {
@@ -333,12 +712,54 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ClientDashboardRouteImport
       parentRoute: typeof ClientRoute
     }
+    '/client/changer-mot-de-passe': {
+      id: '/client/changer-mot-de-passe'
+      path: '/changer-mot-de-passe'
+      fullPath: '/client/changer-mot-de-passe'
+      preLoaderRoute: typeof ClientChangerMotDePasseRouteImport
+      parentRoute: typeof ClientRoute
+    }
+    '/client/candidat': {
+      id: '/client/candidat'
+      path: '/candidat'
+      fullPath: '/client/candidat'
+      preLoaderRoute: typeof ClientCandidatRouteImport
+      parentRoute: typeof ClientRoute
+    }
+    '/client/apprenant': {
+      id: '/client/apprenant'
+      path: '/apprenant'
+      fullPath: '/client/apprenant'
+      preLoaderRoute: typeof ClientApprenantRouteImport
+      parentRoute: typeof ClientRoute
+    }
     '/_admin/dashboard': {
       id: '/_admin/dashboard'
       path: '/dashboard'
       fullPath: '/dashboard'
       preLoaderRoute: typeof AdminDashboardRouteImport
       parentRoute: typeof AdminRoute
+    }
+    '/client/entreprise/': {
+      id: '/client/entreprise/'
+      path: '/'
+      fullPath: '/client/entreprise/'
+      preLoaderRoute: typeof ClientEntrepriseIndexRouteImport
+      parentRoute: typeof ClientEntrepriseRoute
+    }
+    '/client/candidat/': {
+      id: '/client/candidat/'
+      path: '/'
+      fullPath: '/client/candidat/'
+      preLoaderRoute: typeof ClientCandidatIndexRouteImport
+      parentRoute: typeof ClientCandidatRoute
+    }
+    '/client/apprenant/': {
+      id: '/client/apprenant/'
+      path: '/'
+      fullPath: '/client/apprenant/'
+      preLoaderRoute: typeof ClientApprenantIndexRouteImport
+      parentRoute: typeof ClientApprenantRoute
     }
     '/_admin/training/': {
       id: '/_admin/training/'
@@ -402,6 +823,76 @@ declare module '@tanstack/react-router' {
       fullPath: '/appointments/'
       preLoaderRoute: typeof AdminAppointmentsIndexRouteImport
       parentRoute: typeof AdminRoute
+    }
+    '/client/outils/lettre': {
+      id: '/client/outils/lettre'
+      path: '/lettre'
+      fullPath: '/client/outils/lettre'
+      preLoaderRoute: typeof ClientOutilsLettreRouteImport
+      parentRoute: typeof ClientOutilsRoute
+    }
+    '/client/outils/cv': {
+      id: '/client/outils/cv'
+      path: '/cv'
+      fullPath: '/client/outils/cv'
+      preLoaderRoute: typeof ClientOutilsCvRouteImport
+      parentRoute: typeof ClientOutilsRoute
+    }
+    '/client/outils/analyse': {
+      id: '/client/outils/analyse'
+      path: '/analyse'
+      fullPath: '/client/outils/analyse'
+      preLoaderRoute: typeof ClientOutilsAnalyseRouteImport
+      parentRoute: typeof ClientOutilsRoute
+    }
+    '/client/entreprise/documents': {
+      id: '/client/entreprise/documents'
+      path: '/documents'
+      fullPath: '/client/entreprise/documents'
+      preLoaderRoute: typeof ClientEntrepriseDocumentsRouteImport
+      parentRoute: typeof ClientEntrepriseRoute
+    }
+    '/client/entreprise/agenda': {
+      id: '/client/entreprise/agenda'
+      path: '/agenda'
+      fullPath: '/client/entreprise/agenda'
+      preLoaderRoute: typeof ClientEntrepriseAgendaRouteImport
+      parentRoute: typeof ClientEntrepriseRoute
+    }
+    '/client/candidat/documents': {
+      id: '/client/candidat/documents'
+      path: '/documents'
+      fullPath: '/client/candidat/documents'
+      preLoaderRoute: typeof ClientCandidatDocumentsRouteImport
+      parentRoute: typeof ClientCandidatRoute
+    }
+    '/client/candidat/agenda': {
+      id: '/client/candidat/agenda'
+      path: '/agenda'
+      fullPath: '/client/candidat/agenda'
+      preLoaderRoute: typeof ClientCandidatAgendaRouteImport
+      parentRoute: typeof ClientCandidatRoute
+    }
+    '/client/apprenant/formations': {
+      id: '/client/apprenant/formations'
+      path: '/formations'
+      fullPath: '/client/apprenant/formations'
+      preLoaderRoute: typeof ClientApprenantFormationsRouteImport
+      parentRoute: typeof ClientApprenantRoute
+    }
+    '/client/apprenant/documents': {
+      id: '/client/apprenant/documents'
+      path: '/documents'
+      fullPath: '/client/apprenant/documents'
+      preLoaderRoute: typeof ClientApprenantDocumentsRouteImport
+      parentRoute: typeof ClientApprenantRoute
+    }
+    '/client/apprenant/agenda': {
+      id: '/client/apprenant/agenda'
+      path: '/agenda'
+      fullPath: '/client/apprenant/agenda'
+      preLoaderRoute: typeof ClientApprenantAgendaRouteImport
+      parentRoute: typeof ClientApprenantRoute
     }
     '/_admin/training/$id': {
       id: '/_admin/training/$id'
@@ -470,24 +961,122 @@ const AdminRouteChildren: AdminRouteChildren = {
 
 const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
 
+interface ClientApprenantRouteChildren {
+  ClientApprenantAgendaRoute: typeof ClientApprenantAgendaRoute
+  ClientApprenantDocumentsRoute: typeof ClientApprenantDocumentsRoute
+  ClientApprenantFormationsRoute: typeof ClientApprenantFormationsRoute
+  ClientApprenantIndexRoute: typeof ClientApprenantIndexRoute
+}
+
+const ClientApprenantRouteChildren: ClientApprenantRouteChildren = {
+  ClientApprenantAgendaRoute: ClientApprenantAgendaRoute,
+  ClientApprenantDocumentsRoute: ClientApprenantDocumentsRoute,
+  ClientApprenantFormationsRoute: ClientApprenantFormationsRoute,
+  ClientApprenantIndexRoute: ClientApprenantIndexRoute,
+}
+
+const ClientApprenantRouteWithChildren = ClientApprenantRoute._addFileChildren(
+  ClientApprenantRouteChildren,
+)
+
+interface ClientCandidatRouteChildren {
+  ClientCandidatAgendaRoute: typeof ClientCandidatAgendaRoute
+  ClientCandidatDocumentsRoute: typeof ClientCandidatDocumentsRoute
+  ClientCandidatIndexRoute: typeof ClientCandidatIndexRoute
+}
+
+const ClientCandidatRouteChildren: ClientCandidatRouteChildren = {
+  ClientCandidatAgendaRoute: ClientCandidatAgendaRoute,
+  ClientCandidatDocumentsRoute: ClientCandidatDocumentsRoute,
+  ClientCandidatIndexRoute: ClientCandidatIndexRoute,
+}
+
+const ClientCandidatRouteWithChildren = ClientCandidatRoute._addFileChildren(
+  ClientCandidatRouteChildren,
+)
+
+interface ClientEntrepriseRouteChildren {
+  ClientEntrepriseAgendaRoute: typeof ClientEntrepriseAgendaRoute
+  ClientEntrepriseDocumentsRoute: typeof ClientEntrepriseDocumentsRoute
+  ClientEntrepriseIndexRoute: typeof ClientEntrepriseIndexRoute
+}
+
+const ClientEntrepriseRouteChildren: ClientEntrepriseRouteChildren = {
+  ClientEntrepriseAgendaRoute: ClientEntrepriseAgendaRoute,
+  ClientEntrepriseDocumentsRoute: ClientEntrepriseDocumentsRoute,
+  ClientEntrepriseIndexRoute: ClientEntrepriseIndexRoute,
+}
+
+const ClientEntrepriseRouteWithChildren =
+  ClientEntrepriseRoute._addFileChildren(ClientEntrepriseRouteChildren)
+
+interface ClientOutilsRouteChildren {
+  ClientOutilsAnalyseRoute: typeof ClientOutilsAnalyseRoute
+  ClientOutilsCvRoute: typeof ClientOutilsCvRoute
+  ClientOutilsLettreRoute: typeof ClientOutilsLettreRoute
+}
+
+const ClientOutilsRouteChildren: ClientOutilsRouteChildren = {
+  ClientOutilsAnalyseRoute: ClientOutilsAnalyseRoute,
+  ClientOutilsCvRoute: ClientOutilsCvRoute,
+  ClientOutilsLettreRoute: ClientOutilsLettreRoute,
+}
+
+const ClientOutilsRouteWithChildren = ClientOutilsRoute._addFileChildren(
+  ClientOutilsRouteChildren,
+)
+
 interface ClientRouteChildren {
+  ClientApprenantRoute: typeof ClientApprenantRouteWithChildren
+  ClientCandidatRoute: typeof ClientCandidatRouteWithChildren
+  ClientChangerMotDePasseRoute: typeof ClientChangerMotDePasseRoute
   ClientDashboardRoute: typeof ClientDashboardRoute
+  ClientDocumentsRoute: typeof ClientDocumentsRoute
+  ClientEntrepriseRoute: typeof ClientEntrepriseRouteWithChildren
   ClientLoginRoute: typeof ClientLoginRoute
+  ClientOutilsRoute: typeof ClientOutilsRouteWithChildren
 }
 
 const ClientRouteChildren: ClientRouteChildren = {
+  ClientApprenantRoute: ClientApprenantRouteWithChildren,
+  ClientCandidatRoute: ClientCandidatRouteWithChildren,
+  ClientChangerMotDePasseRoute: ClientChangerMotDePasseRoute,
   ClientDashboardRoute: ClientDashboardRoute,
+  ClientDocumentsRoute: ClientDocumentsRoute,
+  ClientEntrepriseRoute: ClientEntrepriseRouteWithChildren,
   ClientLoginRoute: ClientLoginRoute,
+  ClientOutilsRoute: ClientOutilsRouteWithChildren,
 }
 
 const ClientRouteWithChildren =
   ClientRoute._addFileChildren(ClientRouteChildren)
 
+interface OutilsRouteChildren {
+  OutilsAnalyseRoute: typeof OutilsAnalyseRoute
+  OutilsCvRoute: typeof OutilsCvRoute
+  OutilsLettreRoute: typeof OutilsLettreRoute
+  OutilsLoginRoute: typeof OutilsLoginRoute
+  OutilsIndexRoute: typeof OutilsIndexRoute
+}
+
+const OutilsRouteChildren: OutilsRouteChildren = {
+  OutilsAnalyseRoute: OutilsAnalyseRoute,
+  OutilsCvRoute: OutilsCvRoute,
+  OutilsLettreRoute: OutilsLettreRoute,
+  OutilsLoginRoute: OutilsLoginRoute,
+  OutilsIndexRoute: OutilsIndexRoute,
+}
+
+const OutilsRouteWithChildren =
+  OutilsRoute._addFileChildren(OutilsRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminRoute: AdminRouteWithChildren,
+  CandidatureRoute: CandidatureRoute,
   ClientRoute: ClientRouteWithChildren,
   LoginRoute: LoginRoute,
+  OutilsRoute: OutilsRouteWithChildren,
   BookingIndexRoute: BookingIndexRoute,
 }
 export const routeTree = rootRouteImport

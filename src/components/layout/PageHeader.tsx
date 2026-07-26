@@ -56,8 +56,8 @@ export default function PageHeader({
               className={cn(
                 'truncate transition-colors',
                 i === pathItems.length - 1
-                  ? 'font-medium text-gray-900'
-                  : 'text-gray-400 hover:text-gray-700',
+                  ? 'font-medium text-gray-900 dark:text-amber-300'
+                  : 'text-gray-400 hover:text-gray-700 dark:text-amber-400/50 dark:hover:text-amber-300',
               )}
             >
               {item.label}
@@ -66,7 +66,9 @@ export default function PageHeader({
             <span
               className={cn(
                 'truncate',
-                i === pathItems.length - 1 ? 'font-medium text-gray-900' : 'text-gray-400',
+                i === pathItems.length - 1
+                  ? 'font-medium text-gray-900 dark:text-amber-300'
+                  : 'text-gray-400 dark:text-amber-400/40',
               )}
             >
               {item.label}

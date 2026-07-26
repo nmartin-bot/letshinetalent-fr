@@ -190,7 +190,7 @@ function LearnersPage() {
                   <input type="checkbox"
                     checked={selected.size === filtered.length && filtered.length > 0}
                     onChange={e => setSelected(e.target.checked ? new Set(filtered.map(l => l.id)) : new Set())}
-                    className="w-3.5 h-3.5 rounded border-gray-300 accent-gray-900 cursor-pointer" />
+                    className="w-3.5 h-3.5 rounded border-gray-200 accent-gray-900 cursor-pointer" />
                 </th>
                 <th className="text-left pr-6 py-2.5 text-xs font-medium text-gray-400">Apprenant</th>
                 <th className="text-left px-4 py-2.5 text-xs font-medium text-gray-400">Email</th>
@@ -213,7 +213,7 @@ function LearnersPage() {
                           e.target.checked ? next.add(l.id) : next.delete(l.id)
                           setSelected(next)
                         }}
-                        className="w-3.5 h-3.5 rounded border-gray-300 accent-gray-900 cursor-pointer" />
+                        className="w-3.5 h-3.5 rounded border-gray-200 accent-gray-900 cursor-pointer" />
                     </td>
                     <td className="pr-6 py-3">
                       <Link to="/learners/$id" params={{ id: l.id }} className="flex items-center gap-2.5 group/link">

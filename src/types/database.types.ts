@@ -144,6 +144,7 @@ export interface Database {
           objective: string | null
           status: 'active' | 'completed' | 'paused'
           company_id: string | null
+          training_course_id: string | null
           program_start_date: string | null
           program_notes: string | null
           created_at: string
@@ -159,6 +160,7 @@ export interface Database {
           objective?: string | null
           status?: 'active' | 'completed' | 'paused'
           company_id?: string | null
+          training_course_id?: string | null
           program_start_date?: string | null
           program_notes?: string | null
           created_at?: string
@@ -174,6 +176,7 @@ export interface Database {
           objective?: string | null
           status?: 'active' | 'completed' | 'paused'
           company_id?: string | null
+          training_course_id?: string | null
           program_start_date?: string | null
           program_notes?: string | null
           created_at?: string
@@ -183,6 +186,8 @@ export interface Database {
         Row: {
           id: string
           company_id: string | null
+          training_course_id: string | null
+          current_session_id: string | null
           first_name: string
           last_name: string
           email: string | null
@@ -193,6 +198,8 @@ export interface Database {
         Insert: {
           id?: string
           company_id?: string | null
+          training_course_id?: string | null
+          current_session_id?: string | null
           first_name: string
           last_name: string
           email?: string | null
@@ -203,6 +210,8 @@ export interface Database {
         Update: {
           id?: string
           company_id?: string | null
+          training_course_id?: string | null
+          current_session_id?: string | null
           first_name?: string
           last_name?: string
           email?: string | null
@@ -359,6 +368,7 @@ export interface Database {
           id: string
           company_id: string | null
           title: string
+          description: string | null
           type: string | null
           status: 'planned' | 'ongoing' | 'completed'
           start_date: string | null
@@ -370,6 +380,7 @@ export interface Database {
           id?: string
           company_id?: string | null
           title: string
+          description?: string | null
           type?: string | null
           status?: 'planned' | 'ongoing' | 'completed'
           start_date?: string | null
@@ -381,6 +392,7 @@ export interface Database {
           id?: string
           company_id?: string | null
           title?: string
+          description?: string | null
           type?: string | null
           status?: 'planned' | 'ongoing' | 'completed'
           start_date?: string | null
@@ -393,7 +405,8 @@ export interface Database {
         Row: {
           id: string
           course_id: string
-          session_date: string
+          title: string | null
+          session_date: string | null
           duration_hours: number | null
           location: string | null
           notes: string | null
@@ -401,7 +414,8 @@ export interface Database {
         Insert: {
           id?: string
           course_id: string
-          session_date: string
+          title?: string | null
+          session_date?: string | null
           duration_hours?: number | null
           location?: string | null
           notes?: string | null
@@ -409,7 +423,8 @@ export interface Database {
         Update: {
           id?: string
           course_id?: string
-          session_date?: string
+          title?: string | null
+          session_date?: string | null
           duration_hours?: number | null
           location?: string | null
           notes?: string | null
@@ -467,11 +482,38 @@ export interface Database {
           evaluated_at?: string
         }
       }
+      document_folders: {
+        Row: {
+          id: string
+          name: string
+          parent_id: string | null
+          entity_type: string | null
+          entity_id: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          name: string
+          parent_id?: string | null
+          entity_type?: string | null
+          entity_id?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          name?: string
+          parent_id?: string | null
+          entity_type?: string | null
+          entity_id?: string | null
+          created_at?: string
+        }
+      }
       documents: {
         Row: {
           id: string
           entity_type: string
-          entity_id: string
+          entity_id: string | null
+          folder_id: string | null
           name: string
           file_url: string
           mime_type: string | null
@@ -484,7 +526,8 @@ export interface Database {
         Insert: {
           id?: string
           entity_type: string
-          entity_id: string
+          entity_id?: string | null
+          folder_id?: string | null
           name: string
           file_url: string
           mime_type?: string | null
@@ -497,7 +540,8 @@ export interface Database {
         Update: {
           id?: string
           entity_type?: string
-          entity_id?: string
+          entity_id?: string | null
+          folder_id?: string | null
           name?: string
           file_url?: string
           mime_type?: string | null
@@ -511,7 +555,9 @@ export interface Database {
       quotes: {
         Row: {
           id: string
-          company_id: string
+          company_id: string | null
+          entity_type: string | null
+          entity_id: string | null
           reference: string | null
           status: 'draft' | 'sent' | 'accepted' | 'refused'
           amount_ht: number | null
@@ -522,7 +568,9 @@ export interface Database {
         }
         Insert: {
           id?: string
-          company_id: string
+          company_id?: string | null
+          entity_type?: string | null
+          entity_id?: string | null
           reference?: string | null
           status?: 'draft' | 'sent' | 'accepted' | 'refused'
           amount_ht?: number | null
@@ -533,7 +581,9 @@ export interface Database {
         }
         Update: {
           id?: string
-          company_id?: string
+          company_id?: string | null
+          entity_type?: string | null
+          entity_id?: string | null
           reference?: string | null
           status?: 'draft' | 'sent' | 'accepted' | 'refused'
           amount_ht?: number | null
@@ -589,6 +639,7 @@ export interface Database {
           source: string
           status: 'new' | 'reviewing' | 'interview' | 'accepted' | 'refused'
           candidate_id: string | null
+          learner_id: string | null
           cv_url: string | null
           cover_letter_url: string | null
           notes: string | null
@@ -604,6 +655,7 @@ export interface Database {
           source?: string
           status?: 'new' | 'reviewing' | 'interview' | 'accepted' | 'refused'
           candidate_id?: string | null
+          learner_id?: string | null
           cv_url?: string | null
           cover_letter_url?: string | null
           notes?: string | null
@@ -619,6 +671,7 @@ export interface Database {
           source?: string
           status?: 'new' | 'reviewing' | 'interview' | 'accepted' | 'refused'
           candidate_id?: string | null
+          learner_id?: string | null
           cv_url?: string | null
           cover_letter_url?: string | null
           notes?: string | null

@@ -1,5 +1,272 @@
 @import "tailwindcss";
 
+/* Tailwind v4 — utilise la classe .dark plutôt que le media query */
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* ─── macOS-style dark mode ──────────────────────────────────────────────────
+   Overrides Tailwind v4 color variables so every bg-*, text-*, border-*
+   class adapts automatically.
+   Surface hierarchy: body #1C1C1E → cards #2C2C2E → elevated #3A3A3C
+   Tinted surfaces (-50/-100) remontées à oklch(22-28%) pour rester visibles.
+   Accents: iOS blue #0A84FF, green #30D158, red #FF453A, etc.
+   ─────────────────────────────────────────────────────────────────────────── */
+
+.dark {
+  color-scheme: dark;
+
+  /* White / Black inversion */
+  --color-white: oklch(24% 0.009 264);   /* card surface */
+  --color-black: oklch(97% 0.002 264);
+
+  /* ── Gray ─────────────────────────────────────────────────────────────── */
+  --color-gray-50:  oklch(20% 0.007 264);  /* subtle bg, hover row */
+  --color-gray-100: oklch(28% 0.011 264);  /* elevated surface */
+  --color-gray-200: oklch(34% 0.013 264);  /* separator */
+  --color-gray-300: oklch(42% 0.015 264);
+  --color-gray-400: oklch(53% 0.015 264);  /* quaternary label */
+  --color-gray-500: oklch(64% 0.013 264);  /* tertiary label */
+  --color-gray-600: oklch(74% 0.010 264);  /* secondary label */
+  --color-gray-700: oklch(83% 0.008 264);  /* label */
+  --color-gray-800: oklch(89% 0.005 264);  /* strong label */
+  --color-gray-900: oklch(94% 0.003 264);
+  --color-gray-950: oklch(97% 0.001 264);
+
+  /* ── Blue — #0A84FF ───────────────────────────────────────────────────── */
+  --color-blue-50:  oklch(23% 0.07  255);
+  --color-blue-100: oklch(28% 0.11  255);
+  --color-blue-200: oklch(34% 0.14  255);
+  --color-blue-300: oklch(44% 0.18  255);
+  --color-blue-400: oklch(55% 0.21  255);
+  --color-blue-500: oklch(63% 0.22  255);
+  --color-blue-600: oklch(68% 0.21  255);
+  --color-blue-700: oklch(75% 0.18  255);
+  --color-blue-800: oklch(82% 0.13  255);
+
+  /* ── Violet — #BF5AF2 ────────────────────────────────────────────────── */
+  --color-violet-50:  oklch(22% 0.07  300);
+  --color-violet-100: oklch(27% 0.12  300);
+  --color-violet-200: oklch(33% 0.15  300);
+  --color-violet-300: oklch(43% 0.19  300);
+  --color-violet-400: oklch(54% 0.22  300);
+  --color-violet-500: oklch(63% 0.23  300);
+  --color-violet-600: oklch(68% 0.21  300);
+  --color-violet-700: oklch(75% 0.18  300);
+  --color-violet-800: oklch(81% 0.14  300);
+
+  /* ── Indigo ───────────────────────────────────────────────────────────── */
+  --color-indigo-50:  oklch(22% 0.07  270);
+  --color-indigo-100: oklch(27% 0.11  270);
+  --color-indigo-200: oklch(33% 0.14  270);
+  --color-indigo-600: oklch(65% 0.22  270);
+  --color-indigo-700: oklch(73% 0.19  270);
+
+  /* ── Purple ───────────────────────────────────────────────────────────── */
+  --color-purple-50:  oklch(22% 0.07  305);
+  --color-purple-100: oklch(27% 0.11  305);
+  --color-purple-400: oklch(60% 0.22  305);
+  --color-purple-600: oklch(67% 0.22  305);
+  --color-purple-700: oklch(74% 0.19  305);
+
+  /* ── Green — #30D158 ─────────────────────────────────────────────────── */
+  --color-green-50:  oklch(22% 0.07  145);
+  --color-green-100: oklch(27% 0.11  145);
+  --color-green-200: oklch(33% 0.14  145);
+  --color-green-300: oklch(44% 0.17  145);
+  --color-green-400: oklch(58% 0.20  145);
+  --color-green-500: oklch(71% 0.18  145);
+  --color-green-600: oklch(77% 0.17  145);
+  --color-green-700: oklch(82% 0.14  145);
+
+  /* ── Emerald ──────────────────────────────────────────────────────────── */
+  --color-emerald-50:  oklch(22% 0.07  155);
+  --color-emerald-100: oklch(27% 0.11  155);
+  --color-emerald-200: oklch(33% 0.13  155);
+  --color-emerald-300: oklch(44% 0.16  155);
+  --color-emerald-400: oklch(59% 0.18  155);
+  --color-emerald-500: oklch(70% 0.17  155);
+  --color-emerald-600: oklch(76% 0.16  155);
+  --color-emerald-700: oklch(81% 0.13  155);
+  --color-emerald-800: oklch(86% 0.10  155);
+
+  /* ── Red — #FF453A ───────────────────────────────────────────────────── */
+  --color-red-50:  oklch(22% 0.07  25);
+  --color-red-100: oklch(27% 0.11  25);
+  --color-red-200: oklch(34% 0.14  25);
+  --color-red-300: oklch(44% 0.18  25);
+  --color-red-400: oklch(55% 0.22  25);
+  --color-red-500: oklch(62% 0.24  25);
+  --color-red-600: oklch(68% 0.22  25);
+
+  /* ── Rose — #FF375F ──────────────────────────────────────────────────── */
+  --color-rose-50:  oklch(22% 0.07  10);
+  --color-rose-100: oklch(27% 0.11  10);
+  --color-rose-200: oklch(33% 0.14  10);
+  --color-rose-300: oklch(43% 0.18  10);
+  --color-rose-400: oklch(58% 0.24  10);
+  --color-rose-500: oklch(64% 0.23  10);
+  --color-rose-600: oklch(68% 0.22  10);
+  --color-rose-700: oklch(74% 0.19  10);
+  --color-rose-800: oklch(80% 0.16  10);
+  --color-rose-900: oklch(87% 0.11  10);
+
+  /* ── Orange — #FF9F0A ────────────────────────────────────────────────── */
+  --color-orange-50:  oklch(23% 0.07  65);
+  --color-orange-100: oklch(28% 0.11  65);
+  --color-orange-200: oklch(34% 0.14  65);
+  --color-orange-400: oklch(65% 0.20  65);
+  --color-orange-500: oklch(72% 0.19  65);
+  --color-orange-600: oklch(77% 0.18  65);
+  --color-orange-700: oklch(81% 0.15  65);
+  --color-orange-800: oklch(85% 0.12  65);
+
+  /* ── Amber ────────────────────────────────────────────────────────────── */
+  --color-amber-50:  oklch(23% 0.07  85);   /* subtle gold bg */
+  --color-amber-100: oklch(28% 0.11  85);   /* hover gold bg */
+  --color-amber-200: oklch(33% 0.13  85);   /* active gold bg */
+  --color-amber-300: oklch(87% 0.16  82);   /* gold text bright */
+  --color-amber-400: oklch(79% 0.18  85);   /* gold text */
+  --color-amber-500: oklch(83% 0.18  88);
+  --color-amber-600: oklch(87% 0.17  90);
+
+  /* ── Yellow — #FFD60A ────────────────────────────────────────────────── */
+  --color-yellow-50:  oklch(23% 0.07  95);
+  --color-yellow-100: oklch(28% 0.11  95);
+  --color-yellow-200: oklch(34% 0.14  95);
+  --color-yellow-400: oklch(83% 0.18  95);
+  --color-yellow-500: oklch(87% 0.18  95);
+  --color-yellow-600: oklch(85% 0.17  92);
+  --color-yellow-700: oklch(82% 0.15  90);
+  --color-yellow-800: oklch(79% 0.13  88);
+
+  /* ── Cyan — #64D2FF ──────────────────────────────────────────────────── */
+  --color-cyan-50:  oklch(22% 0.07  220);
+  --color-cyan-100: oklch(27% 0.11  220);
+  --color-cyan-400: oklch(74% 0.13  220);
+  --color-cyan-500: oklch(79% 0.12  220);
+  --color-cyan-600: oklch(83% 0.11  220);
+  --color-cyan-700: oklch(87% 0.09  220);
+
+  /* ── Pink ─────────────────────────────────────────────────────────────── */
+  --color-pink-50:  oklch(22% 0.07  0);
+  --color-pink-100: oklch(27% 0.11  0);
+  --color-pink-700: oklch(72% 0.20  0);
+
+  /* ── shadcn/ui semantic tokens ────────────────────────────────────────── */
+  --background: 0 0% 7%;
+  --foreground: 210 10% 95%;
+  --card: 240 6% 13%;
+  --card-foreground: 210 10% 95%;
+  --popover: 240 6% 13%;
+  --popover-foreground: 210 10% 95%;
+  --primary: 213 100% 52%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 240 4% 20%;
+  --secondary-foreground: 210 10% 95%;
+  --muted: 240 4% 20%;
+  --muted-foreground: 240 4% 60%;
+  --accent: 240 4% 20%;
+  --accent-foreground: 210 10% 95%;
+  --destructive: 0 80% 55%;
+  --destructive-foreground: 0 0% 100%;
+  --border: 240 4% 22%;
+  --input: 240 4% 22%;
+  --ring: 213 100% 52%;
+  --sidebar-background: 240 6% 10%;
+  --sidebar-foreground: 240 5% 78%;
+  --sidebar-primary: 213 100% 52%;
+  --sidebar-primary-foreground: 0 0% 100%;
+  --sidebar-accent: 240 4% 16%;
+  --sidebar-accent-foreground: 240 5% 88%;
+  --sidebar-border: 240 4% 18%;
+  --sidebar-ring: 213 100% 52%;
+}
+
+/* ─── Outils dark-gold theme ─────────────────────────────────────────────── */
+[data-outils-dark="true"] {
+  color-scheme: dark;
+  --color-white:    #111111;
+  --color-gray-50:  #181818;
+  --color-gray-100: #212121;
+  --color-gray-200: #2d2d2d;
+  --color-gray-300: #3d3d3d;
+  --color-gray-400: #888;
+  --color-gray-500: #aaa;
+  --color-gray-600: #c4c4c4;
+  --color-gray-700: #d8d8d8;
+  --color-gray-800: #e8e8e8;
+  --color-gray-900: #f4f4f4;
+  --color-gray-950: #f9f9f9;
+}
+
+/* Primary/active = gold */
+[data-outils-dark="true"] .bg-gray-900:not(.cv-preview-shell):not(.cv-preview-shell *) {
+  background-color: #c9a84c !important;
+}
+[data-outils-dark="true"] .bg-gray-900:not(.cv-preview-shell):not(.cv-preview-shell *) *,
+[data-outils-dark="true"] .bg-gray-900.text-white:not(.cv-preview-shell):not(.cv-preview-shell *) {
+  color: #1a1200 !important;
+  fill: #1a1200 !important;
+}
+[data-outils-dark="true"] .hover\:bg-gray-800:not(.cv-preview-shell *):hover {
+  background-color: #d9ba6a !important;
+}
+[data-outils-dark="true"] .focus\:ring-gray-900:not(.cv-preview-shell *):focus {
+  --tw-ring-color: #c9a84c !important;
+}
+
+/* Inputs — scoped outside CV preview */
+[data-outils-dark="true"] input:not([type="file"]):not(.cv-preview-shell *),
+[data-outils-dark="true"] textarea:not(.cv-preview-shell *),
+[data-outils-dark="true"] select:not(.cv-preview-shell *) {
+  background-color: #212121 !important;
+  border-color: #2d2d2d !important;
+  color: #f4f4f4 !important;
+}
+[data-outils-dark="true"] input:not(.cv-preview-shell *)::placeholder,
+[data-outils-dark="true"] textarea:not(.cv-preview-shell *)::placeholder {
+  color: #555 !important;
+}
+
+/* CV preview — reset ALL CSS variables back to light defaults */
+[data-outils-dark="true"] .cv-preview-shell {
+  color-scheme: light;
+  --color-white:    #ffffff;
+  --color-gray-50:  #f9fafb;
+  --color-gray-100: #f3f4f6;
+  --color-gray-200: #e5e7eb;
+  --color-gray-300: #d1d5db;
+  --color-gray-400: #9ca3af;
+  --color-gray-500: #6b7280;
+  --color-gray-600: #4b5563;
+  --color-gray-700: #374151;
+  --color-gray-800: #1f2937;
+  --color-gray-900: #111827;
+  --color-gray-950: #030712;
+  background-color: white !important;
+}
+
+/* Page background */
+.dark body,
+.dark #app {
+  background-color: oklch(16% 0.006 264);
+}
+
+/* text-white reste blanc uniquement sur fonds colorés (onglets, badges, boutons primaires).
+   Sur bg-gray-900 qui devient clair en dark mode, le texte s'adapte via la variable. */
+.dark [class*="bg-rose"] .text-white,
+.dark [class*="bg-violet"] .text-white,
+.dark [class*="bg-blue-"] .text-white,
+.dark [class*="bg-cyan"] .text-white,
+.dark [class*="bg-green"] .text-white,
+.dark [class*="bg-emerald"] .text-white,
+.dark [class*="bg-red"] .text-white,
+.dark [class*="bg-orange"] .text-white,
+.dark [class*="bg-amber"] .text-white,
+.dark [class*="bg-indigo"] .text-white,
+.dark [class*="bg-purple"] .text-white {
+  color: white;
+}
+
 @layer base {
   :root {
     --background: 0 0% 100%;
@@ -31,36 +298,6 @@
     --sidebar-border: 220 13% 91%;
     --sidebar-ring: 217.2 91.2% 59.8%;
   }
-
-  .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
-    --primary: 217.2 91.2% 59.8%;
-    --primary-foreground: 222.2 47.4% 11.2%;
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 224.3 76.3% 48%;
-    --sidebar-background: 240 5.9% 10%;
-    --sidebar-foreground: 240 4.8% 95.9%;
-    --sidebar-primary: 224.3 76.3% 48%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 3.7% 15.9%;
-    --sidebar-accent-foreground: 240 4.8% 95.9%;
-    --sidebar-border: 240 3.7% 15.9%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
-  }
 }
 
 @layer base {
@@ -72,5 +309,38 @@
   }
   html, body, #app {
     min-height: 100%;
+  }
+
+  input[type="checkbox"].accent-gray-900 {
+    appearance: none;
+    -webkit-appearance: none;
+    width: 14px;
+    height: 14px;
+    border: 1px solid #e5e7eb;
+    border-radius: 3px;
+    background: white;
+    cursor: pointer;
+    position: relative;
+    flex-shrink: 0;
+    transition: border-color 0.1s, background 0.1s;
+  }
+  input[type="checkbox"].accent-gray-900:checked {
+    background: #111827;
+    border-color: #111827;
+  }
+  input[type="checkbox"].accent-gray-900:checked::after {
+    content: '';
+    position: absolute;
+    left: 3px;
+    top: 0.5px;
+    width: 5px;
+    height: 8px;
+    border: 1.5px solid white;
+    border-top: none;
+    border-left: none;
+    transform: rotate(45deg);
+  }
+  input[type="checkbox"].accent-gray-900:hover:not(:checked) {
+    border-color: #d1d5db;
   }
 }

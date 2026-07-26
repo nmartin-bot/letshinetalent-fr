@@ -36,8 +36,13 @@ export function useLearners() {
   }
 
   async function remove(id: string) {
-    const { error } = await supabase.from('learners').delete().eq('id', id)
-    if (!error) setLearners(prev => prev.filter(l => l.id !== id))
+    const { error } = await supabase.rpc('delete_entity_full', { p_entity_type: 'learner', p_entity_id: id } as never)
+    if (error) {
+      console.error('delete_entity_full error:', error)
+      await supabase.from('documents').delete().eq('entity_type', 'learner').eq('entity_id', id)
+      await supabase.from('learners').delete().eq('id', id)
+    }
+    setLearners(prev => prev.filter(l => l.id !== id))
   }
 
   return { learners, loading, refresh: fetch, create, update, remove }

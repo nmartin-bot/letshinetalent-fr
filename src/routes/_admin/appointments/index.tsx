@@ -61,7 +61,7 @@ function formatDateRange(start: Date, mode: ViewMode) {
 }
 
 function AgendaPage() {
-  const [mode, setMode] = useState<ViewMode>('week')
+  const [mode, setMode] = useState<ViewMode>('month')
   const [anchor, setAnchor] = useState(() => {
     const d = new Date()
     d.setHours(0, 0, 0, 0)

@@ -6,7 +6,15 @@ export const Route = createFileRoute('/login')({
   beforeLoad: async () => {
     const supabase = createClient()
     const { data: { session } } = await supabase.auth.getSession()
-    if (session) throw redirect({ to: '/' })
+    if (!session) return
+    const { data: profile } = await supabase
+      .from('profiles').select('role, client_type')
+      .eq('id', session.user.id).single() as
+      { data: { role: string; client_type: string | null } | null }
+    if (profile?.role === 'admin') throw redirect({ to: '/' })
+    if (profile?.client_type === 'learner') throw redirect({ to: '/client/apprenant/' })
+    if (profile?.client_type === 'company') throw redirect({ to: '/client/entreprise/' })
+    if (profile?.client_type === 'candidate') throw redirect({ to: '/client/candidat/' })
   },
   component: LoginPage,
 })
@@ -25,11 +33,25 @@ function LoginPage() {
     setError(null)
     setLoading(true)
     const supabase = createClient()
-    const { error } = await supabase.auth.signInWithPassword({ email, password })
-    if (error) {
+    const { data: { session }, error } = await supabase.auth.signInWithPassword({ email, password })
+    if (error || !session) {
       setError('Email ou mot de passe incorrect.')
-    } else {
+      setLoading(false)
+      return
+    }
+    const { data: profile } = await supabase
+      .from('profiles').select('role, client_type')
+      .eq('id', session.user.id).single() as
+      { data: { role: string; client_type: string | null } | null }
+
+    if (profile?.role === 'admin') {
       navigate({ to: '/' })
+    } else if (profile?.client_type === 'learner') {
+      navigate({ to: '/client/apprenant/' })
+    } else if (profile?.client_type === 'company') {
+      navigate({ to: '/client/entreprise/' })
+    } else {
+      navigate({ to: '/client/candidat/' })
     }
     setLoading(false)
   }
@@ -49,11 +71,8 @@ function LoginPage() {
     <div className="min-h-screen flex items-center justify-center bg-white">
       <div className="w-full max-w-sm">
         {/* Logo */}
-        <div className="flex items-center justify-center gap-3 mb-8">
-          <div className="w-10 h-10 bg-gray-900 rounded-lg flex items-center justify-center">
-            <span className="text-white font-bold text-base">L</span>
-          </div>
-          <span className="font-semibold text-gray-900 text-lg">LetShine Talent</span>
+        <div className="flex items-center justify-center mb-8">
+          <span className="font-semibold text-gray-900 text-lg">Let Shine Talent</span>
         </div>
 
         <div className="border border-gray-100 rounded-2xl p-8 shadow-[0_1px_8px_rgba(0,0,0,0.06)] bg-white">

@@ -3,7 +3,7 @@ import { useState, useRef, useEffect } from 'react'
 import {
   LayoutDashboard, Users, Calendar,
   FileText, FileSearch, Quote, Settings, LogOut, ChevronDown,
-  User, MoreHorizontal, BookOpen, Search, Building2, GraduationCap,
+  User, MoreHorizontal, BookOpen, Search, Building2, GraduationCap, Euro,
 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { useAuth } from '@/hooks/useAuth'
@@ -36,7 +36,7 @@ const NAV: NavItem[] = [
 
 interface SearchResult {
   id: string
-  type: 'company' | 'candidate' | 'learner'
+  type: 'company' | 'candidate' | 'learner' | 'training' | 'quote' | 'document'
   label: string
   sub?: string
   to: string
@@ -77,15 +77,28 @@ function GlobalSearch() {
       setLoading(true)
       const supabase = createClient()
       const q = query.trim()
-      const [{ data: companies }, { data: candidates }, { data: learners }] = await Promise.all([
-        supabase.from('companies').select('id, name, sector').ilike('name', `%${q}%`).limit(5),
-        supabase.from('candidates').select('id, first_name, last_name, email').or(`first_name.ilike.%${q}%,last_name.ilike.%${q}%,email.ilike.%${q}%`).limit(5),
-        supabase.from('learners').select('id, first_name, last_name, email').or(`first_name.ilike.%${q}%,last_name.ilike.%${q}%,email.ilike.%${q}%`).limit(5),
-      ]) as [{ data: { id: string; name: string; sector: string | null }[] | null }, { data: { id: string; first_name: string; last_name: string; email: string | null }[] | null }, { data: { id: string; first_name: string; last_name: string; email: string | null }[] | null }]
+      const [compRes, candRes, learnRes, trainRes, quoteRes, docRes] = await Promise.all([
+        supabase.from('companies').select('id, name, sector').ilike('name', `%${q}%`).limit(4),
+        supabase.from('candidates').select('id, first_name, last_name, email').or(`first_name.ilike.%${q}%,last_name.ilike.%${q}%,email.ilike.%${q}%`).limit(4),
+        supabase.from('learners').select('id, first_name, last_name, email').or(`first_name.ilike.%${q}%,last_name.ilike.%${q}%,email.ilike.%${q}%`).limit(4),
+        supabase.from('training_courses').select('id, title, status').ilike('title', `%${q}%`).limit(4),
+        supabase.from('quotes').select('id, reference, status, amount_ht').ilike('reference', `%${q}%`).limit(4),
+        supabase.from('documents').select('id, name, entity_type').ilike('name', `%${q}%`).limit(4),
+      ]) as [
+        { data: { id: string; name: string; sector: string | null }[] | null },
+        { data: { id: string; first_name: string; last_name: string; email: string | null }[] | null },
+        { data: { id: string; first_name: string; last_name: string; email: string | null }[] | null },
+        { data: { id: string; title: string; status: string | null }[] | null },
+        { data: { id: string; reference: string | null; status: string; amount_ht: number | null }[] | null },
+        { data: { id: string; name: string; entity_type: string | null }[] | null },
+      ]
       setResults([
-        ...(companies ?? []).map(c => ({ id: c.id, type: 'company' as const, label: c.name, sub: c.sector ?? undefined, to: '/companies/$id', params: { id: c.id } })),
-        ...(candidates ?? []).map(c => ({ id: c.id, type: 'candidate' as const, label: `${c.first_name} ${c.last_name}`, sub: c.email ?? undefined, to: '/candidates/$id', params: { id: c.id } })),
-        ...(learners ?? []).map(l => ({ id: l.id, type: 'learner' as const, label: `${l.first_name} ${l.last_name}`, sub: l.email ?? undefined, to: '/learners/$id', params: { id: l.id } })),
+        ...(compRes.data ?? []).map(c => ({ id: c.id, type: 'company' as const, label: c.name, sub: c.sector ?? undefined, to: '/companies/$id', params: { id: c.id } })),
+        ...(candRes.data ?? []).map(c => ({ id: c.id, type: 'candidate' as const, label: `${c.first_name} ${c.last_name}`, sub: c.email ?? undefined, to: '/candidates/$id', params: { id: c.id } })),
+        ...(learnRes.data ?? []).map(l => ({ id: l.id, type: 'learner' as const, label: `${l.first_name} ${l.last_name}`, sub: l.email ?? undefined, to: '/learners/$id', params: { id: l.id } })),
+        ...(trainRes.data ?? []).map(t => ({ id: t.id, type: 'training' as const, label: t.title, sub: t.status ?? undefined, to: '/training/$id', params: { id: t.id } })),
+        ...(quoteRes.data ?? []).map(q => ({ id: q.id, type: 'quote' as const, label: q.reference ? `Devis #${q.reference}` : 'Devis', sub: q.amount_ht != null ? `${q.amount_ht.toLocaleString('fr-FR')} € HT` : undefined, to: '/quotes', params: {} })),
+        ...(docRes.data ?? []).map(d => ({ id: d.id, type: 'document' as const, label: d.name, sub: d.entity_type ?? undefined, to: '/documents', params: {} })),
       ])
       setLoading(false)
     }, 180)
@@ -99,12 +112,15 @@ function GlobalSearch() {
     close()
   }
 
-  const ICONS = { company: Building2, candidate: Users, learner: GraduationCap }
-  const TYPE_LABELS = { company: 'Entreprise', candidate: 'Candidat', learner: 'Apprenant' }
+  const ICONS = { company: Building2, candidate: Users, learner: GraduationCap, training: BookOpen, quote: Euro, document: FileText }
+  const TYPE_LABELS = { company: 'Entreprise', candidate: 'Candidat', learner: 'Apprenant', training: 'Formation', quote: 'Devis', document: 'Document' }
   const TYPE_COLORS = {
     company: 'bg-blue-50 text-blue-600',
     candidate: 'bg-indigo-50 text-indigo-600',
     learner: 'bg-emerald-50 text-emerald-600',
+    training: 'bg-violet-50 text-violet-600',
+    quote: 'bg-amber-50 text-amber-600',
+    document: 'bg-cyan-50 text-cyan-600',
   }
 
   return (
@@ -114,9 +130,9 @@ function GlobalSearch() {
         onClick={() => setOpen(true)}
         className="mx-3 flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-gray-50 border border-gray-100 hover:bg-gray-100 transition-colors w-[calc(100%-24px)] text-left"
       >
-        <Search className="w-3.5 h-3.5 text-gray-400 shrink-0" />
-        <span className="flex-1 text-sm text-gray-400">Rechercher...</span>
-        <kbd className="text-[10px] text-gray-300 font-mono shrink-0 border border-gray-200 rounded px-1">⌘K</kbd>
+        <Search className="w-3.5 h-3.5 text-gray-400 shrink-0 dark:text-amber-400" />
+        <span className="flex-1 text-sm text-gray-400 dark:text-amber-400">Rechercher...</span>
+        <kbd className="text-[10px] text-gray-300 font-mono shrink-0 border border-gray-200 rounded px-1 dark:text-amber-400 dark:border-gray-200">⌘K</kbd>
       </button>
 
       {/* Overlay */}
@@ -134,7 +150,7 @@ function GlobalSearch() {
                 ref={modalInputRef}
                 value={query}
                 onChange={e => setQuery(e.target.value)}
-                placeholder="Rechercher une entreprise, un candidat, un apprenant..."
+                placeholder="Rechercher dans toute l'application..."
                 className="flex-1 text-sm text-gray-900 placeholder:text-gray-400 focus:outline-none"
               />
               {loading && <span className="text-xs text-gray-300">…</span>}
@@ -200,9 +216,24 @@ export default function AdminSidebar() {
   const { profile, user } = useAuth()
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({ CRM: true })
   const [showUserMenu, setShowUserMenu] = useState(false)
+  const [newApplications, setNewApplications] = useState(0)
   const menuRef = useRef<HTMLDivElement>(null)
   const routerState = useRouterState()
   const pathname = routerState.location.pathname
+
+  useEffect(() => {
+    if (!user) return
+    const supabase = createClient()
+    async function checkNew() {
+      const { data } = await supabase.from('ats_applications').select('id').eq('status', 'new')
+      setNewApplications(data?.length ?? 0)
+    }
+    checkNew()
+    const channel = supabase.channel('ats_new')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'ats_applications' }, checkNew)
+      .subscribe()
+    return () => { supabase.removeChannel(channel) }
+  }, [user, pathname])
 
   useEffect(() => {
     function onClick(e: MouseEvent) {
@@ -231,7 +262,7 @@ export default function AdminSidebar() {
     <aside className="w-60 flex flex-col h-full bg-white border-r border-gray-100 shrink-0">
       {/* Logo */}
       <div className="flex items-center px-4 h-12 border-b border-gray-100 shrink-0">
-        <span className="font-semibold text-sm text-gray-900">LetShine Talent</span>
+        <span className="font-semibold text-sm text-gray-900 dark:text-amber-300">Let Shine Talent</span>
       </div>
 
       {/* Recherche globale */}
@@ -244,7 +275,7 @@ export default function AdminSidebar() {
         {NAV.map((item, i) => {
           if (item.type === 'section') {
             return (
-              <p key={i} className="px-2 pt-4 pb-1 text-[10px] font-semibold uppercase tracking-widest text-gray-400 first:pt-2">
+              <p key={i} className="px-2 pt-4 pb-1 text-[10px] font-semibold uppercase tracking-widest text-gray-400 first:pt-2 dark:text-amber-400">
                 {item.label}
               </p>
             )
@@ -259,7 +290,9 @@ export default function AdminSidebar() {
                   onClick={() => setOpenGroups(p => ({ ...p, [item.label]: !p[item.label] }))}
                   className={cn(
                     'w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-[13px] transition-colors',
-                    groupActive ? 'text-gray-900' : 'text-gray-500 hover:text-gray-900 hover:bg-gray-50'
+                    groupActive
+                      ? 'text-gray-900 dark:text-amber-400'
+                      : 'text-gray-500 hover:text-gray-900 hover:bg-gray-50 dark:text-amber-400 dark:hover:bg-gray-100'
                   )}
                 >
                   <item.icon className="w-4 h-4 shrink-0" />
@@ -273,8 +306,8 @@ export default function AdminSidebar() {
                         className={cn(
                           'block px-2.5 py-1.5 rounded-lg text-[13px] transition-colors',
                           isActive(child.to)
-                            ? 'text-gray-900 bg-gray-100'
-                            : 'text-gray-400 hover:text-gray-700 hover:bg-gray-50'
+                            ? 'text-gray-900 bg-gray-100 dark:text-amber-400 dark:bg-gray-100'
+                            : 'text-gray-400 hover:text-gray-700 hover:bg-gray-50 dark:text-amber-400 dark:hover:bg-gray-50'
                         )}>
                         {child.label}
                       </Link>
@@ -287,16 +320,18 @@ export default function AdminSidebar() {
 
           if (item.type === 'link') {
             const active = isActive(item.to)
+            const showDot = item.to === '/ats' && newApplications > 0
             return (
               <Link key={item.to} to={item.to}
                 className={cn(
                   'flex items-center gap-2.5 px-2.5 py-1.5 rounded-lg text-[13px] transition-colors',
                   active
-                    ? 'bg-gray-100 text-gray-900'
-                    : 'text-gray-500 hover:text-gray-900 hover:bg-gray-50'
+                    ? 'bg-gray-100 text-gray-900 dark:bg-gray-100 dark:text-amber-400'
+                    : 'text-gray-500 hover:text-gray-900 hover:bg-gray-50 dark:text-amber-400 dark:hover:bg-gray-50'
                 )}>
                 <item.icon className="w-4 h-4 shrink-0" />
-                {item.label}
+                <span className="flex-1">{item.label}</span>
+                {showDot && <span className="w-2 h-2 rounded-full bg-green-500 shrink-0" />}
               </Link>
             )
           }
@@ -335,16 +370,16 @@ export default function AdminSidebar() {
           </div>
         )}
 
-        <div className="flex items-center gap-2 px-1 py-1.5 rounded-lg hover:bg-gray-50 cursor-pointer"
+        <div className="flex items-center gap-2 px-1 py-1.5 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-100 cursor-pointer"
           onClick={() => setShowUserMenu(v => !v)}>
-          <div className="w-6 h-6 bg-gray-800 rounded-full flex items-center justify-center shrink-0">
-            <span className="text-white text-[10px] font-semibold">{initials}</span>
+          <div className="w-6 h-6 bg-gray-800 dark:bg-gray-100 rounded-full flex items-center justify-center shrink-0">
+            <span className="text-white dark:text-amber-400 text-[10px] font-semibold">{initials}</span>
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-[13px] font-medium text-gray-900 truncate leading-tight">{displayName}</p>
-            <p className="text-[11px] text-gray-400 leading-tight">Membre</p>
+            <p className="text-[13px] font-medium text-gray-900 dark:text-amber-400 truncate leading-tight">{displayName}</p>
+            <p className="text-[11px] text-gray-400 dark:text-amber-400 leading-tight">Membre</p>
           </div>
-          <MoreHorizontal className="w-3.5 h-3.5 text-gray-400 shrink-0" />
+          <MoreHorizontal className="w-3.5 h-3.5 text-gray-400 dark:text-amber-400 shrink-0" />
         </div>
       </div>
     </aside>

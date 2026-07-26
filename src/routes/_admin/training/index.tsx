@@ -1,11 +1,11 @@
 import { createFileRoute, Link } from '@tanstack/react-router'
 import { useState } from 'react'
-import { Plus, Search, BookOpen, Building2, Calendar, Clock, Filter, ArrowUpDown, Check, X, Trash2 } from 'lucide-react'
+import { Plus, Search, BookOpen, Filter, ArrowUpDown, Check, X, Trash2 } from 'lucide-react'
 import PageHeader from '@/components/layout/PageHeader'
 import EmptyState from '@/components/shared/EmptyState'
 import ConfirmDialog from '@/components/shared/ConfirmDialog'
 import HelpTooltip from '@/components/shared/HelpTooltip'
-import Modal, { fieldLabel, fieldInput, fieldSelect, FormFooter } from '@/components/shared/Modal'
+import Modal, { fieldLabel, fieldInput, fieldTextarea, FormFooter } from '@/components/shared/Modal'
 import { useTrainingCourses } from '@/hooks/useTraining'
 import { cn } from '@/lib/utils'
 import type { Database } from '@/types/database.types'
@@ -17,15 +17,15 @@ export const Route = createFileRoute('/_admin/training/')({
 type CourseInsert = Database['public']['Tables']['training_courses']['Insert']
 
 const STATUS_CONFIG = {
-  planned: { label: 'Planifiée', class: 'bg-blue-100 text-blue-700' },
-  ongoing: { label: 'En cours', class: 'bg-green-100 text-green-700' },
+  planned:   { label: 'Planifiée', class: 'bg-blue-100 text-blue-700' },
+  ongoing:   { label: 'En cours',  class: 'bg-green-100 text-green-700' },
   completed: { label: 'Terminée', class: 'bg-gray-100 text-gray-500' },
 } as const
 
 const STATUS_TABS = [
-  { id: 'all', label: 'Toutes' },
-  { id: 'planned', label: 'Planifiées' },
-  { id: 'ongoing', label: 'En cours' },
+  { id: 'all',       label: 'Toutes' },
+  { id: 'planned',   label: 'Planifiées' },
+  { id: 'ongoing',   label: 'En cours' },
   { id: 'completed', label: 'Terminées' },
 ]
 
@@ -39,7 +39,9 @@ function TrainingPage() {
   const [showFilter, setShowFilter] = useState(false)
   const [showSort, setShowSort] = useState(false)
   const [showForm, setShowForm] = useState(false)
-  const [confirmDeleteCourse, setConfirmDeleteCourse] = useState<{ id: string; title: string } | null>(null)
+  const [selected, setSelected] = useState<Set<string>>(new Set())
+  const [confirmBulkDelete, setConfirmBulkDelete] = useState(false)
+  const [confirmDeleteSingle, setConfirmDeleteSingle] = useState<{ id: string; title: string } | null>(null)
 
   const filtered = [...courses]
     .filter(c => {
@@ -96,7 +98,7 @@ function TrainingPage() {
                   <div className="fixed inset-0 z-10" onClick={() => setShowSort(false)} />
                   <div className="absolute top-full mt-1.5 left-0 z-20 bg-white border border-gray-200 rounded-xl shadow-lg p-1.5 min-w-[180px]">
                     <p className="text-xs text-gray-400 uppercase tracking-wide px-2 py-1.5 font-medium">Trier par</p>
-                    {([['title_asc', 'Titre A → Z'], ['title_desc', 'Titre Z → A'], ['date_desc', 'Plus récent'], ['date_asc', 'Plus ancien']] as const).map(([id, label]) => (
+                    {([['title_asc', 'Titre A → Z'], ['title_desc', 'Titre Z → A'], ['date_desc', 'Plus récente'], ['date_asc', 'Plus ancienne']] as const).map(([id, label]) => (
                       <button key={id} onClick={() => { setSortBy(id); setShowSort(false) }}
                         className={cn('flex items-center justify-between w-full px-3 py-2 rounded-lg text-sm hover:bg-gray-50 text-left transition-colors',
                           sortBy === id ? 'text-gray-900 font-medium' : 'text-gray-600')}>
@@ -120,6 +122,15 @@ function TrainingPage() {
                 <X className="w-3 h-3" />
               </button>
             )}
+            {selected.size > 0 && (
+              <>
+                <div className="w-px h-4 bg-gray-200" />
+                <button onClick={() => setConfirmBulkDelete(true)}
+                  className="flex items-center gap-1.5 text-xs text-red-500 hover:text-red-600 font-medium transition-colors">
+                  <Trash2 className="w-3.5 h-3.5" />Supprimer ({selected.size})
+                </button>
+              </>
+            )}
           </>
         }
         secondBarRight={
@@ -127,7 +138,7 @@ function TrainingPage() {
             <HelpTooltip
               id="training-catalog"
               title="Catalogue de formations"
-              description="Créez vos formations et associez-y des apprenants depuis leurs fiches individuelles. Survolez une carte pour faire apparaître le bouton de suppression."
+              description="Créez vos formations et associez-y des apprenants depuis leurs fiches individuelles."
               visual={
                 <div className="grid grid-cols-3 gap-1.5">
                   {[['bg-emerald-100', 'bg-emerald-50'], ['bg-violet-100', 'bg-violet-50'], ['bg-blue-100', 'bg-blue-50']].map(([header, body], i) => (
@@ -152,85 +163,122 @@ function TrainingPage() {
         }
       />
 
-      {/* Content */}
-      <div className="h-full overflow-y-auto px-8 py-6">
-        {confirmDeleteCourse && (
-          <ConfirmDialog
-            title={`Supprimer "${confirmDeleteCourse.title}" ?`}
-            description="Cette formation sera définitivement supprimée du catalogue."
-            confirmLabel="Supprimer"
-            icon={Trash2}
-            onConfirm={async () => { await remove(confirmDeleteCourse.id); setConfirmDeleteCourse(null) }}
-            onCancel={() => setConfirmDeleteCourse(null)}
-          />
-        )}
-
-        {showForm && (
-          <Modal title="Nouvelle formation" subtitle="Créez un catalogue de formation et suivez les participants." icon={BookOpen} onClose={() => setShowForm(false)}>
-            <CourseForm onSubmit={handleCreate} onCancel={() => setShowForm(false)} />
-          </Modal>
-        )}
-
+      {/* Table */}
+      <div className="h-full overflow-auto bg-white">
         {loading ? (
-          <div className="text-center py-16 text-gray-400">Chargement...</div>
+          <div className="text-center py-20 text-gray-400 text-sm">Chargement...</div>
         ) : filtered.length === 0 ? (
           <EmptyState
-            variant="cards"
+            variant="table"
             title="Aucune formation"
             description="Créez vos catalogues de formations pour les associer à vos apprenants."
             action={{ label: 'Nouvelle formation', onClick: () => setShowForm(true) }}
           />
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-            {filtered.map(course => {
-              const status = STATUS_CONFIG[course.status as keyof typeof STATUS_CONFIG] ?? STATUS_CONFIG.planned
-              return (
-                <div key={course.id} className="relative group/card">
-                  <Link to="/training/$id" params={{ id: course.id }}
-                    className="block bg-white rounded-xl border border-gray-200 p-5 hover:border-blue-300 hover:shadow-sm transition-all group">
-                    <div className="flex items-start justify-between mb-3">
-                      <div className="w-10 h-10 bg-emerald-50 rounded-lg flex items-center justify-center shrink-0">
-                        <BookOpen className="w-5 h-5 text-emerald-600" />
-                      </div>
-                      <span className={cn('text-xs font-medium px-2 py-0.5 rounded-full', status.class)}>
+          <table className="w-full text-sm border-collapse">
+            <thead>
+              <tr className="border-b border-gray-100">
+                <th className="pl-6 pr-3 py-2.5 w-10">
+                  <input type="checkbox"
+                    checked={selected.size === filtered.length && filtered.length > 0}
+                    onChange={e => setSelected(e.target.checked ? new Set(filtered.map(c => c.id)) : new Set())}
+                    className="w-3.5 h-3.5 rounded border-gray-200 accent-gray-900 cursor-pointer" />
+                </th>
+                <th className="text-left pr-4 py-2.5 text-xs font-medium text-gray-400">Formation</th>
+                <th className="text-left px-4 py-2.5 text-xs font-medium text-gray-400">Entreprise</th>
+                <th className="text-left px-4 py-2.5 text-xs font-medium text-gray-400">Description</th>
+                <th className="text-left px-4 py-2.5 text-xs font-medium text-gray-400">Statut</th>
+                <th className="pr-6 py-2.5" />
+              </tr>
+            </thead>
+            <tbody>
+              {filtered.map(course => {
+                const status = STATUS_CONFIG[course.status as keyof typeof STATUS_CONFIG] ?? STATUS_CONFIG.planned
+                const isSelected = selected.has(course.id)
+                return (
+                  <tr key={course.id}
+                    className={cn('border-b border-gray-50 transition-colors group', isSelected ? 'bg-blue-50/30' : 'hover:bg-gray-50/60')}>
+                    <td className="pl-6 pr-3 py-3 w-10">
+                      <input type="checkbox" checked={isSelected}
+                        onChange={e => {
+                          const next = new Set(selected)
+                          e.target.checked ? next.add(course.id) : next.delete(course.id)
+                          setSelected(next)
+                        }}
+                        className="w-3.5 h-3.5 rounded border-gray-200 accent-gray-900 cursor-pointer" />
+                    </td>
+                    <td className="pr-4 py-3">
+                      <Link to="/training/$id" params={{ id: course.id }}
+                        className="flex items-center gap-2.5 group/link">
+                        <div className="w-7 h-7 bg-emerald-50 rounded-lg flex items-center justify-center shrink-0">
+                          <BookOpen className="w-3.5 h-3.5 text-emerald-600" />
+                        </div>
+                        <span className="font-medium text-gray-900 group-hover/link:text-blue-600 transition-colors">
+                          {course.title}
+                        </span>
+                      </Link>
+                    </td>
+                    <td className="px-4 py-3 text-xs text-gray-500">
+                      {course.companies?.name ?? <span className="text-gray-300">—</span>}
+                    </td>
+                    <td className="px-4 py-3 text-xs text-gray-400 max-w-[240px]">
+                      <span className="truncate block">
+                        {course.description ?? <span className="text-gray-300">—</span>}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3">
+                      <span className={cn('text-[10px] font-semibold px-2 py-0.5 rounded-full', status.class)}>
                         {status.label}
                       </span>
-                    </div>
-                    <h3 className="font-semibold text-gray-900 group-hover:text-blue-600 transition-colors mb-1 line-clamp-2">
-                      {course.title}
-                    </h3>
-                    {course.type && <p className="text-xs text-gray-500 mb-3">{course.type}</p>}
-                    <div className="space-y-1">
-                      {course.companies && (
-                        <div className="flex items-center gap-1.5 text-xs text-gray-400">
-                          <Building2 className="w-3 h-3" />{course.companies.name}
-                        </div>
-                      )}
-                      {course.start_date && (
-                        <div className="flex items-center gap-1.5 text-xs text-gray-400">
-                          <Calendar className="w-3 h-3" />
-                          {new Date(course.start_date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' })}
-                          {course.end_date && ` → ${new Date(course.end_date).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' })}`}
-                        </div>
-                      )}
-                      {course.total_hours && (
-                        <div className="flex items-center gap-1.5 text-xs text-gray-400">
-                          <Clock className="w-3 h-3" />{course.total_hours}h
-                        </div>
-                      )}
-                    </div>
-                  </Link>
-                  <button
-                    onClick={() => setConfirmDeleteCourse({ id: course.id, title: course.title })}
-                    className="absolute top-3 right-3 p-1.5 rounded-lg text-gray-300 hover:text-red-500 hover:bg-red-50 opacity-0 group-hover/card:opacity-100 transition-all">
-                    <Trash2 className="w-3.5 h-3.5" />
-                  </button>
-                </div>
-              )
-            })}
-          </div>
+                    </td>
+                    <td className="pr-6 py-3">
+                      <div className="flex items-center gap-1 justify-end opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button
+                          onClick={() => setConfirmDeleteSingle({ id: course.id, title: course.title })}
+                          className="p-1.5 text-gray-300 hover:text-red-500 rounded-lg hover:bg-red-50 transition-colors">
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                )
+              })}
+            </tbody>
+          </table>
         )}
       </div>
+
+      {confirmBulkDelete && (
+        <ConfirmDialog
+          title={`Supprimer ${selected.size} formation${selected.size > 1 ? 's' : ''} ?`}
+          description={`${selected.size} formation${selected.size > 1 ? 's' : ''} seront définitivement supprimées du catalogue.`}
+          confirmLabel="Supprimer"
+          icon={Trash2}
+          onConfirm={async () => {
+            await Promise.all([...selected].map(id => remove(id)))
+            setSelected(new Set())
+            setConfirmBulkDelete(false)
+          }}
+          onCancel={() => setConfirmBulkDelete(false)}
+        />
+      )}
+
+      {confirmDeleteSingle && (
+        <ConfirmDialog
+          title={`Supprimer "${confirmDeleteSingle.title}" ?`}
+          description="Cette formation sera définitivement supprimée du catalogue."
+          confirmLabel="Supprimer"
+          icon={Trash2}
+          onConfirm={async () => { await remove(confirmDeleteSingle.id); setConfirmDeleteSingle(null) }}
+          onCancel={() => setConfirmDeleteSingle(null)}
+        />
+      )}
+
+      {showForm && (
+        <Modal title="Nouvelle formation" subtitle="Créez un catalogue de formation et suivez les participants." icon={BookOpen} onClose={() => setShowForm(false)}>
+          <CourseForm onSubmit={handleCreate} onCancel={() => setShowForm(false)} />
+        </Modal>
+      )}
     </>
   )
 }
@@ -242,22 +290,9 @@ function CourseForm({ onSubmit, onCancel, initial }: {
 }) {
   const [values, setValues] = useState<CourseInsert>({
     title: initial?.title ?? '',
-    type: initial?.type ?? '',
-    status: initial?.status ?? 'planned',
-    company_id: initial?.company_id ?? null,
-    start_date: initial?.start_date ?? null,
-    end_date: initial?.end_date ?? null,
-    total_hours: initial?.total_hours ?? null,
+    description: initial?.description ?? '',
   })
-  const [companies, setCompanies] = useState<{ id: string; name: string }[]>([])
   const [saving, setSaving] = useState(false)
-
-  useState(() => {
-    import('@/lib/supabase/client').then(({ createClient }) =>
-      createClient().from('companies').select('id, name').order('name')
-        .then(({ data }) => setCompanies((data as { id: string; name: string }[] | null) ?? []))
-    )
-  })
 
   function set(field: keyof CourseInsert, value: unknown) {
     setValues(p => ({ ...p, [field]: value }))
@@ -272,50 +307,15 @@ function CourseForm({ onSubmit, onCancel, initial }: {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-      <div className="grid grid-cols-2 gap-4">
-        <div className="col-span-2">
-          <label className={fieldLabel}>Titre *</label>
-          <input required value={values.title} onChange={e => set('title', e.target.value)}
-            className={fieldInput} />
-        </div>
-        <div>
-          <label className={fieldLabel}>Type</label>
-          <input value={values.type ?? ''} onChange={e => set('type', e.target.value)}
-            placeholder="Ex : Présentiel, E-learning..."
-            className={fieldInput} />
-        </div>
-        <div>
-          <label className={fieldLabel}>Statut</label>
-          <select value={values.status ?? 'planned'} onChange={e => set('status', e.target.value)}
-            className={fieldSelect}>
-            <option value="planned">Planifiée</option>
-            <option value="ongoing">En cours</option>
-            <option value="completed">Terminée</option>
-          </select>
-        </div>
-        <div className="col-span-2">
-          <label className={fieldLabel}>Entreprise cliente</label>
-          <select value={values.company_id ?? ''} onChange={e => set('company_id', e.target.value || null)}
-            className={fieldSelect}>
-            <option value="">— Aucune —</option>
-            {companies.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-          </select>
-        </div>
-        <div>
-          <label className={fieldLabel}>Date de début</label>
-          <input type="date" value={values.start_date ?? ''} onChange={e => set('start_date', e.target.value || null)}
-            className={fieldInput} />
-        </div>
-        <div>
-          <label className={fieldLabel}>Date de fin</label>
-          <input type="date" value={values.end_date ?? ''} onChange={e => set('end_date', e.target.value || null)}
-            className={fieldInput} />
-        </div>
-        <div>
-          <label className={fieldLabel}>Nombre d'heures total</label>
-          <input type="number" value={values.total_hours ?? ''} onChange={e => set('total_hours', e.target.value ? parseInt(e.target.value) : null)}
-            className={fieldInput} />
-        </div>
+      <div>
+        <label className={fieldLabel}>Titre *</label>
+        <input required value={values.title} onChange={e => set('title', e.target.value)}
+          className={fieldInput} autoFocus />
+      </div>
+      <div>
+        <label className={fieldLabel}>Description</label>
+        <textarea value={values.description ?? ''} onChange={e => set('description', e.target.value || null)}
+          className={fieldTextarea} rows={3} placeholder="Objectifs, public cible, contenu..." />
       </div>
       <FormFooter onCancel={onCancel} saving={saving} />
     </form>

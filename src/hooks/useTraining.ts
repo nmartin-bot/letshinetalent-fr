@@ -58,9 +58,8 @@ export function useTrainingCourse(id: string) {
     setLoading(true)
     const [{ data: c }, { data: s }, { data: l }] = await Promise.all([
       supabase.from('training_courses').select('*, companies(name)').eq('id', id).single(),
-      supabase.from('training_sessions').select('*').eq('course_id', id).order('session_date'),
-      supabase.from('training_courses').select('company_id').eq('id', id).single()
-        .then(({ data }) => supabase.from('learners').select('*').eq('company_id', (data as { company_id: string | null } | null)?.company_id ?? '')),
+      supabase.from('training_sessions').select('*').eq('course_id', id).order('created_at', { ascending: true }),
+      supabase.from('learners').select('*').eq('training_course_id', id).order('last_name'),
     ])
     setCourse(c as (Course & { companies: { name: string } | null }) | null)
     setSessions((s as Session[] | null) ?? [])
@@ -70,9 +69,9 @@ export function useTrainingCourse(id: string) {
 
   useEffect(() => { fetch() }, [fetch])
 
-  async function addSession(values: Omit<SessionInsert, 'course_id'>) {
+  async function addSession(values: Omit<SessionInsert, 'course_id' | 'session_date'> & { session_date?: string | null }) {
     const { data, error } = await supabase.from('training_sessions').insert({ ...values, course_id: id } as never).select().single() as { data: Session | null; error: unknown }
-    if (!error && data) setSessions(prev => [...prev, data].sort((a, b) => a.session_date.localeCompare(b.session_date)))
+    if (!error && data) setSessions(prev => [...prev, data])
     return { data, error }
   }
 
@@ -97,5 +96,24 @@ export function useTrainingCourse(id: string) {
     return { data, error }
   }
 
-  return { course, sessions, learners, loading, addSession, removeSession, getAttendance, toggleAttendance, updateCourse, refresh: fetch }
+  async function updateSession(sessionId: string, values: Partial<Omit<SessionInsert, 'course_id'>>) {
+    const { data, error } = await supabase.from('training_sessions').update(values as never).eq('id', sessionId).select().single() as { data: Session | null; error: unknown }
+    if (!error && data) setSessions(prev => prev.map(s => s.id === sessionId ? data : s))
+    return { data, error }
+  }
+
+  return { course, sessions, learners, loading, addSession, removeSession, updateSession, getAttendance, toggleAttendance, updateCourse, refresh: fetch }
+}
+
+export function useAllTrainingCourses() {
+  const supabase = createClient()
+  const [courses, setCourses] = useState<(Course & { companies: { name: string } | null })[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    supabase.from('training_courses').select('*, companies(name)').order('title')
+      .then(({ data }) => { setCourses((data as typeof courses | null) ?? []); setLoading(false) })
+  }, [])
+
+  return { courses, loading }
 }
