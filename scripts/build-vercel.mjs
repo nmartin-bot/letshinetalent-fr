@@ -70,6 +70,9 @@ await esbuild({
   mainFields: ['module', 'main'],
   minify: false,
   logLevel: 'warning',
+  banner: {
+    js: `import { createRequire } from 'node:module'; const require = createRequire(import.meta.url);`,
+  },
 })
 
 await unlink('_vercel_entry_tmp.mjs')
