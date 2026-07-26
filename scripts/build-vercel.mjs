@@ -1,4 +1,4 @@
-import { cp, mkdir, writeFile, rm, unlink } from 'fs/promises'
+import { mkdir, writeFile, rm, unlink } from 'fs/promises'
 import { existsSync } from 'fs'
 import { execSync } from 'child_process'
 import { build as esbuild } from 'esbuild'
@@ -16,13 +16,11 @@ await mkdir('.vercel/output/static', { recursive: true })
 await mkdir('.vercel/output/functions/index.func', { recursive: true })
 
 // 4. Copy static client assets
+const { cp } = await import('fs/promises')
 await cp('dist/client', '.vercel/output/static', { recursive: true })
 
-// 5. Copy server assets (route chunks, etc.) — server.js will be bundled separately
-await cp('dist/server/assets', '.vercel/output/functions/index.func/assets', { recursive: true })
-
-// 6. Write a temporary entry that wraps the server with the Vercel Node.js adapter
-const entryContent = `
+// 5. Write entry that wraps the server with the Vercel Node.js adapter
+await writeFile('_vercel_entry_tmp.mjs', `
 import server from './dist/server/server.js'
 
 export default async function handler(req, res) {
@@ -54,37 +52,38 @@ export default async function handler(req, res) {
   const buf = await response.arrayBuffer()
   res.end(Buffer.from(buf))
 }
-`
-await writeFile('_vercel_entry_tmp.mjs', entryContent)
+`)
 
-// 7. Bundle everything into a single self-contained file
+// 6. Bundle with splitting so dynamic imports (asset chunks) are also bundled
+//    All npm packages get inlined; only node:* builtins remain external
 await esbuild({
   entryPoints: ['_vercel_entry_tmp.mjs'],
   bundle: true,
+  splitting: true,
   platform: 'node',
   format: 'esm',
-  outfile: '.vercel/output/functions/index.func/index.mjs',
-  external: [
-    'node:*',
-    // These are loaded as side-effect chunks from dist/server/assets — keep them external
-  ],
+  outdir: '.vercel/output/functions/index.func',
+  entryNames: 'index',
+  chunkNames: 'chunks/[name]-[hash]',
+  external: ['node:*'],
   conditions: ['import', 'module'],
   mainFields: ['module', 'main'],
   minify: false,
+  logLevel: 'warning',
 })
 
 await unlink('_vercel_entry_tmp.mjs')
 
-// 8. Function config
+// 7. Function config
 await writeFile('.vercel/output/functions/index.func/.vc-config.json', JSON.stringify({
   runtime: 'nodejs20.x',
-  handler: 'index.mjs',
+  handler: 'index.js',
   launcherType: 'Nodejs'
 }))
 
 await writeFile('.vercel/output/functions/index.func/package.json', JSON.stringify({ type: 'module' }))
 
-// 9. Routing config
+// 8. Routing config
 await writeFile('.vercel/output/config.json', JSON.stringify({
   version: 3,
   routes: [
