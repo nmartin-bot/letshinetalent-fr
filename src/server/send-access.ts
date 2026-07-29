@@ -89,7 +89,7 @@ export const sendAccessFn = createServerFn({ method: 'POST' })
     const entityLabel = entityType === 'learner' ? 'apprenant' : entityType === 'company' ? 'entreprise' : 'candidat'
     const resend = new Resend(resendKey)
     const { error: emailError } = await resend.emails.send({
-      from: 'Let Shine Talent <noreply@updates.untitled-hr.com>',
+      from: 'Let Shine Talent <noreply@updates.letshinetalent.fr>',
       to: email,
       subject: 'Accès à votre espace Let Shine Talent',
       html: buildEmailHtml(entityLabel, email, password, `${appUrl}/login`),
