@@ -14,7 +14,7 @@ async function downloadAsPdf(elementId: string, filename: string) {
   el.style.position = 'absolute'
   el.style.left = '-9999px'
   el.style.top = '0'
-  const canvas = await html2canvas(el, { scale: 4, useCORS: true, backgroundColor: '#ffffff', imageTimeout: 0 })
+  const canvas = await html2canvas(el, { scale: 2, useCORS: true, backgroundColor: '#ffffff' })
   el.style.display = ''
   el.style.position = ''
   el.style.left = ''
