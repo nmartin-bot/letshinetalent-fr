@@ -705,7 +705,7 @@ function CVPreview({ cv }: { cv: CVData }) {
       {/* Header */}
       <div style={{ background: BG, color: 'white', padding: '28px 32px', display: 'flex', alignItems: 'center', gap: 20, boxShadow: 'inset 0 0 0 9999px rgba(0,0,0,0.15)' }}>
         {cv.photo && (
-          <img src={cv.photo} alt="photo" style={{ width: 72, height: 72, borderRadius: '50%', objectFit: 'cover', border: '3px solid rgba(255,255,255,0.3)', flexShrink: 0 }} />
+          <div style={{ width: 72, height: 72, borderRadius: '50%', border: '3px solid rgba(255,255,255,0.3)', flexShrink: 0, backgroundImage: `url(${cv.photo})`, backgroundSize: 'cover', backgroundPosition: 'center' }} />
         )}
         <div>
           <h1 style={{ fontSize: 26, fontWeight: 800, letterSpacing: -0.5, margin: 0 }}>
