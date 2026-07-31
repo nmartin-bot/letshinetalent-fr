@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import type { Database } from '@/types/database.types'
+import { createGoogleCalendarEvent, deleteGoogleCalendarEvent } from '@/server/google-calendar'
 
 type Appointment = Database['public']['Tables']['appointments']['Row']
 type AppointmentInsert = Database['public']['Tables']['appointments']['Insert']
@@ -70,6 +71,7 @@ export function useAppointments(from?: string, to?: string) {
       const [enriched] = await resolveEntityLabels([data])
       setAppointments(prev => [...prev, enriched].sort((a, b) => a.starts_at.localeCompare(b.starts_at)))
       setTotalCount(prev => (prev ?? 0) + 1)
+      createGoogleCalendarEvent({ data: { title: data.type, starts_at: data.starts_at, duration_minutes: data.duration_minutes, location: data.location, notes: data.notes, appointment_id: data.id } }).catch(() => {})
     }
     return { data, error }
   }
@@ -84,10 +86,12 @@ export function useAppointments(from?: string, to?: string) {
   }
 
   async function remove(id: string) {
+    const appt = appointments.find(a => a.id === id)
     const { error } = await supabase.from('appointments').delete().eq('id', id)
     if (!error) {
       setAppointments(prev => prev.filter(a => a.id !== id))
       setTotalCount(prev => Math.max(0, (prev ?? 1) - 1))
+      if (appt?.google_event_id) deleteGoogleCalendarEvent({ data: { google_event_id: appt.google_event_id } }).catch(() => {})
     }
     return { error }
   }
