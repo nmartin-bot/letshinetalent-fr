@@ -12,7 +12,7 @@ async function downloadAsPdf(elementId: string, filename: string) {
   if (!el) return
 
   const clone = el.cloneNode(true) as HTMLElement
-  clone.style.cssText = 'display:block;width:794px;'
+  clone.style.cssText = 'display:block;width:794px;height:1123px;overflow:hidden;'
   const wrapper = document.createElement('div')
   wrapper.style.cssText = 'position:fixed;left:-9999px;top:0;width:794px;overflow:hidden;'
   wrapper.appendChild(clone)
