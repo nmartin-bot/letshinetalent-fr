@@ -8,7 +8,7 @@ import { cn } from '@/lib/utils'
 export const Route = createFileRoute('/outils')({
   beforeLoad: async ({ location }) => {
     if (location.pathname === '/outils/login') return
-    if (import.meta.env.DEV) return // TODO: remove for prod
+    if (typeof window === 'undefined') return // skip SSR — magic link token is in URL hash, client-only
 
     const supabase = createClient()
     const { data: { session } } = await supabase.auth.getSession()
