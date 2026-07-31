@@ -10,7 +10,6 @@ async function downloadAsPdf(elementId: string, filename: string) {
   const { default: jsPDF } = await import('jspdf')
   const el = document.getElementById(elementId)
   if (!el) return
-  // Temporarily make element visible for capture
   el.style.display = 'block'
   el.style.position = 'absolute'
   el.style.left = '-9999px'
@@ -23,8 +22,18 @@ async function downloadAsPdf(elementId: string, filename: string) {
   const imgData = canvas.toDataURL('image/png')
   const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' })
   const pdfW = pdf.internal.pageSize.getWidth()
-  const pdfH = (canvas.height * pdfW) / canvas.width
-  pdf.addImage(imgData, 'PNG', 0, 0, pdfW, pdfH)
+  const pdfH = pdf.internal.pageSize.getHeight()
+  const imgH = (canvas.height * pdfW) / canvas.width
+  let y = 0
+  let remaining = imgH
+  while (remaining > 0) {
+    pdf.addImage(imgData, 'PNG', 0, y, pdfW, imgH)
+    remaining -= pdfH
+    if (remaining > 0) {
+      pdf.addPage()
+      y -= pdfH
+    }
+  }
   pdf.save(filename)
 }
 

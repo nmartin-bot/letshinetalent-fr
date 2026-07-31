@@ -163,8 +163,15 @@ export function LettreEditor() {
                 el.style.top = ''
                 const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' })
                 const pdfW = pdf.internal.pageSize.getWidth()
-                const pdfH = (canvas.height * pdfW) / canvas.width
-                pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 0, 0, pdfW, pdfH)
+                const pdfH = pdf.internal.pageSize.getHeight()
+                const imgH = (canvas.height * pdfW) / canvas.width
+                let y = 0
+                let remaining = imgH
+                while (remaining > 0) {
+                  pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 0, y, pdfW, imgH)
+                  remaining -= pdfH
+                  if (remaining > 0) { pdf.addPage(); y -= pdfH }
+                }
                 pdf.save('ma-lettre.pdf')
               }}
               className="flex items-center gap-1.5 bg-gray-900 hover:bg-gray-800 text-white px-3 py-1.5 rounded-lg text-xs font-medium transition-colors">
