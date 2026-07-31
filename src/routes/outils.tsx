@@ -11,18 +11,15 @@ async function downloadAsPdf(elementId: string, filename: string) {
   const el = document.getElementById(elementId)
   if (!el) return
 
+  const clone = el.cloneNode(true) as HTMLElement
+  clone.style.cssText = 'display:block;width:794px;'
   const wrapper = document.createElement('div')
   wrapper.style.cssText = 'position:fixed;left:-9999px;top:0;width:794px;overflow:hidden;'
+  wrapper.appendChild(clone)
   document.body.appendChild(wrapper)
-  wrapper.appendChild(el)
-  el.style.display = 'block'
-  el.style.width = '794px'
 
-  const canvas = await html2canvas(el, { scale: 2, useCORS: true, backgroundColor: '#ffffff' })
+  const canvas = await html2canvas(clone, { scale: 2, useCORS: true, backgroundColor: '#ffffff' })
 
-  el.style.display = ''
-  el.style.width = ''
-  document.body.appendChild(el)
   document.body.removeChild(wrapper)
 
   const imgData = canvas.toDataURL('image/png')
