@@ -13,18 +13,26 @@ function GoogleCallback() {
     const code = new URLSearchParams(window.location.search).get('code')
     const error = new URLSearchParams(window.location.search).get('error')
 
+    console.log('[GoogleCallback] code:', code, 'error:', error)
+
     if (error || !code) {
       navigate({ to: '/settings', search: { tab: 'integrations', error: 'google_denied' } as never })
       return
     }
 
-    handleGoogleCallback({ data: { code } }).then(result => {
-      if ('error' in result) {
+    handleGoogleCallback({ data: { code } })
+      .then(result => {
+        console.log('[GoogleCallback] result:', result)
+        if ('error' in result) {
+          navigate({ to: '/settings', search: { tab: 'integrations' } as never })
+        } else {
+          navigate({ to: '/settings', search: { tab: 'integrations', success: 'google_connected' } as never })
+        }
+      })
+      .catch(e => {
+        console.error('[GoogleCallback] error:', e)
         navigate({ to: '/settings', search: { tab: 'integrations' } as never })
-      } else {
-        navigate({ to: '/settings', search: { tab: 'integrations', success: 'google_connected' } as never })
-      }
-    })
+      })
   }, [])
 
   return (
