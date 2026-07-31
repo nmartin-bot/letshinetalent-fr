@@ -18,7 +18,7 @@ async function downloadAsPdf(elementId: string, filename: string) {
   wrapper.appendChild(clone)
   document.body.appendChild(wrapper)
 
-  const canvas = await html2canvas(clone, { scale: 2, useCORS: true, backgroundColor: '#ffffff' })
+  const canvas = await html2canvas(clone, { scale: 2, useCORS: true, backgroundColor: '#ffffff', width: 794, height: 1123, windowWidth: 794, windowHeight: 1123 })
 
   document.body.removeChild(wrapper)
 

@@ -158,7 +158,7 @@ export function LettreEditor() {
                 wrapper.style.cssText = 'position:fixed;left:-9999px;top:0;width:794px;overflow:hidden;'
                 wrapper.appendChild(clone)
                 document.body.appendChild(wrapper)
-                const canvas = await html2canvas(clone, { scale: 2, useCORS: true, backgroundColor: '#ffffff' })
+                const canvas = await html2canvas(clone, { scale: 2, useCORS: true, backgroundColor: '#ffffff', width: 794, height: 1123, windowWidth: 794, windowHeight: 1123 })
                 document.body.removeChild(wrapper)
                 const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' })
                 const pdfW = pdf.internal.pageSize.getWidth()
