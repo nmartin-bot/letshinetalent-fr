@@ -5,6 +5,29 @@ import { createClient } from '@/lib/supabase/client'
 import { FileText, ScanSearch, Mail, LogOut, Moon, Sun, Download, BookOpen, X, GraduationCap, User, Building2, FolderOpen, Calendar } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
+async function downloadAsPdf(elementId: string, filename: string) {
+  const { default: html2canvas } = await import('html2canvas')
+  const { default: jsPDF } = await import('jspdf')
+  const el = document.getElementById(elementId)
+  if (!el) return
+  // Temporarily make element visible for capture
+  el.style.display = 'block'
+  el.style.position = 'absolute'
+  el.style.left = '-9999px'
+  el.style.top = '0'
+  const canvas = await html2canvas(el, { scale: 2, useCORS: true, backgroundColor: '#ffffff' })
+  el.style.display = ''
+  el.style.position = ''
+  el.style.left = ''
+  el.style.top = ''
+  const imgData = canvas.toDataURL('image/png')
+  const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' })
+  const pdfW = pdf.internal.pageSize.getWidth()
+  const pdfH = (canvas.height * pdfW) / canvas.width
+  pdf.addImage(imgData, 'PNG', 0, 0, pdfW, pdfH)
+  pdf.save(filename)
+}
+
 export const Route = createFileRoute('/outils')({
   beforeLoad: async ({ location }) => {
     if (location.pathname === '/outils/login') return
@@ -253,7 +276,7 @@ function OutilsLayout() {
                   className="flex items-center gap-1.5 text-xs text-gray-500 hover:text-gray-900 hover:bg-gray-100 px-3 py-1.5 rounded-lg font-medium transition-colors">
                   <BookOpen className="w-3.5 h-3.5" />Aide à la rédaction
                 </button>
-                <button onClick={() => window.print()}
+                <button onClick={() => downloadAsPdf('cv-print-area', 'mon-cv.pdf')}
                   className="flex items-center gap-1.5 text-xs text-gray-500 hover:text-gray-900 hover:bg-gray-100 px-3 py-1.5 rounded-lg font-medium transition-colors">
                   <Download className="w-3.5 h-3.5" />PDF
                 </button>
@@ -304,7 +327,7 @@ function OutilsLayout() {
                   <BookOpen className="w-3.5 h-3.5" />Aide à la rédaction
                 </button>
                 <button
-                  onClick={() => window.print()}
+                  onClick={() => downloadAsPdf('cv-print-area', 'mon-cv.pdf')}
                   className="flex items-center gap-1.5 text-xs text-gray-500 hover:text-gray-900 hover:bg-gray-100 px-3 py-1.5 rounded-lg font-medium transition-colors"
                 >
                   <Download className="w-3.5 h-3.5" />PDF

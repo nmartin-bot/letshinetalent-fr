@@ -147,7 +147,26 @@ export function LettreEditor() {
             <span className="text-[10px] text-gray-400">
               {saving ? 'Enregistrement...' : saved ? <span className="flex items-center gap-1 text-green-500"><Check className="w-3 h-3" />Sauvegardé</span> : 'Sauvegarde auto'}
             </span>
-            <button onClick={() => window.print()}
+            <button onClick={async () => {
+                const { default: html2canvas } = await import('html2canvas')
+                const { default: jsPDF } = await import('jspdf')
+                const el = document.getElementById('lettre-print-area')
+                if (!el) return
+                el.style.display = 'block'
+                el.style.position = 'absolute'
+                el.style.left = '-9999px'
+                el.style.top = '0'
+                const canvas = await html2canvas(el, { scale: 2, useCORS: true, backgroundColor: '#ffffff' })
+                el.style.display = ''
+                el.style.position = ''
+                el.style.left = ''
+                el.style.top = ''
+                const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' })
+                const pdfW = pdf.internal.pageSize.getWidth()
+                const pdfH = (canvas.height * pdfW) / canvas.width
+                pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 0, 0, pdfW, pdfH)
+                pdf.save('ma-lettre.pdf')
+              }}
               className="flex items-center gap-1.5 bg-gray-900 hover:bg-gray-800 text-white px-3 py-1.5 rounded-lg text-xs font-medium transition-colors">
               <Download className="w-3.5 h-3.5" />PDF
             </button>
