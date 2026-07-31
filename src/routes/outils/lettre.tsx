@@ -150,17 +150,16 @@ export function LettreEditor() {
             <button onClick={async () => {
                 const { default: html2canvas } = await import('html2canvas')
                 const { default: jsPDF } = await import('jspdf')
-                const el = document.getElementById('lettre-print-area')
+                const el = document.querySelector<HTMLElement>('.lettre-preview-shell')
                 if (!el) return
-                el.style.display = 'block'
-                el.style.position = 'absolute'
-                el.style.left = '-9999px'
-                el.style.top = '0'
-                const canvas = await html2canvas(el, { scale: 2, useCORS: true, backgroundColor: '#ffffff' })
-                el.style.display = ''
-                el.style.position = ''
-                el.style.left = ''
-                el.style.top = ''
+                const clone = el.cloneNode(true) as HTMLElement
+                clone.style.cssText = 'display:block;width:794px;'
+                const wrapper = document.createElement('div')
+                wrapper.style.cssText = 'position:fixed;left:-9999px;top:0;width:794px;overflow:hidden;'
+                wrapper.appendChild(clone)
+                document.body.appendChild(wrapper)
+                const canvas = await html2canvas(clone, { scale: 2, useCORS: true, backgroundColor: '#ffffff' })
+                document.body.removeChild(wrapper)
                 const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' })
                 const pdfW = pdf.internal.pageSize.getWidth()
                 const pdfH = pdf.internal.pageSize.getHeight()
@@ -182,7 +181,7 @@ export function LettreEditor() {
 
         {/* Preview */}
         <div className="flex-1 bg-gray-100 overflow-auto flex items-start justify-center p-8">
-          <div className="shadow-xl rounded-sm overflow-hidden" style={{ width: 794, minHeight: 1123, background: 'white' }}>
+          <div className="lettre-preview-shell shadow-xl rounded-sm overflow-hidden" style={{ width: 794, minHeight: 1123, background: 'white' }}>
             <LettrePreview lettre={lettre} />
           </div>
         </div>
