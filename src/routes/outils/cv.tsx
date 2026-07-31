@@ -703,15 +703,18 @@ function CVPreview({ cv }: { cv: CVData }) {
   return (
     <div style={{ fontFamily: FONT, background: 'white', width: '100%', minHeight: 1123, display: 'flex', flexDirection: 'column' }}>
       {/* Header */}
-      <div style={{ background: BG, color: 'white', padding: '28px 32px', display: 'flex', alignItems: 'center', gap: 20, boxShadow: 'inset 0 0 0 9999px rgba(0,0,0,0.15)' }}>
-        {cv.photo && (
-          <img src={cv.photo} alt="photo" style={{ width: 72, height: 72, borderRadius: '50%', objectFit: 'cover', border: '3px solid rgba(255,255,255,0.3)', flexShrink: 0 }} />
-        )}
-        <div>
-          <h1 style={{ fontSize: 26, fontWeight: 800, letterSpacing: -0.5, margin: 0 }}>
-            {cv.firstName || 'Prénom'} {cv.lastName || 'NOM'}
-          </h1>
-          {cv.jobTitle && <p style={{ fontSize: 12, color: SA, marginTop: 4, fontWeight: 500 }}>{cv.jobTitle}</p>}
+      <div style={{ background: BG, color: 'white', padding: '28px 32px', display: 'flex', alignItems: 'center', gap: 20, position: 'relative' }}>
+        <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.15)', pointerEvents: 'none' }} />
+        <div style={{ position: 'relative', display: 'flex', alignItems: 'center', gap: 20 }}>
+          {cv.photo && (
+            <img src={cv.photo} alt="photo" style={{ width: 72, height: 72, borderRadius: '50%', objectFit: 'cover', border: '3px solid rgba(255,255,255,0.3)', flexShrink: 0 }} />
+          )}
+          <div>
+            <h1 style={{ fontSize: 26, fontWeight: 800, letterSpacing: -0.5, margin: 0 }}>
+              {cv.firstName || 'Prénom'} {cv.lastName || 'NOM'}
+            </h1>
+            {cv.jobTitle && <p style={{ fontSize: 12, color: SA, marginTop: 4, fontWeight: 500 }}>{cv.jobTitle}</p>}
+          </div>
         </div>
       </div>
       {/* Body */}
