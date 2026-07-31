@@ -14,11 +14,13 @@ async function downloadAsPdf(elementId: string, filename: string) {
   el.style.position = 'absolute'
   el.style.left = '-9999px'
   el.style.top = '0'
+  el.style.width = '794px' // A4 at 96dpi — prevents collapsing to narrow column off-screen
   const canvas = await html2canvas(el, { scale: 2, useCORS: true, backgroundColor: '#ffffff' })
   el.style.display = ''
   el.style.position = ''
   el.style.left = ''
   el.style.top = ''
+  el.style.width = ''
   const imgData = canvas.toDataURL('image/png')
   const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' })
   const pdfW = pdf.internal.pageSize.getWidth()
