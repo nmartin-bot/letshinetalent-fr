@@ -52,6 +52,7 @@ import { Route as ClientCandidatAgendaRouteImport } from './routes/client/candid
 import { Route as ClientApprenantFormationsRouteImport } from './routes/client/apprenant/formations'
 import { Route as ClientApprenantDocumentsRouteImport } from './routes/client/apprenant/documents'
 import { Route as ClientApprenantAgendaRouteImport } from './routes/client/apprenant/agenda'
+import { Route as AuthGoogleCallbackRouteImport } from './routes/auth/google/callback'
 import { Route as AdminTrainingIdRouteImport } from './routes/_admin/training/$id'
 import { Route as AdminLearnersIdRouteImport } from './routes/_admin/learners/$id'
 import { Route as AdminCompaniesIdRouteImport } from './routes/_admin/companies/$id'
@@ -274,6 +275,11 @@ const ClientApprenantAgendaRoute = ClientApprenantAgendaRouteImport.update({
   path: '/agenda',
   getParentRoute: () => ClientApprenantRoute,
 } as any)
+const AuthGoogleCallbackRoute = AuthGoogleCallbackRouteImport.update({
+  id: '/auth/google/callback',
+  path: '/auth/google/callback',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdminTrainingIdRoute = AdminTrainingIdRouteImport.update({
   id: '/training/$id',
   path: '/training/$id',
@@ -320,6 +326,7 @@ export interface FileRoutesByFullPath {
   '/companies/$id': typeof AdminCompaniesIdRoute
   '/learners/$id': typeof AdminLearnersIdRoute
   '/training/$id': typeof AdminTrainingIdRoute
+  '/auth/google/callback': typeof AuthGoogleCallbackRoute
   '/client/apprenant/agenda': typeof ClientApprenantAgendaRoute
   '/client/apprenant/documents': typeof ClientApprenantDocumentsRoute
   '/client/apprenant/formations': typeof ClientApprenantFormationsRoute
@@ -364,6 +371,7 @@ export interface FileRoutesByTo {
   '/companies/$id': typeof AdminCompaniesIdRoute
   '/learners/$id': typeof AdminLearnersIdRoute
   '/training/$id': typeof AdminTrainingIdRoute
+  '/auth/google/callback': typeof AuthGoogleCallbackRoute
   '/client/apprenant/agenda': typeof ClientApprenantAgendaRoute
   '/client/apprenant/documents': typeof ClientApprenantDocumentsRoute
   '/client/apprenant/formations': typeof ClientApprenantFormationsRoute
@@ -414,6 +422,7 @@ export interface FileRoutesById {
   '/_admin/companies/$id': typeof AdminCompaniesIdRoute
   '/_admin/learners/$id': typeof AdminLearnersIdRoute
   '/_admin/training/$id': typeof AdminTrainingIdRoute
+  '/auth/google/callback': typeof AuthGoogleCallbackRoute
   '/client/apprenant/agenda': typeof ClientApprenantAgendaRoute
   '/client/apprenant/documents': typeof ClientApprenantDocumentsRoute
   '/client/apprenant/formations': typeof ClientApprenantFormationsRoute
@@ -464,6 +473,7 @@ export interface FileRouteTypes {
     | '/companies/$id'
     | '/learners/$id'
     | '/training/$id'
+    | '/auth/google/callback'
     | '/client/apprenant/agenda'
     | '/client/apprenant/documents'
     | '/client/apprenant/formations'
@@ -508,6 +518,7 @@ export interface FileRouteTypes {
     | '/companies/$id'
     | '/learners/$id'
     | '/training/$id'
+    | '/auth/google/callback'
     | '/client/apprenant/agenda'
     | '/client/apprenant/documents'
     | '/client/apprenant/formations'
@@ -557,6 +568,7 @@ export interface FileRouteTypes {
     | '/_admin/companies/$id'
     | '/_admin/learners/$id'
     | '/_admin/training/$id'
+    | '/auth/google/callback'
     | '/client/apprenant/agenda'
     | '/client/apprenant/documents'
     | '/client/apprenant/formations'
@@ -589,6 +601,7 @@ export interface RootRouteChildren {
   LoginRoute: typeof LoginRoute
   OutilsRoute: typeof OutilsRouteWithChildren
   BookingIndexRoute: typeof BookingIndexRoute
+  AuthGoogleCallbackRoute: typeof AuthGoogleCallbackRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -894,6 +907,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ClientApprenantAgendaRouteImport
       parentRoute: typeof ClientApprenantRoute
     }
+    '/auth/google/callback': {
+      id: '/auth/google/callback'
+      path: '/auth/google/callback'
+      fullPath: '/auth/google/callback'
+      preLoaderRoute: typeof AuthGoogleCallbackRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_admin/training/$id': {
       id: '/_admin/training/$id'
       path: '/training/$id'
@@ -1078,16 +1098,8 @@ const rootRouteChildren: RootRouteChildren = {
   LoginRoute: LoginRoute,
   OutilsRoute: OutilsRouteWithChildren,
   BookingIndexRoute: BookingIndexRoute,
+  AuthGoogleCallbackRoute: AuthGoogleCallbackRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { createStart } from '@tanstack/react-start'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-  }
-}
