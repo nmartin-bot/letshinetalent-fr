@@ -447,7 +447,7 @@ function IntegrationsSection() {
                 if (!clientId) return alert('VITE_GOOGLE_CLIENT_ID non configuré')
                 const params = new URLSearchParams({
                   client_id: clientId,
-                  redirect_uri: `${window.location.origin}/api/auth/google/callback`,
+                  redirect_uri: `${window.location.origin}/auth/google/callback`,
                   response_type: 'code',
                   scope: 'https://www.googleapis.com/auth/calendar.events https://www.googleapis.com/auth/userinfo.email',
                   access_type: 'offline',
