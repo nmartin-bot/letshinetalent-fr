@@ -5,10 +5,10 @@ import { createClient } from '@/lib/supabase/client'
 import { FileText, ScanSearch, Mail, LogOut, Moon, Sun, Download, BookOpen, X, GraduationCap, User, Building2, FolderOpen, Calendar } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
-async function downloadAsPdf(elementId: string, filename: string) {
+async function downloadAsPdf(selector: string, filename: string) {
   const { default: html2canvas } = await import('html2canvas')
   const { default: jsPDF } = await import('jspdf')
-  const el = document.getElementById(elementId)
+  const el = document.querySelector<HTMLElement>(selector)
   if (!el) return
 
   const clone = el.cloneNode(true) as HTMLElement
@@ -278,7 +278,7 @@ function OutilsLayout() {
                   className="flex items-center gap-1.5 text-xs text-gray-500 hover:text-gray-900 hover:bg-gray-100 px-3 py-1.5 rounded-lg font-medium transition-colors">
                   <BookOpen className="w-3.5 h-3.5" />Aide à la rédaction
                 </button>
-                <button onClick={() => downloadAsPdf('cv-print-area', 'mon-cv.pdf')}
+                <button onClick={() => downloadAsPdf('.cv-preview-shell', 'mon-cv.pdf')}
                   className="flex items-center gap-1.5 text-xs text-gray-500 hover:text-gray-900 hover:bg-gray-100 px-3 py-1.5 rounded-lg font-medium transition-colors">
                   <Download className="w-3.5 h-3.5" />PDF
                 </button>
@@ -329,7 +329,7 @@ function OutilsLayout() {
                   <BookOpen className="w-3.5 h-3.5" />Aide à la rédaction
                 </button>
                 <button
-                  onClick={() => downloadAsPdf('cv-print-area', 'mon-cv.pdf')}
+                  onClick={() => downloadAsPdf('.cv-preview-shell', 'mon-cv.pdf')}
                   className="flex items-center gap-1.5 text-xs text-gray-500 hover:text-gray-900 hover:bg-gray-100 px-3 py-1.5 rounded-lg font-medium transition-colors"
                 >
                   <Download className="w-3.5 h-3.5" />PDF
