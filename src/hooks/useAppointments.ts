@@ -71,7 +71,9 @@ export function useAppointments(from?: string, to?: string) {
       const [enriched] = await resolveEntityLabels([data])
       setAppointments(prev => [...prev, enriched].sort((a, b) => a.starts_at.localeCompare(b.starts_at)))
       setTotalCount(prev => (prev ?? 0) + 1)
-      createGoogleCalendarEvent({ data: { title: data.type, starts_at: data.starts_at, duration_minutes: data.duration_minutes, location: data.location, notes: data.notes, appointment_id: data.id } }).catch(() => {})
+      createGoogleCalendarEvent({ data: { title: data.type, starts_at: data.starts_at, duration_minutes: data.duration_minutes, location: data.location, notes: data.notes, appointment_id: data.id } })
+        .then(r => console.log('[GCal] create result:', r))
+        .catch(e => console.error('[GCal] create error:', e))
     }
     return { data, error }
   }
