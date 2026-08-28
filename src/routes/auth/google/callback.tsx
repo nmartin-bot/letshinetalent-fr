@@ -20,7 +20,8 @@ function GoogleCallback() {
       return
     }
 
-    handleGoogleCallback({ data: { code } })
+    const redirectUri = `${window.location.origin}/auth/google/callback`
+    handleGoogleCallback({ data: { code, redirectUri } })
       .then(result => {
         console.log('[GoogleCallback] result:', result)
         if ('error' in result) {

@@ -2,11 +2,10 @@ import { createServerFn } from '@tanstack/react-start'
 import { createClient } from '@supabase/supabase-js'
 
 export const handleGoogleCallback = createServerFn({ method: 'POST' })
-  .validator((d: { code: string }) => d)
-  .handler(async ({ data: { code } }) => {
+  .validator((d: { code: string; redirectUri: string }) => d)
+  .handler(async ({ data: { code, redirectUri } }) => {
     const clientId = process.env.GOOGLE_CLIENT_ID
     const clientSecret = process.env.GOOGLE_CLIENT_SECRET
-    const appUrl = process.env.VITE_APP_URL ?? 'http://localhost:3000'
 
     if (!clientId || !clientSecret) return { error: 'not_configured' }
 
@@ -17,7 +16,7 @@ export const handleGoogleCallback = createServerFn({ method: 'POST' })
         code,
         client_id: clientId,
         client_secret: clientSecret,
-        redirect_uri: `${appUrl}/auth/google/callback`,
+        redirect_uri: redirectUri,
         grant_type: 'authorization_code',
       }),
     })
