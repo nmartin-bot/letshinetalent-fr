@@ -69,7 +69,8 @@ export function AnalyseATS() {
       const data = await analyseCv({ data: { cv, pdfBase64, job: jobText || undefined } })
       if ('error' in data) throw new Error(data.error)
       setResult(data)
-    } catch {
+    } catch (e) {
+      console.error('[analyse] error:', e)
       setError('L\'analyse a échoué. Vérifiez votre connexion ou réessayez.')
     }
     setLoading(false)

@@ -98,7 +98,11 @@ Réponds UNIQUEMENT avec un JSON valide dans ce format exact :
       }),
     })
 
-    if (!res.ok) return { error: 'Erreur API Claude' }
+    if (!res.ok) {
+      const errBody = await res.text()
+      console.error('[analyseCv] API error', res.status, errBody)
+      return { error: `Erreur API Claude: ${res.status}` }
+    }
 
     const claude = await res.json() as { content: { type: string; text: string }[] }
     const text = claude.content.find(c => c.type === 'text')?.text ?? ''
