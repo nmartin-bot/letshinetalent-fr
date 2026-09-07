@@ -25,15 +25,18 @@ type AnalysisResult = {
 }
 
 async function fileToBase64(file: File): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader()
-    reader.onload = () => {
-      const result = reader.result as string
-      resolve(result.split(',')[1])
-    }
-    reader.onerror = reject
-    reader.readAsDataURL(file)
-  })
+  const buffer = await file.arrayBuffer()
+  const bytes = new Uint8Array(buffer)
+  const CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/'
+  let result = ''
+  for (let i = 0; i < bytes.length; i += 3) {
+    const b0 = bytes[i], b1 = bytes[i + 1] ?? 0, b2 = bytes[i + 2] ?? 0
+    result += CHARS[b0 >> 2]
+    result += CHARS[((b0 & 3) << 4) | (b1 >> 4)]
+    result += i + 1 < bytes.length ? CHARS[((b1 & 15) << 2) | (b2 >> 6)] : '='
+    result += i + 2 < bytes.length ? CHARS[b2 & 63] : '='
+  }
+  return result
 }
 
 export function AnalyseATS() {
