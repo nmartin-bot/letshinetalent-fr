@@ -61,7 +61,8 @@ export function AnalyseATS() {
       }
       setCvText(text)
       setCvFileName(file.name)
-    } catch {
+    } catch (e) {
+      console.error('[PDF] extraction error:', e)
       setError('Impossible de lire le fichier. Essayez un PDF ou un fichier texte.')
     }
     setExtracting(false)
