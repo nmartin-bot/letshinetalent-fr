@@ -73,7 +73,8 @@ export function AnalyseATS() {
       } else {
         cv = (await cvFile.text()).replace(/[^\x20-\x7e\n\r\t]/g, ' ')
       }
-      const data = await analyseCv({ data: { cv, job: jobText || '' } })
+      const jobSafe = (jobText || '').replace(/[^\x20-\x7e\n\r\t]/g, ' ')
+      const data = await analyseCv({ data: { cv, job: jobSafe } })
       if ('error' in data) throw new Error((data as { error: string }).error)
       setResult(data as AnalysisResult)
     } catch (e) {
@@ -125,7 +126,7 @@ export function AnalyseATS() {
               <div className="flex items-center gap-3 rounded-xl border border-gray-200 px-4 py-3 bg-gray-50">
                 <FileText className="w-5 h-5 text-gray-500 shrink-0" />
                 <span className="flex-1 text-sm text-gray-700 truncate">{cvFileName}</span>
-                <button onClick={() => { setCvFileName(null); setCvText(''); if (fileInputRef.current) fileInputRef.current.value = '' }}
+                <button onClick={() => { setCvFileName(null); setCvFile(null); if (fileInputRef.current) fileInputRef.current.value = '' }}
                   className="text-gray-400 hover:text-gray-600 transition-colors"><X className="w-4 h-4" /></button>
               </div>
             )}
