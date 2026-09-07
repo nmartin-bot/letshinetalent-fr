@@ -24,19 +24,23 @@ type AnalysisResult = {
   summary: string
 }
 
-async function fileToBase64(file: File): Promise<string> {
+async function extractPdfText(file: File): Promise<string> {
   const buffer = await file.arrayBuffer()
-  const bytes = new Uint8Array(buffer)
-  const CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/'
-  let result = ''
-  for (let i = 0; i < bytes.length; i += 3) {
-    const b0 = bytes[i], b1 = bytes[i + 1] ?? 0, b2 = bytes[i + 2] ?? 0
-    result += CHARS[b0 >> 2]
-    result += CHARS[((b0 & 3) << 4) | (b1 >> 4)]
-    result += i + 1 < bytes.length ? CHARS[((b1 & 15) << 2) | (b2 >> 6)] : '='
-    result += i + 2 < bytes.length ? CHARS[b2 & 63] : '='
+  const raw = new TextDecoder('latin1').decode(buffer)
+  const strings: string[] = []
+  const blocks = raw.match(/BT[\s\S]*?ET/g) ?? []
+  for (const block of blocks) {
+    const matches = block.match(/\(([^)\\]|\\.)*\)/g) ?? []
+    for (const m of matches) {
+      const s = m.slice(1, -1)
+        .replace(/\\n/g, '\n').replace(/\\r/g, '\r').replace(/\\t/g, '\t')
+        .replace(/\\(\d{3})/g, (_, o) => String.fromCharCode(parseInt(o, 8)))
+        .replace(/\\(.)/g, '$1')
+      strings.push(s)
+    }
   }
-  return result
+  const result = strings.join(' ').replace(/\s+/g, ' ').trim()
+  return result || raw.replace(/[^\x20-\x7e\n\r\t]/g, ' ').replace(/\s+/g, ' ').slice(0, 8000)
 }
 
 export function AnalyseATS() {
@@ -63,13 +67,12 @@ export function AnalyseATS() {
 
     try {
       let cv = ''
-      let pdfBase64: string | undefined
       if (cvFile.type === 'application/pdf' || cvFile.name.endsWith('.pdf')) {
-        pdfBase64 = await fileToBase64(cvFile)
+        cv = await extractPdfText(cvFile)
       } else {
         cv = await cvFile.text()
       }
-      const data = await analyseCv({ data: { cv, pdfBase64, job: jobText || undefined } })
+      const data = await analyseCv({ data: { cv, job: jobText || undefined } })
       if ('error' in data) throw new Error(data.error)
       setResult(data)
     } catch (e) {
