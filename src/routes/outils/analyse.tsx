@@ -25,8 +25,11 @@ type AnalysisResult = {
 }
 
 async function extractPdfText(file: File): Promise<string> {
-  const { getDocument, GlobalWorkerOptions } = await import('pdfjs-dist')
-  GlobalWorkerOptions.workerSrc = `https://cdn.jsdelivr.net/npm/pdfjs-dist@6.1.200/build/pdf.worker.min.mjs`
+  const [{ getDocument, GlobalWorkerOptions }, workerUrl] = await Promise.all([
+    import('pdfjs-dist'),
+    import('pdfjs-dist/build/pdf.worker.min.mjs?url').then(m => m.default),
+  ])
+  GlobalWorkerOptions.workerSrc = workerUrl
   const buffer = await file.arrayBuffer()
   const pdf = await getDocument({ data: buffer }).promise
   let text = ''
