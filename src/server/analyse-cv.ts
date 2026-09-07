@@ -8,11 +8,11 @@ type AnalysisResult = {
 }
 
 export const analyseCv = createServerFn({ method: 'POST' })
-  .validator((d: { cv: string; job?: string }) => d)
-  .handler(async ({ data: { cv, job } }): Promise<AnalysisResult | { error: string }> => {
+  .validator((d: { cv?: string; pdfBase64?: string; job?: string }) => d)
+  .handler(async ({ data: { cv, pdfBase64, job } }): Promise<AnalysisResult | { error: string }> => {
     const apiKey = process.env.ANTHROPIC_API_KEY
     if (!apiKey) return { error: 'ANTHROPIC_API_KEY non configurée' }
-    if (!cv?.trim()) return { error: 'CV vide' }
+    if (!cv?.trim() && !pdfBase64) return { error: 'CV vide' }
 
     const systemPrompt = `Tu es un expert en recrutement et en optimisation de CV pour les systèmes ATS (Applicant Tracking System). Tu analyses des CV et fournis des retours structurés en JSON.`
 
@@ -75,18 +75,26 @@ Réponds UNIQUEMENT avec un JSON valide dans ce format exact :
   }
 }`
 
+    const userContent = pdfBase64
+      ? [
+          { type: 'document', source: { type: 'base64', media_type: 'application/pdf', data: pdfBase64 } },
+          { type: 'text', text: userPrompt },
+        ]
+      : userPrompt
+
     const res = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {
         'x-api-key': apiKey,
         'anthropic-version': '2023-06-01',
+        'anthropic-beta': 'pdfs-2024-09-25',
         'content-type': 'application/json',
       },
       body: JSON.stringify({
         model: 'claude-haiku-4-5-20251001',
         max_tokens: 1024,
         system: systemPrompt,
-        messages: [{ role: 'user', content: userPrompt }],
+        messages: [{ role: 'user', content: userContent }],
       }),
     })
 

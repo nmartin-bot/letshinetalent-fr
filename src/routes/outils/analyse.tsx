@@ -24,61 +24,49 @@ type AnalysisResult = {
   summary: string
 }
 
-async function extractPdfText(file: File): Promise<string> {
-  const [{ getDocument, GlobalWorkerOptions }, workerUrl] = await Promise.all([
-    import('pdfjs-dist'),
-    import('pdfjs-dist/build/pdf.worker.min.mjs?url').then(m => m.default),
-  ])
-  GlobalWorkerOptions.workerSrc = workerUrl
-  const buffer = await file.arrayBuffer()
-  const pdf = await getDocument({ data: buffer }).promise
-  let text = ''
-  for (let i = 1; i <= pdf.numPages; i++) {
-    const page = await pdf.getPage(i)
-    const content = await page.getTextContent()
-    text += content.items.map((item: { str?: string }) => item.str ?? '').join(' ') + '\n'
-  }
-  return text.trim()
+async function fileToBase64(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onload = () => {
+      const result = reader.result as string
+      resolve(result.split(',')[1])
+    }
+    reader.onerror = reject
+    reader.readAsDataURL(file)
+  })
 }
 
 export function AnalyseATS() {
-  const [cvText, setCvText] = useState('')
+  const [cvFile, setCvFile] = useState<File | null>(null)
   const [cvFileName, setCvFileName] = useState<string | null>(null)
   const [jobText, setJobText] = useState('')
   const [loading, setLoading] = useState(false)
-  const [extracting, setExtracting] = useState(false)
   const [result, setResult] = useState<AnalysisResult | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [expandedSection, setExpandedSection] = useState<string | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
-  async function handleFile(file: File) {
-    setExtracting(true)
+  function handleFile(file: File) {
+    setCvFile(file)
+    setCvFileName(file.name)
     setError(null)
-    try {
-      let text = ''
-      if (file.type === 'application/pdf' || file.name.endsWith('.pdf')) {
-        text = await extractPdfText(file)
-      } else {
-        text = await file.text()
-      }
-      setCvText(text)
-      setCvFileName(file.name)
-    } catch (e) {
-      console.error('[PDF] extraction error:', e)
-      setError('Impossible de lire le fichier. Essayez un PDF ou un fichier texte.')
-    }
-    setExtracting(false)
   }
 
   async function handleAnalyse() {
-    if (!cvText.trim()) return
+    if (!cvFile) return
     setLoading(true)
     setError(null)
     setResult(null)
 
     try {
-      const data = await analyseCv({ data: { cv: cvText, job: jobText || undefined } })
+      let cv = ''
+      let pdfBase64: string | undefined
+      if (cvFile.type === 'application/pdf' || cvFile.name.endsWith('.pdf')) {
+        pdfBase64 = await fileToBase64(cvFile)
+      } else {
+        cv = await cvFile.text()
+      }
+      const data = await analyseCv({ data: { cv, pdfBase64, job: jobText || undefined } })
       if ('error' in data) throw new Error(data.error)
       setResult(data)
     } catch {
@@ -122,10 +110,8 @@ export function AnalyseATS() {
                 onDrop={e => { e.preventDefault(); const f = e.dataTransfer.files[0]; if (f) handleFile(f) }}
                 className="w-full rounded-xl border-2 border-dashed border-gray-200 hover:border-gray-400 transition-colors px-4 py-10 flex flex-col items-center gap-3 text-gray-400 hover:text-gray-600 cursor-pointer bg-gray-50 hover:bg-gray-100"
               >
-                {extracting
-                  ? <><span className="w-5 h-5 border-2 border-gray-300 border-t-gray-600 rounded-full animate-spin" /><span className="text-sm">Lecture du fichier...</span></>
-                  : <><Upload className="w-6 h-6" /><span className="text-sm font-medium">Importer votre CV</span><span className="text-xs">PDF, TXT — glissez ou cliquez</span></>
-                }
+                <><Upload className="w-6 h-6" /><span className="text-sm font-medium">Importer votre CV</span><span className="text-xs">PDF, TXT — glissez ou cliquez</span></>
+
               </button>
             ) : (
               <div className="flex items-center gap-3 rounded-xl border border-gray-200 px-4 py-3 bg-gray-50">
@@ -158,7 +144,7 @@ export function AnalyseATS() {
 
         <button
           onClick={handleAnalyse}
-          disabled={loading || extracting || !cvText.trim()}
+          disabled={loading || !cvFile}
           className="flex items-center gap-2 bg-gray-900 hover:bg-gray-800 disabled:opacity-40 text-white px-5 py-2.5 rounded-xl text-sm font-medium transition-colors">
           {loading
             ? <><span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />Analyse en cours...</>
