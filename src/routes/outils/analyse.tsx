@@ -74,8 +74,16 @@ export function AnalyseATS() {
         cv = (await cvFile.text()).replace(/[^\x20-\x7e\n\r\t]/g, ' ')
       }
       const jobSafe = (jobText || '').replace(/[^\x20-\x7e\n\r\t]/g, ' ')
-      const data = await analyseCv({ data: { cv, job: jobSafe } })
-      if ('error' in data) throw new Error((data as { error: string }).error)
+      // Bypass TanStack's client serialization (Safari ByteString header bug)
+      const fnUrl = (analyseCv as unknown as { url: string }).url
+      const resp = await fetch(fnUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ data: { cv, job: jobSafe } }),
+      })
+      if (!resp.ok) throw new Error(`Erreur serveur: ${resp.status}`)
+      const data = await resp.json()
+      if (data && 'error' in data) throw new Error((data as { error: string }).error)
       setResult(data as AnalysisResult)
     } catch (e) {
       console.error('[analyse] error:', e)
