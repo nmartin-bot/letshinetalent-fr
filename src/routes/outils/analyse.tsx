@@ -40,7 +40,8 @@ async function extractPdfText(file: File): Promise<string> {
     }
   }
   const result = strings.join(' ').replace(/\s+/g, ' ').trim()
-  return result || raw.replace(/[^\x20-\x7e\n\r\t]/g, ' ').replace(/\s+/g, ' ').slice(0, 8000)
+  const clean = (s: string) => s.replace(/[^\x20-\x7e\n\r\t]/g, ' ').replace(/\s+/g, ' ').trim()
+  return clean(result) || clean(raw).slice(0, 8000)
 }
 
 export function AnalyseATS() {
@@ -70,7 +71,7 @@ export function AnalyseATS() {
       if (cvFile.type === 'application/pdf' || cvFile.name.endsWith('.pdf')) {
         cv = await extractPdfText(cvFile)
       } else {
-        cv = await cvFile.text()
+        cv = (await cvFile.text()).replace(/[^\x20-\x7e\n\r\t]/g, ' ')
       }
       const data = await analyseCv({ data: { cv, job: jobText || undefined } })
       if ('error' in data) throw new Error(data.error)
