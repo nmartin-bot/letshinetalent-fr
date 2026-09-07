@@ -73,9 +73,9 @@ export function AnalyseATS() {
       } else {
         cv = (await cvFile.text()).replace(/[^\x20-\x7e\n\r\t]/g, ' ')
       }
-      const data = await analyseCv({ data: { cv, job: jobText || undefined } })
-      if ('error' in data) throw new Error(data.error)
-      setResult(data)
+      const data = await analyseCv({ data: { cv, job: jobText || '' } })
+      if ('error' in data) throw new Error((data as { error: string }).error)
+      setResult(data as AnalysisResult)
     } catch (e) {
       console.error('[analyse] error:', e)
       setError('L\'analyse a échoué. Vérifiez votre connexion ou réessayez.')
