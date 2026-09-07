@@ -79,7 +79,7 @@ export function AnalyseATS() {
       const resp = await fetch(fnUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ data: { cv, job: jobSafe } }),
+        body: JSON.stringify({ cv, job: jobSafe }),
       })
       if (!resp.ok) throw new Error(`Erreur serveur: ${resp.status}`)
       const data = await resp.json()
