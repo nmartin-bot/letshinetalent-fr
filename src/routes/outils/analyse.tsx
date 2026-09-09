@@ -68,15 +68,30 @@ export function AnalyseATS() {
 
     try {
       let cv = ''
-      if (cvFile.type === 'application/pdf' || cvFile.name.endsWith('.pdf')) {
-        cv = await extractPdfText(cvFile)
-      } else {
-        cv = (await cvFile.text()).replace(/[^\x20-\x7e\n\r\t]/g, ' ')
+      try {
+        if (cvFile.type === 'application/pdf' || cvFile.name.endsWith('.pdf')) {
+          cv = await extractPdfText(cvFile)
+        } else {
+          cv = (await cvFile.text()).replace(/[^\x20-\x7e\n\r\t]/g, ' ')
+        }
+        console.log('[analyse] step1 cv ok, len=', cv.length, 'sample=', cv.slice(0, 50))
+      } catch (e1) {
+        console.error('[analyse] error in PDF extraction:', e1)
+        throw e1
       }
+
       const jobSafe = (jobText || '').replace(/[^\x20-\x7e\n\r\t]/g, ' ')
-      const data = await analyseCv({ data: { cv, job: jobSafe } })
-      if (data && 'error' in data) throw new Error((data as { error: string }).error)
-      setResult(data as AnalysisResult)
+
+      try {
+        console.log('[analyse] calling analyseCv...')
+        const data = await analyseCv({ data: { cv, job: jobSafe } })
+        console.log('[analyse] step2 data ok:', data)
+        if (data && 'error' in data) throw new Error((data as { error: string }).error)
+        setResult(data as AnalysisResult)
+      } catch (e2) {
+        console.error('[analyse] error in analyseCv call:', e2)
+        throw e2
+      }
     } catch (e) {
       console.error('[analyse] error:', e)
       setError('L\'analyse a échoué. Vérifiez votre connexion ou réessayez.')
