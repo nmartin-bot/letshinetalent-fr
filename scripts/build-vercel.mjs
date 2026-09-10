@@ -31,6 +31,9 @@ if (typeof globalThis.WebSocket === 'undefined') {
   globalThis.WebSocket = ws
 }
 
+// Save native Node.js fetch BEFORE server.js loads (TanStack patches globalThis.fetch)
+const _fetch = globalThis.fetch
+
 // Dynamic import so server.js (and Supabase) loads AFTER the polyfill above
 const { default: server } = await import('./dist/server/server.js')
 
@@ -92,7 +95,7 @@ async function handleAnalyseCv(req, res) {
     : textPrompt
 
   try {
-    const resp = await fetch('https://api.anthropic.com/v1/messages', {
+    const resp = await _fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {
         'x-api-key': apiKey,
