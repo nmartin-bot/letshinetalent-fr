@@ -24,11 +24,12 @@ type AnalysisResult = {
 }
 
 async function fileToBase64(file: File): Promise<string> {
-  const buffer = await file.arrayBuffer()
-  const bytes = new Uint8Array(buffer)
-  let binary = ''
-  for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i])
-  return btoa(binary)
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onload = () => resolve((reader.result as string).split(',')[1])
+    reader.onerror = reject
+    reader.readAsDataURL(file)
+  })
 }
 
 export function AnalyseATS() {
@@ -69,7 +70,7 @@ export function AnalyseATS() {
       const resp = await fetch('/api/analyse-cv', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
-        body: new TextEncoder().encode(body),
+        body,
       })
       const data = await resp.json()
       if (!resp.ok || (data && 'error' in data)) throw new Error(data?.error ?? `Erreur ${resp.status}`)
