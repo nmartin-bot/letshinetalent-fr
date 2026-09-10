@@ -67,10 +67,16 @@ export function AnalyseATS() {
         body = JSON.stringify({ cv, job: jobSafe })
       }
 
+      // Debug: find non-ASCII chars in body
+      for (let i = 0; i < Math.min(body.length, 200); i++) {
+        const code = body.charCodeAt(i)
+        if (code > 127) { console.error('[analyse] non-ASCII in body at', i, ':', code, JSON.stringify(body.slice(Math.max(0,i-5), i+5))); break }
+      }
+
       const resp = await fetch('/api/analyse-cv', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
-        body,
+        body: new Blob([body], { type: 'application/json' }),
       })
       const data = await resp.json()
       if (!resp.ok || (data && 'error' in data)) throw new Error(data?.error ?? `Erreur ${resp.status}`)
