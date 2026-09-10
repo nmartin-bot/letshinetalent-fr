@@ -106,16 +106,18 @@ Réponds UNIQUEMENT avec un JSON valide dans ce format exact :
     })
 
     if (!resp.ok) {
+      const errBody = await resp.text()
+      console.error('[analyse-cv] Anthropic error', resp.status, errBody)
       res.statusCode = 502
       res.setHeader('content-type', 'application/json')
-      res.end(JSON.stringify({ error: 'Erreur API Claude: ' + resp.status }))
+      res.end(JSON.stringify({ error: 'Erreur API Claude ' + resp.status + ': ' + errBody.slice(0, 200) }))
       return
     }
 
     const claude = await resp.json()
     const text = claude.content?.find(c => c.type === 'text')?.text ?? ''
     const jsonMatch = text.match(/\\{[\\s\\S]*\\}/)
-    if (!jsonMatch) throw new Error('No JSON in response')
+    if (!jsonMatch) throw new Error('No JSON in response: ' + text.slice(0, 100))
     const result = JSON.parse(jsonMatch[0])
 
     res.statusCode = 200
@@ -125,7 +127,7 @@ Réponds UNIQUEMENT avec un JSON valide dans ce format exact :
     console.error('[analyse-cv] error:', e)
     res.statusCode = 500
     res.setHeader('content-type', 'application/json')
-    res.end(JSON.stringify({ error: 'Erreur interne' }))
+    res.end(JSON.stringify({ error: String(e?.message ?? e) }))
   }
 }
 
