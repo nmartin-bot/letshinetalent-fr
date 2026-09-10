@@ -136,7 +136,8 @@ async function handleAnalyseCv(req, res) {
 
 export default async function handler(req, res) {
   // Handle ATS analysis directly — bypasses TanStack server fn (Safari ByteString bug)
-  if (req.url === '/api/analyse-cv' && req.method === 'POST') {
+  const reqPath = req.url.split('?')[0]
+  if (reqPath === '/api/analyse-cv' && req.method === 'POST') {
     return handleAnalyseCv(req, res)
   }
 
