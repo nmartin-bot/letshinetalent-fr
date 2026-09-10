@@ -82,10 +82,11 @@ export function AnalyseATS() {
       const jobSafe = (jobText || '').replace(/[^\x20-\x7e\n\r\t]/g, ' ')
 
       try {
+        const bodyStr = JSON.stringify({ cv, job: jobSafe })
         const resp = await fetch('/api/analyse-cv', {
           method: 'POST',
           headers: { 'content-type': 'application/json' },
-          body: JSON.stringify({ cv, job: jobSafe }),
+          body: new TextEncoder().encode(bodyStr),
         })
         const data = await resp.json()
         if (!resp.ok || (data && 'error' in data)) throw new Error(data?.error ?? `Erreur ${resp.status}`)
