@@ -34,7 +34,107 @@ if (typeof globalThis.WebSocket === 'undefined') {
 // Dynamic import so server.js (and Supabase) loads AFTER the polyfill above
 const { default: server } = await import('./dist/server/server.js')
 
+async function handleAnalyseCv(req, res) {
+  const apiKey = process.env.ANTHROPIC_API_KEY
+  if (!apiKey) {
+    res.statusCode = 500
+    res.setHeader('content-type', 'application/json')
+    res.end(JSON.stringify({ error: 'ANTHROPIC_API_KEY non configurée' }))
+    return
+  }
+
+  const body = await new Promise((resolve) => {
+    const chunks = []
+    req.on('data', c => chunks.push(c))
+    req.on('end', () => resolve(Buffer.concat(chunks).toString('utf8')))
+  })
+
+  let cv, job
+  try {
+    ;({ cv, job } = JSON.parse(body))
+  } catch {
+    res.statusCode = 400
+    res.setHeader('content-type', 'application/json')
+    res.end(JSON.stringify({ error: 'Corps invalide' }))
+    return
+  }
+
+  if (!cv?.trim()) {
+    res.statusCode = 400
+    res.setHeader('content-type', 'application/json')
+    res.end(JSON.stringify({ error: 'CV vide' }))
+    return
+  }
+
+  const systemPrompt = "Tu es un expert en recrutement et en optimisation de CV pour les systèmes ATS (Applicant Tracking System). Tu analyses des CV et fournis des retours structurés en JSON."
+
+  const userPrompt = \`Analyse ce CV pour son passage en ATS\${job ? \` et sa correspondance avec l'offre d'emploi fournie\` : ''}.
+
+CV :
+\${cv}
+
+\${job ? \`Offre d'emploi :\\n\${job}\` : ''}
+
+Réponds UNIQUEMENT avec un JSON valide dans ce format exact :
+{
+  "globalScore": <nombre 0-100>,
+  "summary": "<phrase de 2-3 lignes résumant le diagnostic>",
+  "sections": [
+    {"label": "Structure et lisibilité", "score": <0-25>, "max": 25, "status": "<good|warn|bad>", "feedback": "<diagnostic>", "tips": ["<conseil>"]},
+    {"label": "Informations de contact", "score": <0-15>, "max": 15, "status": "<good|warn|bad>", "feedback": "<diagnostic>", "tips": ["<conseil>"]},
+    {"label": "Expériences professionnelles", "score": <0-25>, "max": 25, "status": "<good|warn|bad>", "feedback": "<diagnostic>", "tips": ["<conseil>"]},
+    {"label": "Compétences et mots-clés", "score": <0-20>, "max": 20, "status": "<good|warn|bad>", "feedback": "<diagnostic>", "tips": ["<conseil>"]},
+    {"label": "Formation", "score": <0-15>, "max": 15, "status": "<good|warn|bad>", "feedback": "<diagnostic>", "tips": ["<conseil>"]}
+  ],
+  "keywords": {"found": ["<mot-clé présent>"], "missing": ["<mot-clé manquant>"]}
+}\`
+
+  try {
+    const resp = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01',
+        'content-type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'claude-haiku-4-5-20251001',
+        max_tokens: 1024,
+        system: systemPrompt,
+        messages: [{ role: 'user', content: userPrompt }],
+      }),
+    })
+
+    if (!resp.ok) {
+      res.statusCode = 502
+      res.setHeader('content-type', 'application/json')
+      res.end(JSON.stringify({ error: 'Erreur API Claude: ' + resp.status }))
+      return
+    }
+
+    const claude = await resp.json()
+    const text = claude.content?.find(c => c.type === 'text')?.text ?? ''
+    const jsonMatch = text.match(/\\{[\\s\\S]*\\}/)
+    if (!jsonMatch) throw new Error('No JSON in response')
+    const result = JSON.parse(jsonMatch[0])
+
+    res.statusCode = 200
+    res.setHeader('content-type', 'application/json')
+    res.end(JSON.stringify(result))
+  } catch (e) {
+    console.error('[analyse-cv] error:', e)
+    res.statusCode = 500
+    res.setHeader('content-type', 'application/json')
+    res.end(JSON.stringify({ error: 'Erreur interne' }))
+  }
+}
+
 export default async function handler(req, res) {
+  // Handle ATS analysis directly — bypasses TanStack server fn (Safari ByteString bug)
+  if (req.url === '/api/analyse-cv' && req.method === 'POST') {
+    return handleAnalyseCv(req, res)
+  }
+
   const proto = req.headers['x-forwarded-proto'] || 'https'
   const host = req.headers['x-forwarded-host'] || req.headers['host']
   const url = proto + '://' + host + req.url

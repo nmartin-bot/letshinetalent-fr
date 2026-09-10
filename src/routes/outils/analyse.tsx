@@ -1,6 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { useState, useRef } from 'react'
-import { analyseCv } from '@/server/analyse-cv'
 import { ScanSearch, Upload, CheckCircle2, XCircle, AlertCircle, ChevronDown, ChevronUp, FileText, X } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -83,13 +82,16 @@ export function AnalyseATS() {
       const jobSafe = (jobText || '').replace(/[^\x20-\x7e\n\r\t]/g, ' ')
 
       try {
-        console.log('[analyse] calling analyseCv...')
-        const data = await analyseCv({ data: { cv, job: jobSafe } })
-        console.log('[analyse] step2 data ok:', data)
-        if (data && 'error' in data) throw new Error((data as { error: string }).error)
+        const resp = await fetch('/api/analyse-cv', {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ cv, job: jobSafe }),
+        })
+        const data = await resp.json()
+        if (!resp.ok || (data && 'error' in data)) throw new Error(data?.error ?? `Erreur ${resp.status}`)
         setResult(data as AnalysisResult)
       } catch (e2) {
-        console.error('[analyse] error in analyseCv call:', e2)
+        console.error('[analyse] error in fetch /api/analyse-cv:', e2)
         throw e2
       }
     } catch (e) {
