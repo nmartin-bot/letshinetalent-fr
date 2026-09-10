@@ -55,36 +55,20 @@ export function AnalyseATS() {
     setResult(null)
 
     try {
-      const isPdf = cvFile.type === 'application/pdf' || cvFile.name.endsWith('.pdf')
-      const jobSafe = (jobText || '').replace(/[^\x00-\x7f]/g, ' ')
-
-      let body: string
-      if (isPdf) {
-        const pdf_base64 = await fileToBase64(cvFile)
-        body = JSON.stringify({ pdf_base64, job: jobSafe })
-      } else {
-        const cv = (await cvFile.text()).replace(/[^\x00-\x7f]/g, ' ')
-        body = JSON.stringify({ cv, job: jobSafe })
-      }
-
-      console.log('[analyse] body len=', body.length, 'sample=', body.slice(0, 60))
+      const pdf_base64 = await fileToBase64(cvFile)
+      const job = (jobText || '').replace(/[^\x00-\x7f]/g, ' ')
+      const body = JSON.stringify({ pdf_base64, job })
 
       const resp = await fetch('/api/analyse-cv', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
-        body: new Blob([body], { type: 'application/json' }),
+        body: new Blob([body]),
       })
-      console.log('[analyse] fetch done, status=', resp.status)
-
-      const text = await resp.text()
-      console.log('[analyse] resp text=', text.slice(0, 200))
-
-      const data = JSON.parse(text)
-      if (!resp.ok || (data && 'error' in data)) throw new Error(data?.error ?? `Erreur ${resp.status}`)
+      const data = await resp.json()
+      if (!resp.ok || data?.error) throw new Error(data?.error ?? `Erreur ${resp.status}`)
       setResult(data as AnalysisResult)
     } catch (e) {
-      console.error('[analyse] error:', e)
-      setError('L\'analyse a échoué. Vérifiez votre connexion ou réessayez.')
+      setError('L\'analyse a échoué. Réessayez.')
     }
     setLoading(false)
   }

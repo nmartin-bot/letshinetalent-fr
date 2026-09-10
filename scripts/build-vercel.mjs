@@ -25,17 +25,39 @@ await cp('dist/client', '.vercel/output/static', { recursive: true })
 //    Supabase Realtime doesn't throw on Node.js < 22.
 await writeFile('_vercel_entry_tmp.mjs', `
 import ws from 'ws'
+import { request as httpsRequest } from 'node:https'
 
-// Polyfill WebSocket for Node.js < 22 before any module that needs it loads
 if (typeof globalThis.WebSocket === 'undefined') {
   globalThis.WebSocket = ws
 }
 
-// Save native Node.js fetch BEFORE server.js loads (TanStack patches globalThis.fetch)
-const _fetch = globalThis.fetch
-
-// Dynamic import so server.js (and Supabase) loads AFTER the polyfill above
 const { default: server } = await import('./dist/server/server.js')
+
+function callAnthropic(apiKey, payload) {
+  return new Promise((resolve, reject) => {
+    const bodyStr = JSON.stringify(payload)
+    const buf = Buffer.from(bodyStr, 'utf8')
+    const req = httpsRequest({
+      hostname: 'api.anthropic.com',
+      path: '/v1/messages',
+      method: 'POST',
+      headers: {
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01',
+        'anthropic-beta': 'pdfs-2024-09-25',
+        'content-type': 'application/json',
+        'content-length': buf.length,
+      },
+    }, (res) => {
+      const chunks = []
+      res.on('data', c => chunks.push(c))
+      res.on('end', () => resolve({ status: res.statusCode, body: Buffer.concat(chunks).toString('utf8') }))
+    })
+    req.on('error', reject)
+    req.write(buf)
+    req.end()
+  })
+}
 
 async function handleAnalyseCv(req, res) {
   const apiKey = process.env.ANTHROPIC_API_KEY
@@ -46,7 +68,7 @@ async function handleAnalyseCv(req, res) {
     return
   }
 
-  const body = await new Promise((resolve) => {
+  const rawBody = await new Promise((resolve) => {
     const chunks = []
     req.on('data', c => chunks.push(c))
     req.on('end', () => resolve(Buffer.concat(chunks).toString('utf8')))
@@ -54,7 +76,7 @@ async function handleAnalyseCv(req, res) {
 
   let pdf_base64, cv, job
   try {
-    ;({ pdf_base64, cv, job } = JSON.parse(body))
+    ;({ pdf_base64, cv, job } = JSON.parse(rawBody))
   } catch {
     res.statusCode = 400
     res.setHeader('content-type', 'application/json')
@@ -69,58 +91,34 @@ async function handleAnalyseCv(req, res) {
     return
   }
 
-  const systemPrompt = "Tu es un expert en recrutement et en optimisation de CV pour les systèmes ATS (Applicant Tracking System). Tu analyses des CV et fournis des retours structurés en JSON."
+  const system = "Tu es un expert en recrutement et en optimisation de CV pour les systèmes ATS. Tu analyses des CV et fournis des retours structurés en JSON."
 
-  const textPrompt = \`Analyse ce CV pour son passage en ATS\${job ? \` et sa correspondance avec l'offre d'emploi fournie\` : ''}.
+  const prompt = \`Analyse ce CV pour son passage en ATS\${job ? \` et sa correspondance avec cette offre d'emploi\` : ''}.
+\${!pdf_base64 ? \`CV :\\n\${cv}\\n\\n\` : ''}\${job ? \`Offre :\\n\${job}\\n\\n\` : ''}
+Réponds UNIQUEMENT avec un JSON valide :
+{"globalScore":<0-100>,"summary":"<2-3 lignes>","sections":[{"label":"Structure et lisibilité","score":<0-25>,"max":25,"status":"<good|warn|bad>","feedback":"<diagnostic>","tips":["<conseil>"]},{"label":"Informations de contact","score":<0-15>,"max":15,"status":"<good|warn|bad>","feedback":"<diagnostic>","tips":["<conseil>"]},{"label":"Expériences professionnelles","score":<0-25>,"max":25,"status":"<good|warn|bad>","feedback":"<diagnostic>","tips":["<conseil>"]},{"label":"Compétences et mots-clés","score":<0-20>,"max":20,"status":"<good|warn|bad>","feedback":"<diagnostic>","tips":["<conseil>"]},{"label":"Formation","score":<0-15>,"max":15,"status":"<good|warn|bad>","feedback":"<diagnostic>","tips":["<conseil>"]}],"keywords":{"found":["<mot>"],"missing":["<mot>"]}}\`
 
-\${!pdf_base64 ? \`CV :\\n\${cv}\\n\\n\` : ''}\${job ? \`Offre d'emploi :\\n\${job}\\n\\n\` : ''}Réponds UNIQUEMENT avec un JSON valide dans ce format exact :
-{
-  "globalScore": <nombre 0-100>,
-  "summary": "<phrase de 2-3 lignes résumant le diagnostic>",
-  "sections": [
-    {"label": "Structure et lisibilité", "score": <0-25>, "max": 25, "status": "<good|warn|bad>", "feedback": "<diagnostic>", "tips": ["<conseil>"]},
-    {"label": "Informations de contact", "score": <0-15>, "max": 15, "status": "<good|warn|bad>", "feedback": "<diagnostic>", "tips": ["<conseil>"]},
-    {"label": "Expériences professionnelles", "score": <0-25>, "max": 25, "status": "<good|warn|bad>", "feedback": "<diagnostic>", "tips": ["<conseil>"]},
-    {"label": "Compétences et mots-clés", "score": <0-20>, "max": 20, "status": "<good|warn|bad>", "feedback": "<diagnostic>", "tips": ["<conseil>"]},
-    {"label": "Formation", "score": <0-15>, "max": 15, "status": "<good|warn|bad>", "feedback": "<diagnostic>", "tips": ["<conseil>"]}
-  ],
-  "keywords": {"found": ["<mot-clé présent>"], "missing": ["<mot-clé manquant>"]}
-}\`
-
-  const userContent = pdf_base64
-    ? [
-        { type: 'document', source: { type: 'base64', media_type: 'application/pdf', data: pdf_base64 } },
-        { type: 'text', text: textPrompt },
-      ]
-    : textPrompt
+  const content = pdf_base64
+    ? [{ type: 'document', source: { type: 'base64', media_type: 'application/pdf', data: pdf_base64 } }, { type: 'text', text: prompt }]
+    : prompt
 
   try {
-    const resp = await _fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'x-api-key': apiKey,
-        'anthropic-version': '2023-06-01',
-        'anthropic-beta': 'pdfs-2024-09-25',
-        'content-type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'claude-haiku-4-5-20251001',
-        max_tokens: 1024,
-        system: systemPrompt,
-        messages: [{ role: 'user', content: userContent }],
-      }),
+    const { status, body: responseBody } = await callAnthropic(apiKey, {
+      model: 'claude-haiku-4-5-20251001',
+      max_tokens: 1024,
+      system,
+      messages: [{ role: 'user', content }],
     })
 
-    if (!resp.ok) {
-      const errBody = await resp.text()
-      console.error('[analyse-cv] Anthropic error', resp.status, errBody)
+    if (status !== 200) {
+      console.error('[analyse-cv] Anthropic error', status, responseBody.slice(0, 200))
       res.statusCode = 502
       res.setHeader('content-type', 'application/json')
-      res.end(JSON.stringify({ error: 'Erreur API Claude ' + resp.status + ': ' + errBody.slice(0, 200) }))
+      res.end(JSON.stringify({ error: 'Erreur API Claude ' + status + ': ' + responseBody.slice(0, 200) }))
       return
     }
 
-    const claude = await resp.json()
+    const claude = JSON.parse(responseBody)
     const text = claude.content?.find(c => c.type === 'text')?.text ?? ''
     const jsonMatch = text.match(/\\{[\\s\\S]*\\}/)
     if (!jsonMatch) throw new Error('No JSON in response: ' + text.slice(0, 100))
