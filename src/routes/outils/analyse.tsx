@@ -23,24 +23,12 @@ type AnalysisResult = {
   summary: string
 }
 
-async function extractPdfText(file: File): Promise<string> {
+async function fileToBase64(file: File): Promise<string> {
   const buffer = await file.arrayBuffer()
-  const raw = new TextDecoder('latin1').decode(buffer)
-  const strings: string[] = []
-  const blocks = raw.match(/BT[\s\S]*?ET/g) ?? []
-  for (const block of blocks) {
-    const matches = block.match(/\(([^)\\]|\\.)*\)/g) ?? []
-    for (const m of matches) {
-      const s = m.slice(1, -1)
-        .replace(/\\n/g, '\n').replace(/\\r/g, '\r').replace(/\\t/g, '\t')
-        .replace(/\\(\d{3})/g, (_, o) => String.fromCharCode(parseInt(o, 8)))
-        .replace(/\\(.)/g, '$1')
-      strings.push(s)
-    }
-  }
-  const result = strings.join(' ').replace(/\s+/g, ' ').trim()
-  const clean = (s: string) => s.replace(/[^\x20-\x7e\n\r\t]/g, ' ').replace(/\s+/g, ' ').trim()
-  return clean(result) || clean(raw).slice(0, 8000)
+  const bytes = new Uint8Array(buffer)
+  let binary = ''
+  for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i])
+  return btoa(binary)
 }
 
 export function AnalyseATS() {
@@ -66,35 +54,26 @@ export function AnalyseATS() {
     setResult(null)
 
     try {
-      let cv = ''
-      try {
-        if (cvFile.type === 'application/pdf' || cvFile.name.endsWith('.pdf')) {
-          cv = await extractPdfText(cvFile)
-        } else {
-          cv = (await cvFile.text()).replace(/[^\x20-\x7e\n\r\t]/g, ' ')
-        }
-        console.log('[analyse] step1 cv ok, len=', cv.length, 'sample=', cv.slice(0, 50))
-      } catch (e1) {
-        console.error('[analyse] error in PDF extraction:', e1)
-        throw e1
+      const isPdf = cvFile.type === 'application/pdf' || cvFile.name.endsWith('.pdf')
+      const jobSafe = (jobText || '').replace(/[^\x00-\x7f]/g, ' ')
+
+      let body: string
+      if (isPdf) {
+        const pdf_base64 = await fileToBase64(cvFile)
+        body = JSON.stringify({ pdf_base64, job: jobSafe })
+      } else {
+        const cv = (await cvFile.text()).replace(/[^\x00-\x7f]/g, ' ')
+        body = JSON.stringify({ cv, job: jobSafe })
       }
 
-      const jobSafe = (jobText || '').replace(/[^\x20-\x7e\n\r\t]/g, ' ')
-
-      try {
-        const bodyStr = JSON.stringify({ cv, job: jobSafe })
-        const resp = await fetch('/api/analyse-cv', {
-          method: 'POST',
-          headers: { 'content-type': 'application/json' },
-          body: new TextEncoder().encode(bodyStr),
-        })
-        const data = await resp.json()
-        if (!resp.ok || (data && 'error' in data)) throw new Error(data?.error ?? `Erreur ${resp.status}`)
-        setResult(data as AnalysisResult)
-      } catch (e2) {
-        console.error('[analyse] error in fetch /api/analyse-cv:', e2)
-        throw e2
-      }
+      const resp = await fetch('/api/analyse-cv', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: new TextEncoder().encode(body),
+      })
+      const data = await resp.json()
+      if (!resp.ok || (data && 'error' in data)) throw new Error(data?.error ?? `Erreur ${resp.status}`)
+      setResult(data as AnalysisResult)
     } catch (e) {
       console.error('[analyse] error:', e)
       setError('L\'analyse a échoué. Vérifiez votre connexion ou réessayez.')

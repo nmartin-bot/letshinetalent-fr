@@ -49,9 +49,9 @@ async function handleAnalyseCv(req, res) {
     req.on('end', () => resolve(Buffer.concat(chunks).toString('utf8')))
   })
 
-  let cv, job
+  let pdf_base64, cv, job
   try {
-    ;({ cv, job } = JSON.parse(body))
+    ;({ pdf_base64, cv, job } = JSON.parse(body))
   } catch {
     res.statusCode = 400
     res.setHeader('content-type', 'application/json')
@@ -59,7 +59,7 @@ async function handleAnalyseCv(req, res) {
     return
   }
 
-  if (!cv?.trim()) {
+  if (!pdf_base64 && !cv?.trim()) {
     res.statusCode = 400
     res.setHeader('content-type', 'application/json')
     res.end(JSON.stringify({ error: 'CV vide' }))
@@ -68,14 +68,9 @@ async function handleAnalyseCv(req, res) {
 
   const systemPrompt = "Tu es un expert en recrutement et en optimisation de CV pour les systèmes ATS (Applicant Tracking System). Tu analyses des CV et fournis des retours structurés en JSON."
 
-  const userPrompt = \`Analyse ce CV pour son passage en ATS\${job ? \` et sa correspondance avec l'offre d'emploi fournie\` : ''}.
+  const textPrompt = \`Analyse ce CV pour son passage en ATS\${job ? \` et sa correspondance avec l'offre d'emploi fournie\` : ''}.
 
-CV :
-\${cv}
-
-\${job ? \`Offre d'emploi :\\n\${job}\` : ''}
-
-Réponds UNIQUEMENT avec un JSON valide dans ce format exact :
+\${!pdf_base64 ? \`CV :\\n\${cv}\\n\\n\` : ''}\${job ? \`Offre d'emploi :\\n\${job}\\n\\n\` : ''}Réponds UNIQUEMENT avec un JSON valide dans ce format exact :
 {
   "globalScore": <nombre 0-100>,
   "summary": "<phrase de 2-3 lignes résumant le diagnostic>",
@@ -89,19 +84,27 @@ Réponds UNIQUEMENT avec un JSON valide dans ce format exact :
   "keywords": {"found": ["<mot-clé présent>"], "missing": ["<mot-clé manquant>"]}
 }\`
 
+  const userContent = pdf_base64
+    ? [
+        { type: 'document', source: { type: 'base64', media_type: 'application/pdf', data: pdf_base64 } },
+        { type: 'text', text: textPrompt },
+      ]
+    : textPrompt
+
   try {
     const resp = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: {
         'x-api-key': apiKey,
         'anthropic-version': '2023-06-01',
+        'anthropic-beta': 'pdfs-2024-09-25',
         'content-type': 'application/json',
       },
       body: JSON.stringify({
         model: 'claude-haiku-4-5-20251001',
         max_tokens: 1024,
         system: systemPrompt,
-        messages: [{ role: 'user', content: userPrompt }],
+        messages: [{ role: 'user', content: userContent }],
       }),
     })
 
