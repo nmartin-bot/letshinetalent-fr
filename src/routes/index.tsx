@@ -3,6 +3,8 @@ import { createClient } from '@/lib/supabase/client'
 
 export const Route = createFileRoute('/')({
   beforeLoad: async () => {
+    if (typeof window === 'undefined') return // skip SSR — les cookies ne sont pas lisibles, cf. _admin.tsx
+
     const supabase = createClient()
     const { data: { session } } = await supabase.auth.getSession()
 

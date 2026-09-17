@@ -7,6 +7,11 @@ import { ThemeProvider } from '@/contexts/ThemeContext'
 
 export const Route = createFileRoute('/_admin')({
   beforeLoad: async () => {
+    // Côté serveur le client navigateur ne voit pas les cookies : la session
+    // paraîtrait toujours absente et tout rechargement renverrait vers /login.
+    // Les données sont chargées côté client et protégées par RLS.
+    if (typeof window === 'undefined') return
+
     const supabase = createClient()
     const { data: { session } } = await supabase.auth.getSession()
 

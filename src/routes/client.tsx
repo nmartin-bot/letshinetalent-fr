@@ -16,6 +16,7 @@ type PortalContext = {
 export const Route = createFileRoute('/client')({
   beforeLoad: async ({ location }) => {
     if (location.pathname === '/login' || location.pathname === '/client/changer-mot-de-passe') return
+    if (typeof window === 'undefined') return // skip SSR — les cookies ne sont pas lisibles, cf. _admin.tsx
 
     const supabase = createClient()
     const { data: { session } } = await supabase.auth.getSession()
