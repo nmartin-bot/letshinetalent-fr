@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from '@tanstack/react-router'
 import { useState, useEffect } from 'react'
-import { Plus, Trash2, Pencil, Users, BookOpen } from 'lucide-react'
-import { useTrainingCourse } from '@/hooks/useTraining'
+import { Plus, Trash2, Pencil, Users, BookOpen, Check, ChevronDown } from 'lucide-react'
+import { useTrainingCourse, useLearnerGroups } from '@/hooks/useTraining'
 import { CourseForm } from '@/routes/_admin/training/index'
 import PageHeader from '@/components/layout/PageHeader'
 import DocumentManager from '@/components/shared/DocumentManager'
@@ -16,11 +16,14 @@ export const Route = createFileRoute('/_admin/training/$id')({
 
 type Attendance = Database['public']['Tables']['attendance']['Row']
 type Learner = Database['public']['Tables']['learners']['Row']
-type SidebarView = 'session' | 'apprenants' | 'infos'
+type LearnerGroup = Database['public']['Tables']['learner_groups']['Row']
+type Session = Database['public']['Tables']['training_sessions']['Row']
+type SidebarView = 'session' | 'groupes' | 'apprenants' | 'infos'
 
 function TrainingCoursePage() {
   const { id } = Route.useParams()
-  const { course, sessions, learners, loading, addSession, removeSession, updateSession, getAttendance, updateCourse } = useTrainingCourse(id)
+  const { course, sessions, learners, loading, addSession, removeSession, updateSession, getAttendance, updateCourse, refresh } = useTrainingCourse(id)
+  const groups = useLearnerGroups(id)
   const [editing, setEditing] = useState(false)
   const [selectedSessionId, setSelectedSessionId] = useState<string | null>(null)
   const [sideView, setSideView] = useState<SidebarView>('session')
@@ -83,11 +86,11 @@ function TrainingCoursePage() {
         ]}
         secondBarLeft={
           <div className="flex items-center gap-1">
-            {(['session', 'apprenants', 'infos'] as SidebarView[]).map(v => (
+            {(['session', 'groupes', 'apprenants', 'infos'] as SidebarView[]).map(v => (
               <button key={v} onClick={() => setSideView(v)}
                 className={cn('px-3 py-1 rounded-full text-xs font-medium transition-colors',
                   sideView === v ? 'bg-gray-900 text-white' : 'text-gray-500 hover:text-gray-700')}>
-                {v === 'session' ? 'Sessions' : v === 'apprenants' ? 'Apprenants' : 'Infos'}
+                {v === 'session' ? 'Sessions' : v === 'groupes' ? 'Groupes' : v === 'apprenants' ? 'Apprenants' : 'Infos'}
               </button>
             ))}
           </div>
@@ -228,9 +231,17 @@ function TrainingCoursePage() {
             </div>
           )}
         </div>
+      ) : sideView === 'groupes' ? (
+        <div className="h-full overflow-y-auto bg-white">
+          <GroupsPanel groups={groups} learners={learners} sessions={sessions} onChanged={() => refresh(true)} />
+        </div>
       ) : sideView === 'apprenants' ? (
         <div className="h-full overflow-y-auto bg-white">
-          <ApprenantsList learners={learners} />
+          <ApprenantsList
+            learners={learners}
+            groups={groups.groups}
+            onAssign={async (learnerId, groupId) => { await groups.assignLearner(learnerId, groupId); await refresh() }}
+          />
         </div>
       ) : (
         <div className="h-full overflow-y-auto p-6">
@@ -255,7 +266,355 @@ function avatarColor(name: string) {
   return AVATAR_COLORS[h % AVATAR_COLORS.length]
 }
 
-function ApprenantsList({ learners }: { learners: Learner[] }) {
+function formatPeriod(g: LearnerGroup) {
+  const fmt = (d: string) => new Date(d).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' })
+  if (g.starts_on && g.ends_on) return `${fmt(g.starts_on)} → ${fmt(g.ends_on)}`
+  if (g.starts_on) return `à partir du ${fmt(g.starts_on)}`
+  if (g.ends_on) return `jusqu'au ${fmt(g.ends_on)}`
+  return null
+}
+
+function GroupsPanel({ groups, learners, sessions, onChanged }: {
+  groups: ReturnType<typeof useLearnerGroups>
+  learners: Learner[]
+  sessions: Session[]
+  onChanged: () => Promise<void>
+}) {
+  const [showForm, setShowForm] = useState(false)
+  const [editingGroup, setEditingGroup] = useState<LearnerGroup | null>(null)
+  const [managing, setManaging] = useState<LearnerGroup | null>(null)
+  const [confirmDelete, setConfirmDelete] = useState<LearnerGroup | null>(null)
+
+  const managedGroup = managing ? groups.groups.find(g => g.id === managing.id) ?? managing : null
+
+  const countFor = (groupId: string) => learners.filter(l => l.group_id === groupId).length
+  const ungrouped = learners.filter(l => !l.group_id).length
+
+  return (
+    <div className="p-6">
+      <div className="flex items-center justify-between mb-5">
+        <div>
+          <h2 className="text-sm font-semibold text-gray-900">Groupes d'apprenants</h2>
+          <p className="text-xs text-gray-500 mt-0.5">
+            Créez un groupe par promotion pour séparer les participants de chaque session de formation.
+          </p>
+        </div>
+        <button onClick={() => setShowForm(true)}
+          className="flex items-center gap-1.5 bg-gray-900 hover:bg-gray-800 text-white px-3 py-1.5 rounded-lg text-xs font-medium transition-colors shrink-0">
+          <Plus className="w-3.5 h-3.5" />Nouveau groupe
+        </button>
+      </div>
+
+      {groups.loading ? (
+        <p className="text-sm text-gray-400">Chargement...</p>
+      ) : groups.groups.length === 0 ? (
+        <div className="text-center py-16 border border-dashed border-gray-200 rounded-xl">
+          <Users className="w-8 h-8 text-gray-200 mx-auto mb-3" />
+          <p className="text-sm text-gray-500 mb-1">Aucun groupe pour cette formation.</p>
+          <p className="text-xs text-gray-400">
+            {learners.length > 1
+              ? `Les ${learners.length} apprenants sont pour l'instant non affectés.`
+              : learners.length === 1
+                ? "L'unique apprenant est pour l'instant non affecté."
+                : 'Aucun apprenant n\'est encore rattaché à cette formation.'}
+          </p>
+        </div>
+      ) : (
+        <div className="space-y-2 max-w-2xl">
+          {groups.groups.map(g => {
+            const period = formatPeriod(g)
+            const count = countFor(g.id)
+            return (
+              <div key={g.id} className="group flex items-center gap-3 border border-gray-200 rounded-xl px-4 py-3 hover:bg-gray-50/60 transition-colors">
+                <button onClick={() => setManaging(g)} className="flex items-center gap-3 flex-1 min-w-0 text-left">
+                  <div className="w-8 h-8 rounded-lg bg-violet-50 flex items-center justify-center shrink-0">
+                    <Users className="w-4 h-4 text-violet-600" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-gray-900 truncate group-hover:text-violet-700 transition-colors">{g.name}</p>
+                    <p className="text-xs text-gray-400 mt-0.5 truncate">
+                      {[period, g.current_session_id
+                        ? `accès jusqu'à « ${sessions.find(s => s.id === g.current_session_id)?.title ?? 'module'} »`
+                        : 'aucun accès ouvert'].filter(Boolean).join(' · ')}
+                    </p>
+                  </div>
+                </button>
+                <span className="text-xs text-gray-500 shrink-0">
+                  {count} apprenant{count > 1 ? 's' : ''}
+                </span>
+                <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
+                  <button onClick={() => setEditingGroup(g)}
+                    className="p-1.5 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100 transition-colors">
+                    <Pencil className="w-3.5 h-3.5" />
+                  </button>
+                  <button onClick={() => setConfirmDelete(g)}
+                    className="p-1.5 text-gray-300 hover:text-red-500 rounded-lg hover:bg-red-50 transition-colors">
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              </div>
+            )
+          })}
+          {ungrouped > 0 && (
+            <p className="text-xs text-gray-400 pt-2">
+              {ungrouped} apprenant{ungrouped > 1 ? 's' : ''} non affecté{ungrouped > 1 ? 's' : ''} — ouvrez un groupe pour {ungrouped > 1 ? 'les' : 'l\''}y ajouter.
+            </p>
+          )}
+        </div>
+      )}
+
+      {(showForm || editingGroup) && (
+        <Modal
+          title={editingGroup ? 'Modifier le groupe' : 'Nouveau groupe'}
+          subtitle="Un groupe correspond à une promotion de cette formation."
+          icon={Users}
+          size="sm"
+          onClose={() => { setShowForm(false); setEditingGroup(null) }}>
+          <GroupForm
+            initial={editingGroup}
+            onSubmit={async values => {
+              if (editingGroup) await groups.update(editingGroup.id, values)
+              else await groups.create(values)
+              setShowForm(false); setEditingGroup(null)
+            }}
+            onCancel={() => { setShowForm(false); setEditingGroup(null) }}
+          />
+        </Modal>
+      )}
+
+      {managedGroup && (
+        <Modal
+          title={managedGroup.name}
+          subtitle="Membres de la promotion et modules ouverts dans leur espace."
+          icon={Users}
+          onClose={() => setManaging(null)}>
+          <ManageGroup
+            group={managedGroup}
+            learners={learners}
+            sessions={sessions}
+            onSetSession={async sessionId => { await groups.setGroupSession(managedGroup.id, sessionId); await onChanged() }}
+            onSetMembers={async ids => { await groups.setMembers(managedGroup.id, ids); await onChanged() }}
+            onClose={() => setManaging(null)}
+          />
+        </Modal>
+      )}
+
+      {confirmDelete && (
+        <ConfirmDialog
+          title={`Supprimer le groupe "${confirmDelete.name}" ?`}
+          description="Les apprenants de ce groupe ne seront pas supprimés, ils redeviendront simplement non affectés."
+          confirmLabel="Supprimer"
+          icon={Trash2}
+          onConfirm={async () => { await groups.remove(confirmDelete.id); setConfirmDelete(null) }}
+          onCancel={() => setConfirmDelete(null)}
+        />
+      )}
+    </div>
+  )
+}
+
+function ManageGroup({ group, learners, sessions, onSetSession, onSetMembers, onClose }: {
+  group: LearnerGroup
+  learners: Learner[]
+  sessions: Session[]
+  onSetSession: (sessionId: string | null) => Promise<void>
+  onSetMembers: (learnerIds: string[]) => Promise<void>
+  onClose: () => void
+}) {
+  const [members, setMembers] = useState<Set<string>>(
+    () => new Set(learners.filter(l => l.group_id === group.id).map(l => l.id))
+  )
+  const [showSessions, setShowSessions] = useState(false)
+  const [saving, setSaving] = useState(false)
+
+  // Un apprenant ne peut être que dans une promo : les autres groupes sont verrouillés.
+  const available = learners.filter(l => !l.group_id || l.group_id === group.id)
+  const takenCount = learners.length - available.length
+  const currentSession = sessions.find(s => s.id === group.current_session_id)
+
+  function toggle(id: string) {
+    setMembers(prev => {
+      const next = new Set(prev)
+      next.has(id) ? next.delete(id) : next.add(id)
+      return next
+    })
+  }
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault()
+    setSaving(true)
+    await onSetMembers([...members])
+    setSaving(false)
+    onClose()
+  }
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-5">
+      <div>
+        <label className={fieldLabel}>Modules ouverts dans l'espace apprenant</label>
+        <div className="relative">
+          <button type="button" onClick={() => setShowSessions(v => !v)}
+            className="flex items-center justify-between w-full px-3 py-2 rounded-lg border border-gray-200 text-sm hover:bg-gray-50 transition-colors">
+            <span className={cn('truncate', currentSession ? 'text-gray-900' : 'text-gray-400')}>
+              {currentSession ? `Jusqu'à « ${currentSession.title ?? 'module'} »` : 'Aucun accès ouvert'}
+            </span>
+            <ChevronDown className="w-3.5 h-3.5 text-gray-400 shrink-0 ml-1" />
+          </button>
+          {showSessions && (
+            <>
+              <div className="fixed inset-0 z-10" onClick={() => setShowSessions(false)} />
+              <div className="absolute top-full mt-1.5 left-0 right-0 z-20 bg-white border border-gray-200 rounded-xl shadow-lg p-1 max-h-56 overflow-y-auto">
+                <button type="button"
+                  onClick={async () => { setShowSessions(false); setSaving(true); await onSetSession(null); setSaving(false) }}
+                  className={cn('flex items-center justify-between w-full px-3 py-1.5 rounded-lg text-xs hover:bg-gray-50 text-left transition-colors',
+                    !group.current_session_id ? 'text-gray-900 font-medium' : 'text-gray-500')}>
+                  Aucun accès
+                  {!group.current_session_id && <Check className="w-3 h-3 shrink-0 ml-1" />}
+                </button>
+                {sessions.map((s, i) => (
+                  <button key={s.id} type="button"
+                    onClick={async () => { setShowSessions(false); setSaving(true); await onSetSession(s.id); setSaving(false) }}
+                    className={cn('flex items-center justify-between w-full px-3 py-1.5 rounded-lg text-xs hover:bg-gray-50 text-left transition-colors',
+                      group.current_session_id === s.id ? 'text-gray-900 font-medium' : 'text-gray-600')}>
+                    <span className="truncate">{s.title ?? `Module ${i + 1}`}</span>
+                    {group.current_session_id === s.id && <Check className="w-3 h-3 shrink-0 ml-1" />}
+                  </button>
+                ))}
+              </div>
+            </>
+          )}
+        </div>
+        <p className="text-[11px] text-gray-400 mt-1.5">
+          Tous les modules jusqu'à celui-ci s'ouvrent d'un coup pour l'ensemble de la promotion.
+        </p>
+      </div>
+
+      <div>
+        <div className="flex items-baseline justify-between mb-1.5">
+          <label className={cn(fieldLabel, 'mb-0')}>Membres</label>
+          <span className="text-[11px] text-gray-400">{members.size} sélectionné{members.size > 1 ? 's' : ''}</span>
+        </div>
+        {available.length === 0 ? (
+          <p className="text-xs text-gray-400 py-3">Aucun apprenant disponible pour cette formation.</p>
+        ) : (
+          <div className="border border-gray-200 rounded-lg divide-y divide-gray-50 max-h-56 overflow-y-auto">
+            {available.map(l => {
+              const fullName = `${l.first_name} ${l.last_name}`
+              const checked = members.has(l.id)
+              return (
+                <label key={l.id} className="flex items-center gap-2.5 px-3 py-2 hover:bg-gray-50/60 cursor-pointer transition-colors">
+                  <input type="checkbox" checked={checked} onChange={() => toggle(l.id)}
+                    className="w-3.5 h-3.5 rounded border-gray-200 accent-gray-900 cursor-pointer shrink-0" />
+                  <div className={cn('w-6 h-6 rounded-full flex items-center justify-center shrink-0 text-[10px] font-semibold', avatarColor(fullName))}>
+                    {l.first_name[0]}{l.last_name[0]}
+                  </div>
+                  <span className="text-xs text-gray-700 truncate">{fullName}</span>
+                </label>
+              )
+            })}
+          </div>
+        )}
+        {takenCount > 0 && (
+          <p className="text-[11px] text-gray-400 mt-1.5">
+            {takenCount} apprenant{takenCount > 1 ? 's' : ''} déjà rattaché{takenCount > 1 ? 's' : ''} à une autre promotion.
+          </p>
+        )}
+      </div>
+
+      <FormFooter onCancel={onClose} saving={saving} label="Enregistrer" />
+    </form>
+  )
+}
+
+function GroupForm({ initial, onSubmit, onCancel }: {
+  initial?: LearnerGroup | null
+  onSubmit: (v: { name: string; starts_on: string | null; ends_on: string | null }) => Promise<void>
+  onCancel: () => void
+}) {
+  const [name, setName] = useState(initial?.name ?? '')
+  const [startsOn, setStartsOn] = useState(initial?.starts_on ?? '')
+  const [endsOn, setEndsOn] = useState(initial?.ends_on ?? '')
+  const [saving, setSaving] = useState(false)
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault()
+    setSaving(true)
+    await onSubmit({ name: name.trim(), starts_on: startsOn || null, ends_on: endsOn || null })
+    setSaving(false)
+  }
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <div>
+        <label className={fieldLabel}>Nom du groupe *</label>
+        <input required value={name} onChange={e => setName(e.target.value)}
+          className={fieldInput} autoFocus placeholder="ex : Promo janvier 2026" />
+      </div>
+      <div className="grid grid-cols-2 gap-3">
+        <div>
+          <label className={fieldLabel}>Début</label>
+          <input type="date" value={startsOn} onChange={e => setStartsOn(e.target.value)} className={fieldInput} />
+        </div>
+        <div>
+          <label className={fieldLabel}>Fin</label>
+          <input type="date" value={endsOn} onChange={e => setEndsOn(e.target.value)} className={fieldInput} />
+        </div>
+      </div>
+      <FormFooter onCancel={onCancel} saving={saving} label={initial ? 'Enregistrer' : 'Créer'} />
+    </form>
+  )
+}
+
+function GroupPicker({ learner, groups, onAssign }: {
+  learner: Learner
+  groups: LearnerGroup[]
+  onAssign: (learnerId: string, groupId: string | null) => Promise<void>
+}) {
+  const [open, setOpen] = useState(false)
+  const current = groups.find(g => g.id === learner.group_id)
+
+  if (groups.length === 0) {
+    return <span className="text-xs text-gray-300">Aucun groupe créé</span>
+  }
+
+  return (
+    <div className="relative">
+      <button onClick={() => setOpen(v => !v)}
+        className={cn('flex items-center gap-1.5 px-2 py-1 rounded-lg border text-xs transition-colors',
+          current ? 'border-violet-200 bg-violet-50 text-violet-700' : 'border-gray-200 text-gray-400 hover:bg-gray-50')}>
+        {current?.name ?? 'Non affecté'}
+        <ChevronDown className="w-3 h-3 shrink-0" />
+      </button>
+      {open && (
+        <>
+          <div className="fixed inset-0 z-10" onClick={() => setOpen(false)} />
+          <div className="absolute top-full mt-1 left-0 z-20 bg-white border border-gray-200 rounded-xl shadow-lg p-1.5 min-w-[180px]">
+            <button onClick={async () => { await onAssign(learner.id, null); setOpen(false) }}
+              className={cn('flex items-center justify-between w-full px-3 py-2 rounded-lg text-sm hover:bg-gray-50 text-left transition-colors',
+                !learner.group_id ? 'text-gray-900 font-medium' : 'text-gray-500')}>
+              Non affecté
+              {!learner.group_id && <Check className="w-3 h-3 shrink-0 ml-1" />}
+            </button>
+            {groups.map(g => (
+              <button key={g.id} onClick={async () => { await onAssign(learner.id, g.id); setOpen(false) }}
+                className={cn('flex items-center justify-between w-full px-3 py-2 rounded-lg text-sm hover:bg-gray-50 text-left transition-colors',
+                  learner.group_id === g.id ? 'text-gray-900 font-medium' : 'text-gray-600')}>
+                <span className="truncate">{g.name}</span>
+                {learner.group_id === g.id && <Check className="w-3 h-3 shrink-0 ml-1" />}
+              </button>
+            ))}
+          </div>
+        </>
+      )}
+    </div>
+  )
+}
+
+function ApprenantsList({ learners, groups, onAssign }: {
+  learners: Learner[]
+  groups: LearnerGroup[]
+  onAssign: (learnerId: string, groupId: string | null) => Promise<void>
+}) {
   if (learners.length === 0) {
     return (
       <div className="text-center py-16">
@@ -271,6 +630,7 @@ function ApprenantsList({ learners }: { learners: Learner[] }) {
         <thead>
           <tr className="border-b border-gray-100">
             <th className="text-left pl-6 pr-4 py-2.5 text-xs font-medium text-gray-400">Apprenant</th>
+            <th className="text-left px-4 py-2.5 text-xs font-medium text-gray-400">Groupe</th>
             <th className="text-left px-4 py-2.5 text-xs font-medium text-gray-400">Email</th>
             <th className="text-left px-4 py-2.5 text-xs font-medium text-gray-400">Téléphone</th>
             <th className="text-left px-4 py-2.5 pr-6 text-xs font-medium text-gray-400">Fonction</th>
@@ -288,6 +648,9 @@ function ApprenantsList({ learners }: { learners: Learner[] }) {
                     </div>
                     <span className="font-medium text-gray-900 group-hover/link:text-blue-600 transition-colors">{fullName}</span>
                   </Link>
+                </td>
+                <td className="px-4 py-3">
+                  <GroupPicker learner={l} groups={groups} onAssign={onAssign} />
                 </td>
                 <td className="px-4 py-3 text-xs text-gray-500">{l.email ?? <span className="text-gray-300">—</span>}</td>
                 <td className="px-4 py-3 text-xs text-gray-500">{l.phone ?? <span className="text-gray-300">—</span>}</td>

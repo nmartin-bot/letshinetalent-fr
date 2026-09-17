@@ -182,12 +182,42 @@ export interface Database {
           created_at?: string
         }
       }
+      learner_groups: {
+        Row: {
+          id: string
+          course_id: string
+          name: string
+          starts_on: string | null
+          ends_on: string | null
+          current_session_id: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          course_id: string
+          name: string
+          starts_on?: string | null
+          ends_on?: string | null
+          current_session_id?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          course_id?: string
+          name?: string
+          starts_on?: string | null
+          ends_on?: string | null
+          current_session_id?: string | null
+          created_at?: string
+        }
+      }
       learners: {
         Row: {
           id: string
           company_id: string | null
           training_course_id: string | null
           current_session_id: string | null
+          group_id: string | null
           first_name: string
           last_name: string
           email: string | null
@@ -200,6 +230,7 @@ export interface Database {
           company_id?: string | null
           training_course_id?: string | null
           current_session_id?: string | null
+          group_id?: string | null
           first_name: string
           last_name: string
           email?: string | null
@@ -212,6 +243,7 @@ export interface Database {
           company_id?: string | null
           training_course_id?: string | null
           current_session_id?: string | null
+          group_id?: string | null
           first_name?: string
           last_name?: string
           email?: string | null

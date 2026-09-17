@@ -8,6 +8,8 @@ type Session = Database['public']['Tables']['training_sessions']['Row']
 type SessionInsert = Database['public']['Tables']['training_sessions']['Insert']
 type Attendance = Database['public']['Tables']['attendance']['Row']
 type Learner = Database['public']['Tables']['learners']['Row']
+type LearnerGroup = Database['public']['Tables']['learner_groups']['Row']
+type LearnerGroupInsert = Database['public']['Tables']['learner_groups']['Insert']
 
 export function useTrainingCourses() {
   const supabase = createClient()
@@ -118,8 +120,10 @@ export function useTrainingCourse(id: string) {
   const [learners, setLearners] = useState<Learner[]>([])
   const [loading, setLoading] = useState(true)
 
-  const fetch = useCallback(async () => {
-    setLoading(true)
+  // silent : rafraîchit sans repasser par l'écran de chargement, qui démonterait
+  // les panneaux ouverts (et leur état local) à chaque mise à jour.
+  const fetch = useCallback(async (silent = false) => {
+    if (!silent) setLoading(true)
     const [{ data: c }, { data: s }, { data: l }] = await Promise.all([
       supabase.from('training_courses').select('*, companies(name)').eq('id', id).single(),
       supabase.from('training_sessions').select('*').eq('course_id', id).order('created_at', { ascending: true }),
@@ -167,6 +171,92 @@ export function useTrainingCourse(id: string) {
   }
 
   return { course, sessions, learners, loading, addSession, removeSession, updateSession, getAttendance, toggleAttendance, updateCourse, refresh: fetch }
+}
+
+export function useLearnerGroups(courseId: string) {
+  const supabase = createClient()
+  const [groups, setGroups] = useState<LearnerGroup[]>([])
+  const [loading, setLoading] = useState(true)
+
+  const fetch = useCallback(async () => {
+    setLoading(true)
+    const { data } = await supabase
+      .from('learner_groups')
+      .select('*')
+      .eq('course_id', courseId)
+      .order('created_at', { ascending: true }) as { data: LearnerGroup[] | null }
+    setGroups(data ?? [])
+    setLoading(false)
+  }, [courseId])
+
+  useEffect(() => { fetch() }, [fetch])
+
+  async function create(values: Omit<LearnerGroupInsert, 'course_id'>) {
+    const { data, error } = await supabase
+      .from('learner_groups')
+      .insert({ ...values, course_id: courseId } as never)
+      .select().single() as { data: LearnerGroup | null; error: unknown }
+    if (!error && data) setGroups(prev => [...prev, data])
+    return { data, error }
+  }
+
+  async function update(groupId: string, values: Partial<Omit<LearnerGroupInsert, 'course_id'>>) {
+    const { data, error } = await supabase
+      .from('learner_groups')
+      .update(values as never).eq('id', groupId)
+      .select().single() as { data: LearnerGroup | null; error: unknown }
+    if (!error && data) setGroups(prev => prev.map(g => g.id === groupId ? data : g))
+    return { data, error }
+  }
+
+  async function remove(groupId: string) {
+    const { error } = await supabase.from('learner_groups').delete().eq('id', groupId)
+    if (!error) setGroups(prev => prev.filter(g => g.id !== groupId))
+    return { error }
+  }
+
+  // Un groupe sans curseur n'écrase pas l'accès déjà accordé à l'apprenant.
+  function joinPatch(groupId: string) {
+    const session = groups.find(g => g.id === groupId)?.current_session_id
+    return session ? { group_id: groupId, current_session_id: session } : { group_id: groupId }
+  }
+
+  async function assignLearner(learnerId: string, groupId: string | null) {
+    const patch = groupId ? joinPatch(groupId) : { group_id: null }
+    const { error } = await supabase.from('learners').update(patch as never).eq('id', learnerId)
+    return { error }
+  }
+
+  // Membres retirés : on ne touche pas à leur accès, seulement à leur rattachement.
+  async function setMembers(groupId: string, learnerIds: string[]) {
+    const { data: current } = await supabase
+      .from('learners').select('id').eq('group_id', groupId) as { data: { id: string }[] | null }
+
+    const before = new Set((current ?? []).map(l => l.id))
+    const after = new Set(learnerIds)
+    const added = learnerIds.filter(id => !before.has(id))
+    const removed = [...before].filter(id => !after.has(id))
+
+    if (removed.length) {
+      await supabase.from('learners').update({ group_id: null } as never).in('id', removed)
+    }
+    if (added.length) {
+      await supabase.from('learners').update(joinPatch(groupId) as never).in('id', added)
+    }
+  }
+
+  // Le portail apprenant lit learners.current_session_id : on propage à tous les membres.
+  async function setGroupSession(groupId: string, sessionId: string | null) {
+    const { data, error } = await supabase
+      .from('learner_groups').update({ current_session_id: sessionId } as never).eq('id', groupId)
+      .select().single() as { data: LearnerGroup | null; error: unknown }
+    if (error) return { error }
+    await supabase.from('learners').update({ current_session_id: sessionId } as never).eq('group_id', groupId)
+    if (data) setGroups(prev => prev.map(g => g.id === groupId ? data : g))
+    return { error: null }
+  }
+
+  return { groups, loading, create, update, remove, assignLearner, setMembers, setGroupSession, refresh: fetch }
 }
 
 export function useAllTrainingCourses() {
