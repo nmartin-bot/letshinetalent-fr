@@ -1,5 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router'
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { ChevronLeft, ChevronRight, Plus, Clock, MapPin, Trash2, Pencil } from 'lucide-react'
 import PageHeader from '@/components/layout/PageHeader'
 import EmptyState from '@/components/shared/EmptyState'
@@ -9,6 +9,7 @@ import HelpTooltip from '@/components/shared/HelpTooltip'
 import { useAppointments, type AppointmentWithLabel } from '@/hooks/useAppointments'
 import AppointmentForm from '@/components/appointments/AppointmentForm'
 import { cn } from '@/lib/utils'
+import { fetchGoogleCalendarEvents } from '@/server/google-calendar'
 
 export const Route = createFileRoute('/_admin/appointments/')({
   component: AgendaPage,
@@ -16,6 +17,15 @@ export const Route = createFileRoute('/_admin/appointments/')({
 
 type ViewMode = 'week' | 'month'
 type Appointment = AppointmentWithLabel
+
+type GoogleEvent = {
+  id: string
+  title: string
+  starts_at: string
+  duration_minutes: number
+  location: string | null
+  notes: string | null
+}
 
 
 const TYPE_LABELS: Record<string, string> = {
@@ -88,6 +98,15 @@ function AgendaPage() {
     periodStart.toISOString(),
     periodEnd.toISOString()
   )
+
+  const [googleEvents, setGoogleEvents] = useState<GoogleEvent[]>([])
+  const [selectedGoogle, setSelectedGoogle] = useState<GoogleEvent | null>(null)
+
+  useEffect(() => {
+    fetchGoogleCalendarEvents({ data: { timeMin: periodStart.toISOString(), timeMax: periodEnd.toISOString() } })
+      .then(r => { if (r.events) setGoogleEvents(r.events) })
+      .catch(() => {})
+  }, [periodStart.toISOString(), periodEnd.toISOString()])
 
   function navigate(dir: 1 | -1) {
     const d = new Date(anchor)
@@ -312,6 +331,50 @@ function AgendaPage() {
         )
       })()}
 
+      {/* Modal détail Google Calendar */}
+      {selectedGoogle && (() => {
+        const start = new Date(selectedGoogle.starts_at)
+        const end = new Date(start.getTime() + selectedGoogle.duration_minutes * 60000)
+        return (
+          <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4" onClick={() => setSelectedGoogle(null)}>
+            <div className="bg-white rounded-xl shadow-xl w-full max-w-sm overflow-hidden" onClick={e => e.stopPropagation()}>
+              <div className="px-5 pt-5 pb-4 bg-blue-50 border-b border-blue-100">
+                <div className="flex items-start justify-between">
+                  <p className="text-[10px] font-semibold uppercase tracking-widest text-blue-500 mb-2">Google Calendar</p>
+                  <button onClick={() => setSelectedGoogle(null)} className="p-1.5 rounded-lg text-gray-400 hover:text-gray-700 hover:bg-white/60 transition-colors">
+                    <span className="text-sm leading-none">×</span>
+                  </button>
+                </div>
+                <h3 className="font-semibold text-gray-900 text-base leading-snug">{selectedGoogle.title}</h3>
+                <p className="text-xs text-gray-500 mt-0.5 capitalize">
+                  {start.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })}
+                </p>
+              </div>
+              <div className="px-5 py-4 space-y-0">
+                <div className="flex items-center justify-between py-2.5 border-b border-gray-50">
+                  <div className="flex items-center gap-2 text-xs text-gray-400"><Clock className="w-3.5 h-3.5" />Horaire</div>
+                  <span className="text-xs text-gray-900 font-medium">
+                    {start.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })} – {end.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })} · {selectedGoogle.duration_minutes} min
+                  </span>
+                </div>
+                {selectedGoogle.location && (
+                  <div className="flex items-center justify-between py-2.5 border-b border-gray-50">
+                    <div className="flex items-center gap-2 text-xs text-gray-400"><MapPin className="w-3.5 h-3.5" />Lieu</div>
+                    <span className="text-xs text-gray-900">{selectedGoogle.location}</span>
+                  </div>
+                )}
+                {selectedGoogle.notes && (
+                  <div className="pt-3">
+                    <p className="text-[10px] font-medium text-gray-400 uppercase tracking-wide mb-1.5">Notes</p>
+                    <p className="text-xs text-gray-600 bg-gray-50 rounded-lg p-3 leading-relaxed">{selectedGoogle.notes}</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        )
+      })()}
+
       {!loading && totalCount === 0 ? (
         <EmptyState
           variant="calendar"
@@ -325,9 +388,9 @@ function AgendaPage() {
           {loading ? (
             <div className="flex items-center justify-center py-20 text-gray-400">Chargement...</div>
           ) : mode === 'week' ? (
-            <WeekView days={days} appointments={appointments} onSelect={setSelected} today={today} />
+            <WeekView days={days} appointments={appointments} googleEvents={googleEvents} onSelect={setSelected} onSelectGoogle={setSelectedGoogle} today={today} />
           ) : (
-            <MonthView days={days} appointments={appointments} onSelect={setSelected} today={today} periodStart={periodStart} />
+            <MonthView days={days} appointments={appointments} googleEvents={googleEvents} onSelect={setSelected} onSelectGoogle={setSelectedGoogle} today={today} periodStart={periodStart} />
           )}
         </div>
       )}
@@ -355,10 +418,12 @@ function entityInitials(label: string) {
     : label.slice(0, 2).toUpperCase()
 }
 
-function WeekView({ days, appointments, onSelect, today }: {
+function WeekView({ days, appointments, googleEvents, onSelect, onSelectGoogle, today }: {
   days: Date[]
   appointments: Appointment[]
+  googleEvents: GoogleEvent[]
   onSelect: (a: Appointment) => void
+  onSelectGoogle: (e: GoogleEvent) => void
   today: Date
 }) {
   return (
@@ -395,13 +460,14 @@ function WeekView({ days, appointments, onSelect, today }: {
         <div className="flex flex-1 divide-x divide-gray-100">
           {days.map(day => {
             const dayAppts = appointments.filter(a => isSameDay(new Date(a.starts_at), day))
+            const dayGoogleEvts = googleEvents.filter(e => isSameDay(new Date(e.starts_at), day))
             return (
               <div key={day.toISOString()} className="flex-1 relative" style={{ height: HOURS.length * HOUR_H }}>
                 {/* Hour lines */}
                 {HOURS.map((_, i) => (
                   <div key={i} className="absolute left-0 right-0 border-t border-gray-100" style={{ top: i * HOUR_H }} />
                 ))}
-                {/* Events */}
+                {/* Internal appointments */}
                 {dayAppts.map(appt => {
                   const start = new Date(appt.starts_at)
                   const startDecimal = start.getHours() + start.getMinutes() / 60
@@ -435,6 +501,24 @@ function WeekView({ days, appointments, onSelect, today }: {
                     </button>
                   )
                 })}
+                {/* Google Calendar events */}
+                {dayGoogleEvts.map(evt => {
+                  const start = new Date(evt.starts_at)
+                  const startDecimal = start.getHours() + start.getMinutes() / 60
+                  const top = (startDecimal - HOURS[0]) * HOUR_H
+                  const height = Math.max((evt.duration_minutes / 60) * HOUR_H - 4, 24)
+                  const end = new Date(start.getTime() + evt.duration_minutes * 60000)
+                  const timeStr = `${start.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })} – ${end.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}`
+                  return (
+                    <button key={evt.id} onClick={() => onSelectGoogle(evt)}
+                      style={{ top: top + 2, height, left: 4, right: 4 }}
+                      className="absolute rounded-lg border border-blue-200 bg-blue-50 px-2 py-1.5 text-left hover:shadow-md transition-shadow overflow-hidden flex flex-col">
+                      <p className="text-[9px] font-semibold uppercase tracking-wide leading-tight mb-0.5 text-blue-500">Google</p>
+                      <p className="text-xs font-semibold leading-tight truncate text-gray-900">{evt.title}</p>
+                      <p className="text-[10px] text-gray-500 mt-0.5 leading-tight">{timeStr}</p>
+                    </button>
+                  )
+                })}
               </div>
             )
           })}
@@ -444,10 +528,12 @@ function WeekView({ days, appointments, onSelect, today }: {
   )
 }
 
-function MonthView({ days, appointments, onSelect, today, periodStart }: {
+function MonthView({ days, appointments, googleEvents, onSelect, onSelectGoogle, today, periodStart }: {
   days: Date[]
   appointments: Appointment[]
+  googleEvents: GoogleEvent[]
   onSelect: (a: Appointment) => void
+  onSelectGoogle: (e: GoogleEvent) => void
   today: Date
   periodStart: Date
 }) {
@@ -466,6 +552,7 @@ function MonthView({ days, appointments, onSelect, today, periodStart }: {
       <div className="grid grid-cols-7 auto-rows-fr divide-x divide-y divide-gray-100 flex-1 overflow-y-auto">
         {days.map(day => {
           const dayAppts = appointments.filter(a => isSameDay(new Date(a.starts_at), day))
+          const dayGoogleEvts = googleEvents.filter(e => isSameDay(new Date(e.starts_at), day))
           const isToday = isSameDay(day, today)
           const isCurrentMonth = day.getMonth() === periodStart.getMonth()
           return (
@@ -484,6 +571,12 @@ function MonthView({ days, appointments, onSelect, today, periodStart }: {
                     </button>
                   )
                 })}
+                {dayGoogleEvts.map(evt => (
+                  <button key={evt.id} onClick={() => onSelectGoogle(evt)}
+                    className="w-full text-left rounded-md px-2 py-1 text-xs font-medium border border-blue-200 bg-blue-50 text-blue-700 truncate transition-shadow hover:shadow-sm">
+                    {evt.title}
+                  </button>
+                ))}
               </div>
             </div>
           )

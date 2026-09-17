@@ -86,6 +86,55 @@ export const createGoogleCalendarEvent = createServerFn({ method: 'POST' })
     return { success: true, eventId: created.id }
   })
 
+export const fetchGoogleCalendarEvents = createServerFn({ method: 'POST' })
+  .validator((d: { timeMin: string; timeMax: string }) => d)
+  .handler(async ({ data }) => {
+    const supabase = createClient(process.env.VITE_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!)
+    const token = await getValidToken(supabase)
+    if (!token) return { events: [], error: 'not_connected' as const }
+
+    const params = new URLSearchParams({
+      timeMin: data.timeMin,
+      timeMax: data.timeMax,
+      singleEvents: 'true',
+      orderBy: 'startTime',
+      maxResults: '100',
+    })
+
+    const res = await fetch(`https://www.googleapis.com/calendar/v3/calendars/primary/events?${params}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+
+    if (!res.ok) return { events: [], error: 'api_error' as const }
+
+    const data2 = await res.json() as { items: Array<{
+      id: string
+      summary?: string
+      start?: { dateTime?: string; date?: string }
+      end?: { dateTime?: string; date?: string }
+      location?: string
+      description?: string
+    }> }
+
+    const events = (data2.items ?? [])
+      .filter(e => e.start?.dateTime)
+      .map(e => {
+        const start = new Date(e.start!.dateTime!)
+        const end = new Date(e.end?.dateTime ?? e.start!.dateTime!)
+        const duration = Math.round((end.getTime() - start.getTime()) / 60000)
+        return {
+          id: e.id,
+          title: e.summary ?? '(Sans titre)',
+          starts_at: start.toISOString(),
+          duration_minutes: duration,
+          location: e.location ?? null,
+          notes: e.description ?? null,
+        }
+      })
+
+    return { events, error: null }
+  })
+
 export const deleteGoogleCalendarEvent = createServerFn({ method: 'POST' })
   .validator((d: { google_event_id: string }) => d)
   .handler(async ({ data }) => {

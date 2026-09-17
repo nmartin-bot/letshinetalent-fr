@@ -9,68 +9,62 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as OutilsRouteImport } from './routes/outils'
-import { Route as LoginRouteImport } from './routes/login'
-import { Route as ClientRouteImport } from './routes/client'
-import { Route as CandidatureRouteImport } from './routes/candidature'
-import { Route as AdminRouteImport } from './routes/_admin'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as OutilsIndexRouteImport } from './routes/outils/index'
-import { Route as BookingIndexRouteImport } from './routes/booking/index'
-import { Route as OutilsLoginRouteImport } from './routes/outils/login'
-import { Route as OutilsLettreRouteImport } from './routes/outils/lettre'
-import { Route as OutilsCvRouteImport } from './routes/outils/cv'
-import { Route as OutilsAnalyseRouteImport } from './routes/outils/analyse'
-import { Route as ClientOutilsRouteImport } from './routes/client/outils'
-import { Route as ClientLoginRouteImport } from './routes/client/login'
-import { Route as ClientEntrepriseRouteImport } from './routes/client/entreprise'
-import { Route as ClientDocumentsRouteImport } from './routes/client/documents'
-import { Route as ClientDashboardRouteImport } from './routes/client/dashboard'
-import { Route as ClientChangerMotDePasseRouteImport } from './routes/client/changer-mot-de-passe'
-import { Route as ClientCandidatRouteImport } from './routes/client/candidat'
-import { Route as ClientApprenantRouteImport } from './routes/client/apprenant'
+import { Route as AdminRouteImport } from './routes/_admin'
+import { Route as CandidatureRouteImport } from './routes/candidature'
+import { Route as ClientRouteImport } from './routes/client'
+import { Route as LoginRouteImport } from './routes/login'
+import { Route as OutilsRouteImport } from './routes/outils'
 import { Route as AdminDashboardRouteImport } from './routes/_admin/dashboard'
-import { Route as ClientEntrepriseIndexRouteImport } from './routes/client/entreprise/index'
-import { Route as ClientCandidatIndexRouteImport } from './routes/client/candidat/index'
-import { Route as ClientApprenantIndexRouteImport } from './routes/client/apprenant/index'
-import { Route as AdminTrainingIndexRouteImport } from './routes/_admin/training/index'
-import { Route as AdminSettingsIndexRouteImport } from './routes/_admin/settings/index'
-import { Route as AdminQuotesIndexRouteImport } from './routes/_admin/quotes/index'
-import { Route as AdminLearnersIndexRouteImport } from './routes/_admin/learners/index'
-import { Route as AdminDocumentsIndexRouteImport } from './routes/_admin/documents/index'
-import { Route as AdminCompaniesIndexRouteImport } from './routes/_admin/companies/index'
-import { Route as AdminCandidatesIndexRouteImport } from './routes/_admin/candidates/index'
-import { Route as AdminAtsIndexRouteImport } from './routes/_admin/ats/index'
+import { Route as BookingIndexRouteImport } from './routes/booking/index'
+import { Route as ClientApprenantRouteImport } from './routes/client/apprenant'
+import { Route as ClientCandidatRouteImport } from './routes/client/candidat'
+import { Route as ClientChangerMotDePasseRouteImport } from './routes/client/changer-mot-de-passe'
+import { Route as ClientDashboardRouteImport } from './routes/client/dashboard'
+import { Route as ClientDocumentsRouteImport } from './routes/client/documents'
+import { Route as ClientEntrepriseRouteImport } from './routes/client/entreprise'
+import { Route as ClientLoginRouteImport } from './routes/client/login'
+import { Route as ClientOutilsRouteImport } from './routes/client/outils'
+import { Route as OutilsIndexRouteImport } from './routes/outils/index'
+import { Route as OutilsAnalyseRouteImport } from './routes/outils/analyse'
+import { Route as OutilsCvRouteImport } from './routes/outils/cv'
+import { Route as OutilsLettreRouteImport } from './routes/outils/lettre'
+import { Route as OutilsLoginRouteImport } from './routes/outils/login'
 import { Route as AdminAppointmentsIndexRouteImport } from './routes/_admin/appointments/index'
-import { Route as ClientOutilsLettreRouteImport } from './routes/client/outils/lettre'
-import { Route as ClientOutilsCvRouteImport } from './routes/client/outils/cv'
-import { Route as ClientOutilsAnalyseRouteImport } from './routes/client/outils/analyse'
-import { Route as ClientEntrepriseDocumentsRouteImport } from './routes/client/entreprise/documents'
-import { Route as ClientEntrepriseAgendaRouteImport } from './routes/client/entreprise/agenda'
-import { Route as ClientCandidatDocumentsRouteImport } from './routes/client/candidat/documents'
-import { Route as ClientCandidatAgendaRouteImport } from './routes/client/candidat/agenda'
-import { Route as ClientApprenantFormationsRouteImport } from './routes/client/apprenant/formations'
-import { Route as ClientApprenantDocumentsRouteImport } from './routes/client/apprenant/documents'
-import { Route as ClientApprenantAgendaRouteImport } from './routes/client/apprenant/agenda'
-import { Route as AuthGoogleCallbackRouteImport } from './routes/auth/google/callback'
-import { Route as AdminTrainingIdRouteImport } from './routes/_admin/training/$id'
-import { Route as AdminLearnersIdRouteImport } from './routes/_admin/learners/$id'
-import { Route as AdminCompaniesIdRouteImport } from './routes/_admin/companies/$id'
+import { Route as AdminAtsIndexRouteImport } from './routes/_admin/ats/index'
+import { Route as AdminCandidatesIndexRouteImport } from './routes/_admin/candidates/index'
 import { Route as AdminCandidatesIdRouteImport } from './routes/_admin/candidates/$id'
+import { Route as AdminCompaniesIndexRouteImport } from './routes/_admin/companies/index'
+import { Route as AdminCompaniesIdRouteImport } from './routes/_admin/companies/$id'
+import { Route as AdminDocumentsIndexRouteImport } from './routes/_admin/documents/index'
+import { Route as AdminLearnersIndexRouteImport } from './routes/_admin/learners/index'
+import { Route as AdminLearnersIdRouteImport } from './routes/_admin/learners/$id'
+import { Route as AdminQuotesIndexRouteImport } from './routes/_admin/quotes/index'
+import { Route as AdminSettingsIndexRouteImport } from './routes/_admin/settings/index'
+import { Route as AdminTrainingIndexRouteImport } from './routes/_admin/training/index'
+import { Route as AdminTrainingIdRouteImport } from './routes/_admin/training/$id'
+import { Route as AuthGoogleCallbackRouteImport } from './routes/auth/google/callback'
+import { Route as ClientApprenantIndexRouteImport } from './routes/client/apprenant/index'
+import { Route as ClientApprenantAgendaRouteImport } from './routes/client/apprenant/agenda'
+import { Route as ClientApprenantDocumentsRouteImport } from './routes/client/apprenant/documents'
+import { Route as ClientApprenantFormationsRouteImport } from './routes/client/apprenant/formations'
+import { Route as ClientCandidatIndexRouteImport } from './routes/client/candidat/index'
+import { Route as ClientCandidatAgendaRouteImport } from './routes/client/candidat/agenda'
+import { Route as ClientCandidatDocumentsRouteImport } from './routes/client/candidat/documents'
+import { Route as ClientEntrepriseIndexRouteImport } from './routes/client/entreprise/index'
+import { Route as ClientEntrepriseAgendaRouteImport } from './routes/client/entreprise/agenda'
+import { Route as ClientEntrepriseDocumentsRouteImport } from './routes/client/entreprise/documents'
+import { Route as ClientOutilsAnalyseRouteImport } from './routes/client/outils/analyse'
+import { Route as ClientOutilsCvRouteImport } from './routes/client/outils/cv'
+import { Route as ClientOutilsLettreRouteImport } from './routes/client/outils/lettre'
 
-const OutilsRoute = OutilsRouteImport.update({
-  id: '/outils',
-  path: '/outils',
+const IndexRoute = IndexRouteImport.update({
+  id: '/',
+  path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const LoginRoute = LoginRouteImport.update({
-  id: '/login',
-  path: '/login',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ClientRoute = ClientRouteImport.update({
-  id: '/client',
-  path: '/client',
+const AdminRoute = AdminRouteImport.update({
+  id: '/_admin',
   getParentRoute: () => rootRouteImport,
 } as any)
 const CandidatureRoute = CandidatureRouteImport.update({
@@ -78,73 +72,34 @@ const CandidatureRoute = CandidatureRouteImport.update({
   path: '/candidature',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AdminRoute = AdminRouteImport.update({
-  id: '/_admin',
+const ClientRoute = ClientRouteImport.update({
+  id: '/client',
+  path: '/client',
   getParentRoute: () => rootRouteImport,
 } as any)
-const IndexRoute = IndexRouteImport.update({
-  id: '/',
-  path: '/',
+const LoginRoute = LoginRouteImport.update({
+  id: '/login',
+  path: '/login',
   getParentRoute: () => rootRouteImport,
 } as any)
-const OutilsIndexRoute = OutilsIndexRouteImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => OutilsRoute,
+const OutilsRoute = OutilsRouteImport.update({
+  id: '/outils',
+  path: '/outils',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminDashboardRoute = AdminDashboardRouteImport.update({
+  id: '/dashboard',
+  path: '/dashboard',
+  getParentRoute: () => AdminRoute,
 } as any)
 const BookingIndexRoute = BookingIndexRouteImport.update({
   id: '/booking/',
   path: '/booking/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const OutilsLoginRoute = OutilsLoginRouteImport.update({
-  id: '/login',
-  path: '/login',
-  getParentRoute: () => OutilsRoute,
-} as any)
-const OutilsLettreRoute = OutilsLettreRouteImport.update({
-  id: '/lettre',
-  path: '/lettre',
-  getParentRoute: () => OutilsRoute,
-} as any)
-const OutilsCvRoute = OutilsCvRouteImport.update({
-  id: '/cv',
-  path: '/cv',
-  getParentRoute: () => OutilsRoute,
-} as any)
-const OutilsAnalyseRoute = OutilsAnalyseRouteImport.update({
-  id: '/analyse',
-  path: '/analyse',
-  getParentRoute: () => OutilsRoute,
-} as any)
-const ClientOutilsRoute = ClientOutilsRouteImport.update({
-  id: '/outils',
-  path: '/outils',
-  getParentRoute: () => ClientRoute,
-} as any)
-const ClientLoginRoute = ClientLoginRouteImport.update({
-  id: '/login',
-  path: '/login',
-  getParentRoute: () => ClientRoute,
-} as any)
-const ClientEntrepriseRoute = ClientEntrepriseRouteImport.update({
-  id: '/entreprise',
-  path: '/entreprise',
-  getParentRoute: () => ClientRoute,
-} as any)
-const ClientDocumentsRoute = ClientDocumentsRouteImport.update({
-  id: '/documents',
-  path: '/documents',
-  getParentRoute: () => ClientRoute,
-} as any)
-const ClientDashboardRoute = ClientDashboardRouteImport.update({
-  id: '/dashboard',
-  path: '/dashboard',
-  getParentRoute: () => ClientRoute,
-} as any)
-const ClientChangerMotDePasseRoute = ClientChangerMotDePasseRouteImport.update({
-  id: '/changer-mot-de-passe',
-  path: '/changer-mot-de-passe',
+const ClientApprenantRoute = ClientApprenantRouteImport.update({
+  id: '/apprenant',
+  path: '/apprenant',
   getParentRoute: () => ClientRoute,
 } as any)
 const ClientCandidatRoute = ClientCandidatRouteImport.update({
@@ -152,64 +107,64 @@ const ClientCandidatRoute = ClientCandidatRouteImport.update({
   path: '/candidat',
   getParentRoute: () => ClientRoute,
 } as any)
-const ClientApprenantRoute = ClientApprenantRouteImport.update({
-  id: '/apprenant',
-  path: '/apprenant',
+const ClientChangerMotDePasseRoute = ClientChangerMotDePasseRouteImport.update({
+  id: '/changer-mot-de-passe',
+  path: '/changer-mot-de-passe',
   getParentRoute: () => ClientRoute,
 } as any)
-const AdminDashboardRoute = AdminDashboardRouteImport.update({
+const ClientDashboardRoute = ClientDashboardRouteImport.update({
   id: '/dashboard',
   path: '/dashboard',
-  getParentRoute: () => AdminRoute,
+  getParentRoute: () => ClientRoute,
 } as any)
-const ClientEntrepriseIndexRoute = ClientEntrepriseIndexRouteImport.update({
+const ClientDocumentsRoute = ClientDocumentsRouteImport.update({
+  id: '/documents',
+  path: '/documents',
+  getParentRoute: () => ClientRoute,
+} as any)
+const ClientEntrepriseRoute = ClientEntrepriseRouteImport.update({
+  id: '/entreprise',
+  path: '/entreprise',
+  getParentRoute: () => ClientRoute,
+} as any)
+const ClientLoginRoute = ClientLoginRouteImport.update({
+  id: '/login',
+  path: '/login',
+  getParentRoute: () => ClientRoute,
+} as any)
+const ClientOutilsRoute = ClientOutilsRouteImport.update({
+  id: '/outils',
+  path: '/outils',
+  getParentRoute: () => ClientRoute,
+} as any)
+const OutilsIndexRoute = OutilsIndexRouteImport.update({
   id: '/',
   path: '/',
-  getParentRoute: () => ClientEntrepriseRoute,
+  getParentRoute: () => OutilsRoute,
 } as any)
-const ClientCandidatIndexRoute = ClientCandidatIndexRouteImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => ClientCandidatRoute,
+const OutilsAnalyseRoute = OutilsAnalyseRouteImport.update({
+  id: '/analyse',
+  path: '/analyse',
+  getParentRoute: () => OutilsRoute,
 } as any)
-const ClientApprenantIndexRoute = ClientApprenantIndexRouteImport.update({
-  id: '/',
-  path: '/',
-  getParentRoute: () => ClientApprenantRoute,
+const OutilsCvRoute = OutilsCvRouteImport.update({
+  id: '/cv',
+  path: '/cv',
+  getParentRoute: () => OutilsRoute,
 } as any)
-const AdminTrainingIndexRoute = AdminTrainingIndexRouteImport.update({
-  id: '/training/',
-  path: '/training/',
-  getParentRoute: () => AdminRoute,
+const OutilsLettreRoute = OutilsLettreRouteImport.update({
+  id: '/lettre',
+  path: '/lettre',
+  getParentRoute: () => OutilsRoute,
 } as any)
-const AdminSettingsIndexRoute = AdminSettingsIndexRouteImport.update({
-  id: '/settings/',
-  path: '/settings/',
-  getParentRoute: () => AdminRoute,
+const OutilsLoginRoute = OutilsLoginRouteImport.update({
+  id: '/login',
+  path: '/login',
+  getParentRoute: () => OutilsRoute,
 } as any)
-const AdminQuotesIndexRoute = AdminQuotesIndexRouteImport.update({
-  id: '/quotes/',
-  path: '/quotes/',
-  getParentRoute: () => AdminRoute,
-} as any)
-const AdminLearnersIndexRoute = AdminLearnersIndexRouteImport.update({
-  id: '/learners/',
-  path: '/learners/',
-  getParentRoute: () => AdminRoute,
-} as any)
-const AdminDocumentsIndexRoute = AdminDocumentsIndexRouteImport.update({
-  id: '/documents/',
-  path: '/documents/',
-  getParentRoute: () => AdminRoute,
-} as any)
-const AdminCompaniesIndexRoute = AdminCompaniesIndexRouteImport.update({
-  id: '/companies/',
-  path: '/companies/',
-  getParentRoute: () => AdminRoute,
-} as any)
-const AdminCandidatesIndexRoute = AdminCandidatesIndexRouteImport.update({
-  id: '/candidates/',
-  path: '/candidates/',
+const AdminAppointmentsIndexRoute = AdminAppointmentsIndexRouteImport.update({
+  id: '/appointments/',
+  path: '/appointments/',
   getParentRoute: () => AdminRoute,
 } as any)
 const AdminAtsIndexRoute = AdminAtsIndexRouteImport.update({
@@ -217,77 +172,19 @@ const AdminAtsIndexRoute = AdminAtsIndexRouteImport.update({
   path: '/ats/',
   getParentRoute: () => AdminRoute,
 } as any)
-const AdminAppointmentsIndexRoute = AdminAppointmentsIndexRouteImport.update({
-  id: '/appointments/',
-  path: '/appointments/',
+const AdminCandidatesIndexRoute = AdminCandidatesIndexRouteImport.update({
+  id: '/candidates/',
+  path: '/candidates/',
   getParentRoute: () => AdminRoute,
 } as any)
-const ClientOutilsLettreRoute = ClientOutilsLettreRouteImport.update({
-  id: '/lettre',
-  path: '/lettre',
-  getParentRoute: () => ClientOutilsRoute,
-} as any)
-const ClientOutilsCvRoute = ClientOutilsCvRouteImport.update({
-  id: '/cv',
-  path: '/cv',
-  getParentRoute: () => ClientOutilsRoute,
-} as any)
-const ClientOutilsAnalyseRoute = ClientOutilsAnalyseRouteImport.update({
-  id: '/analyse',
-  path: '/analyse',
-  getParentRoute: () => ClientOutilsRoute,
-} as any)
-const ClientEntrepriseDocumentsRoute =
-  ClientEntrepriseDocumentsRouteImport.update({
-    id: '/documents',
-    path: '/documents',
-    getParentRoute: () => ClientEntrepriseRoute,
-  } as any)
-const ClientEntrepriseAgendaRoute = ClientEntrepriseAgendaRouteImport.update({
-  id: '/agenda',
-  path: '/agenda',
-  getParentRoute: () => ClientEntrepriseRoute,
-} as any)
-const ClientCandidatDocumentsRoute = ClientCandidatDocumentsRouteImport.update({
-  id: '/documents',
-  path: '/documents',
-  getParentRoute: () => ClientCandidatRoute,
-} as any)
-const ClientCandidatAgendaRoute = ClientCandidatAgendaRouteImport.update({
-  id: '/agenda',
-  path: '/agenda',
-  getParentRoute: () => ClientCandidatRoute,
-} as any)
-const ClientApprenantFormationsRoute =
-  ClientApprenantFormationsRouteImport.update({
-    id: '/formations',
-    path: '/formations',
-    getParentRoute: () => ClientApprenantRoute,
-  } as any)
-const ClientApprenantDocumentsRoute =
-  ClientApprenantDocumentsRouteImport.update({
-    id: '/documents',
-    path: '/documents',
-    getParentRoute: () => ClientApprenantRoute,
-  } as any)
-const ClientApprenantAgendaRoute = ClientApprenantAgendaRouteImport.update({
-  id: '/agenda',
-  path: '/agenda',
-  getParentRoute: () => ClientApprenantRoute,
-} as any)
-const AuthGoogleCallbackRoute = AuthGoogleCallbackRouteImport.update({
-  id: '/auth/google/callback',
-  path: '/auth/google/callback',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AdminTrainingIdRoute = AdminTrainingIdRouteImport.update({
-  id: '/training/$id',
-  path: '/training/$id',
+const AdminCandidatesIdRoute = AdminCandidatesIdRouteImport.update({
+  id: '/candidates/$id',
+  path: '/candidates/$id',
   getParentRoute: () => AdminRoute,
 } as any)
-const AdminLearnersIdRoute = AdminLearnersIdRouteImport.update({
-  id: '/learners/$id',
-  path: '/learners/$id',
+const AdminCompaniesIndexRoute = AdminCompaniesIndexRouteImport.update({
+  id: '/companies/',
+  path: '/companies/',
   getParentRoute: () => AdminRoute,
 } as any)
 const AdminCompaniesIdRoute = AdminCompaniesIdRouteImport.update({
@@ -295,10 +192,113 @@ const AdminCompaniesIdRoute = AdminCompaniesIdRouteImport.update({
   path: '/companies/$id',
   getParentRoute: () => AdminRoute,
 } as any)
-const AdminCandidatesIdRoute = AdminCandidatesIdRouteImport.update({
-  id: '/candidates/$id',
-  path: '/candidates/$id',
+const AdminDocumentsIndexRoute = AdminDocumentsIndexRouteImport.update({
+  id: '/documents/',
+  path: '/documents/',
   getParentRoute: () => AdminRoute,
+} as any)
+const AdminLearnersIndexRoute = AdminLearnersIndexRouteImport.update({
+  id: '/learners/',
+  path: '/learners/',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminLearnersIdRoute = AdminLearnersIdRouteImport.update({
+  id: '/learners/$id',
+  path: '/learners/$id',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminQuotesIndexRoute = AdminQuotesIndexRouteImport.update({
+  id: '/quotes/',
+  path: '/quotes/',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminSettingsIndexRoute = AdminSettingsIndexRouteImport.update({
+  id: '/settings/',
+  path: '/settings/',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminTrainingIndexRoute = AdminTrainingIndexRouteImport.update({
+  id: '/training/',
+  path: '/training/',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminTrainingIdRoute = AdminTrainingIdRouteImport.update({
+  id: '/training/$id',
+  path: '/training/$id',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AuthGoogleCallbackRoute = AuthGoogleCallbackRouteImport.update({
+  id: '/auth/google/callback',
+  path: '/auth/google/callback',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ClientApprenantIndexRoute = ClientApprenantIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => ClientApprenantRoute,
+} as any)
+const ClientApprenantAgendaRoute = ClientApprenantAgendaRouteImport.update({
+  id: '/agenda',
+  path: '/agenda',
+  getParentRoute: () => ClientApprenantRoute,
+} as any)
+const ClientApprenantDocumentsRoute =
+  ClientApprenantDocumentsRouteImport.update({
+    id: '/documents',
+    path: '/documents',
+    getParentRoute: () => ClientApprenantRoute,
+  } as any)
+const ClientApprenantFormationsRoute =
+  ClientApprenantFormationsRouteImport.update({
+    id: '/formations',
+    path: '/formations',
+    getParentRoute: () => ClientApprenantRoute,
+  } as any)
+const ClientCandidatIndexRoute = ClientCandidatIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => ClientCandidatRoute,
+} as any)
+const ClientCandidatAgendaRoute = ClientCandidatAgendaRouteImport.update({
+  id: '/agenda',
+  path: '/agenda',
+  getParentRoute: () => ClientCandidatRoute,
+} as any)
+const ClientCandidatDocumentsRoute = ClientCandidatDocumentsRouteImport.update({
+  id: '/documents',
+  path: '/documents',
+  getParentRoute: () => ClientCandidatRoute,
+} as any)
+const ClientEntrepriseIndexRoute = ClientEntrepriseIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => ClientEntrepriseRoute,
+} as any)
+const ClientEntrepriseAgendaRoute = ClientEntrepriseAgendaRouteImport.update({
+  id: '/agenda',
+  path: '/agenda',
+  getParentRoute: () => ClientEntrepriseRoute,
+} as any)
+const ClientEntrepriseDocumentsRoute =
+  ClientEntrepriseDocumentsRouteImport.update({
+    id: '/documents',
+    path: '/documents',
+    getParentRoute: () => ClientEntrepriseRoute,
+  } as any)
+const ClientOutilsAnalyseRoute = ClientOutilsAnalyseRouteImport.update({
+  id: '/analyse',
+  path: '/analyse',
+  getParentRoute: () => ClientOutilsRoute,
+} as any)
+const ClientOutilsCvRoute = ClientOutilsCvRouteImport.update({
+  id: '/cv',
+  path: '/cv',
+  getParentRoute: () => ClientOutilsRoute,
+} as any)
+const ClientOutilsLettreRoute = ClientOutilsLettreRouteImport.update({
+  id: '/lettre',
+  path: '/lettre',
+  getParentRoute: () => ClientOutilsRoute,
 } as any)
 
 export interface FileRoutesByFullPath {
@@ -606,32 +606,11 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/outils': {
-      id: '/outils'
-      path: '/outils'
-      fullPath: '/outils'
-      preLoaderRoute: typeof OutilsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/login': {
-      id: '/login'
-      path: '/login'
-      fullPath: '/login'
-      preLoaderRoute: typeof LoginRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/client': {
-      id: '/client'
-      path: '/client'
-      fullPath: '/client'
-      preLoaderRoute: typeof ClientRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/candidature': {
-      id: '/candidature'
-      path: '/candidature'
-      fullPath: '/candidature'
-      preLoaderRoute: typeof CandidatureRouteImport
+    '/': {
+      id: '/'
+      path: '/'
+      fullPath: '/'
+      preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_admin': {
@@ -641,19 +620,40 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/': {
-      id: '/'
-      path: '/'
-      fullPath: '/'
-      preLoaderRoute: typeof IndexRouteImport
+    '/candidature': {
+      id: '/candidature'
+      path: '/candidature'
+      fullPath: '/candidature'
+      preLoaderRoute: typeof CandidatureRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/outils/': {
-      id: '/outils/'
-      path: '/'
-      fullPath: '/outils/'
-      preLoaderRoute: typeof OutilsIndexRouteImport
-      parentRoute: typeof OutilsRoute
+    '/client': {
+      id: '/client'
+      path: '/client'
+      fullPath: '/client'
+      preLoaderRoute: typeof ClientRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/outils': {
+      id: '/outils'
+      path: '/outils'
+      fullPath: '/outils'
+      preLoaderRoute: typeof OutilsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_admin/dashboard': {
+      id: '/_admin/dashboard'
+      path: '/dashboard'
+      fullPath: '/dashboard'
+      preLoaderRoute: typeof AdminDashboardRouteImport
+      parentRoute: typeof AdminRoute
     }
     '/booking/': {
       id: '/booking/'
@@ -662,74 +662,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof BookingIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/outils/login': {
-      id: '/outils/login'
-      path: '/login'
-      fullPath: '/outils/login'
-      preLoaderRoute: typeof OutilsLoginRouteImport
-      parentRoute: typeof OutilsRoute
-    }
-    '/outils/lettre': {
-      id: '/outils/lettre'
-      path: '/lettre'
-      fullPath: '/outils/lettre'
-      preLoaderRoute: typeof OutilsLettreRouteImport
-      parentRoute: typeof OutilsRoute
-    }
-    '/outils/cv': {
-      id: '/outils/cv'
-      path: '/cv'
-      fullPath: '/outils/cv'
-      preLoaderRoute: typeof OutilsCvRouteImport
-      parentRoute: typeof OutilsRoute
-    }
-    '/outils/analyse': {
-      id: '/outils/analyse'
-      path: '/analyse'
-      fullPath: '/outils/analyse'
-      preLoaderRoute: typeof OutilsAnalyseRouteImport
-      parentRoute: typeof OutilsRoute
-    }
-    '/client/outils': {
-      id: '/client/outils'
-      path: '/outils'
-      fullPath: '/client/outils'
-      preLoaderRoute: typeof ClientOutilsRouteImport
-      parentRoute: typeof ClientRoute
-    }
-    '/client/login': {
-      id: '/client/login'
-      path: '/login'
-      fullPath: '/client/login'
-      preLoaderRoute: typeof ClientLoginRouteImport
-      parentRoute: typeof ClientRoute
-    }
-    '/client/entreprise': {
-      id: '/client/entreprise'
-      path: '/entreprise'
-      fullPath: '/client/entreprise'
-      preLoaderRoute: typeof ClientEntrepriseRouteImport
-      parentRoute: typeof ClientRoute
-    }
-    '/client/documents': {
-      id: '/client/documents'
-      path: '/documents'
-      fullPath: '/client/documents'
-      preLoaderRoute: typeof ClientDocumentsRouteImport
-      parentRoute: typeof ClientRoute
-    }
-    '/client/dashboard': {
-      id: '/client/dashboard'
-      path: '/dashboard'
-      fullPath: '/client/dashboard'
-      preLoaderRoute: typeof ClientDashboardRouteImport
-      parentRoute: typeof ClientRoute
-    }
-    '/client/changer-mot-de-passe': {
-      id: '/client/changer-mot-de-passe'
-      path: '/changer-mot-de-passe'
-      fullPath: '/client/changer-mot-de-passe'
-      preLoaderRoute: typeof ClientChangerMotDePasseRouteImport
+    '/client/apprenant': {
+      id: '/client/apprenant'
+      path: '/apprenant'
+      fullPath: '/client/apprenant'
+      preLoaderRoute: typeof ClientApprenantRouteImport
       parentRoute: typeof ClientRoute
     }
     '/client/candidat': {
@@ -739,88 +676,88 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ClientCandidatRouteImport
       parentRoute: typeof ClientRoute
     }
-    '/client/apprenant': {
-      id: '/client/apprenant'
-      path: '/apprenant'
-      fullPath: '/client/apprenant'
-      preLoaderRoute: typeof ClientApprenantRouteImport
+    '/client/changer-mot-de-passe': {
+      id: '/client/changer-mot-de-passe'
+      path: '/changer-mot-de-passe'
+      fullPath: '/client/changer-mot-de-passe'
+      preLoaderRoute: typeof ClientChangerMotDePasseRouteImport
       parentRoute: typeof ClientRoute
     }
-    '/_admin/dashboard': {
-      id: '/_admin/dashboard'
+    '/client/dashboard': {
+      id: '/client/dashboard'
       path: '/dashboard'
-      fullPath: '/dashboard'
-      preLoaderRoute: typeof AdminDashboardRouteImport
-      parentRoute: typeof AdminRoute
+      fullPath: '/client/dashboard'
+      preLoaderRoute: typeof ClientDashboardRouteImport
+      parentRoute: typeof ClientRoute
     }
-    '/client/entreprise/': {
-      id: '/client/entreprise/'
-      path: '/'
-      fullPath: '/client/entreprise/'
-      preLoaderRoute: typeof ClientEntrepriseIndexRouteImport
-      parentRoute: typeof ClientEntrepriseRoute
-    }
-    '/client/candidat/': {
-      id: '/client/candidat/'
-      path: '/'
-      fullPath: '/client/candidat/'
-      preLoaderRoute: typeof ClientCandidatIndexRouteImport
-      parentRoute: typeof ClientCandidatRoute
-    }
-    '/client/apprenant/': {
-      id: '/client/apprenant/'
-      path: '/'
-      fullPath: '/client/apprenant/'
-      preLoaderRoute: typeof ClientApprenantIndexRouteImport
-      parentRoute: typeof ClientApprenantRoute
-    }
-    '/_admin/training/': {
-      id: '/_admin/training/'
-      path: '/training'
-      fullPath: '/training/'
-      preLoaderRoute: typeof AdminTrainingIndexRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/_admin/settings/': {
-      id: '/_admin/settings/'
-      path: '/settings'
-      fullPath: '/settings/'
-      preLoaderRoute: typeof AdminSettingsIndexRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/_admin/quotes/': {
-      id: '/_admin/quotes/'
-      path: '/quotes'
-      fullPath: '/quotes/'
-      preLoaderRoute: typeof AdminQuotesIndexRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/_admin/learners/': {
-      id: '/_admin/learners/'
-      path: '/learners'
-      fullPath: '/learners/'
-      preLoaderRoute: typeof AdminLearnersIndexRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/_admin/documents/': {
-      id: '/_admin/documents/'
+    '/client/documents': {
+      id: '/client/documents'
       path: '/documents'
-      fullPath: '/documents/'
-      preLoaderRoute: typeof AdminDocumentsIndexRouteImport
-      parentRoute: typeof AdminRoute
+      fullPath: '/client/documents'
+      preLoaderRoute: typeof ClientDocumentsRouteImport
+      parentRoute: typeof ClientRoute
     }
-    '/_admin/companies/': {
-      id: '/_admin/companies/'
-      path: '/companies'
-      fullPath: '/companies/'
-      preLoaderRoute: typeof AdminCompaniesIndexRouteImport
-      parentRoute: typeof AdminRoute
+    '/client/entreprise': {
+      id: '/client/entreprise'
+      path: '/entreprise'
+      fullPath: '/client/entreprise'
+      preLoaderRoute: typeof ClientEntrepriseRouteImport
+      parentRoute: typeof ClientRoute
     }
-    '/_admin/candidates/': {
-      id: '/_admin/candidates/'
-      path: '/candidates'
-      fullPath: '/candidates/'
-      preLoaderRoute: typeof AdminCandidatesIndexRouteImport
+    '/client/login': {
+      id: '/client/login'
+      path: '/login'
+      fullPath: '/client/login'
+      preLoaderRoute: typeof ClientLoginRouteImport
+      parentRoute: typeof ClientRoute
+    }
+    '/client/outils': {
+      id: '/client/outils'
+      path: '/outils'
+      fullPath: '/client/outils'
+      preLoaderRoute: typeof ClientOutilsRouteImport
+      parentRoute: typeof ClientRoute
+    }
+    '/outils/': {
+      id: '/outils/'
+      path: '/'
+      fullPath: '/outils/'
+      preLoaderRoute: typeof OutilsIndexRouteImport
+      parentRoute: typeof OutilsRoute
+    }
+    '/outils/analyse': {
+      id: '/outils/analyse'
+      path: '/analyse'
+      fullPath: '/outils/analyse'
+      preLoaderRoute: typeof OutilsAnalyseRouteImport
+      parentRoute: typeof OutilsRoute
+    }
+    '/outils/cv': {
+      id: '/outils/cv'
+      path: '/cv'
+      fullPath: '/outils/cv'
+      preLoaderRoute: typeof OutilsCvRouteImport
+      parentRoute: typeof OutilsRoute
+    }
+    '/outils/lettre': {
+      id: '/outils/lettre'
+      path: '/lettre'
+      fullPath: '/outils/lettre'
+      preLoaderRoute: typeof OutilsLettreRouteImport
+      parentRoute: typeof OutilsRoute
+    }
+    '/outils/login': {
+      id: '/outils/login'
+      path: '/login'
+      fullPath: '/outils/login'
+      preLoaderRoute: typeof OutilsLoginRouteImport
+      parentRoute: typeof OutilsRoute
+    }
+    '/_admin/appointments/': {
+      id: '/_admin/appointments/'
+      path: '/appointments'
+      fullPath: '/appointments/'
+      preLoaderRoute: typeof AdminAppointmentsIndexRouteImport
       parentRoute: typeof AdminRoute
     }
     '/_admin/ats/': {
@@ -830,102 +767,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminAtsIndexRouteImport
       parentRoute: typeof AdminRoute
     }
-    '/_admin/appointments/': {
-      id: '/_admin/appointments/'
-      path: '/appointments'
-      fullPath: '/appointments/'
-      preLoaderRoute: typeof AdminAppointmentsIndexRouteImport
+    '/_admin/candidates/': {
+      id: '/_admin/candidates/'
+      path: '/candidates'
+      fullPath: '/candidates/'
+      preLoaderRoute: typeof AdminCandidatesIndexRouteImport
       parentRoute: typeof AdminRoute
     }
-    '/client/outils/lettre': {
-      id: '/client/outils/lettre'
-      path: '/lettre'
-      fullPath: '/client/outils/lettre'
-      preLoaderRoute: typeof ClientOutilsLettreRouteImport
-      parentRoute: typeof ClientOutilsRoute
-    }
-    '/client/outils/cv': {
-      id: '/client/outils/cv'
-      path: '/cv'
-      fullPath: '/client/outils/cv'
-      preLoaderRoute: typeof ClientOutilsCvRouteImport
-      parentRoute: typeof ClientOutilsRoute
-    }
-    '/client/outils/analyse': {
-      id: '/client/outils/analyse'
-      path: '/analyse'
-      fullPath: '/client/outils/analyse'
-      preLoaderRoute: typeof ClientOutilsAnalyseRouteImport
-      parentRoute: typeof ClientOutilsRoute
-    }
-    '/client/entreprise/documents': {
-      id: '/client/entreprise/documents'
-      path: '/documents'
-      fullPath: '/client/entreprise/documents'
-      preLoaderRoute: typeof ClientEntrepriseDocumentsRouteImport
-      parentRoute: typeof ClientEntrepriseRoute
-    }
-    '/client/entreprise/agenda': {
-      id: '/client/entreprise/agenda'
-      path: '/agenda'
-      fullPath: '/client/entreprise/agenda'
-      preLoaderRoute: typeof ClientEntrepriseAgendaRouteImport
-      parentRoute: typeof ClientEntrepriseRoute
-    }
-    '/client/candidat/documents': {
-      id: '/client/candidat/documents'
-      path: '/documents'
-      fullPath: '/client/candidat/documents'
-      preLoaderRoute: typeof ClientCandidatDocumentsRouteImport
-      parentRoute: typeof ClientCandidatRoute
-    }
-    '/client/candidat/agenda': {
-      id: '/client/candidat/agenda'
-      path: '/agenda'
-      fullPath: '/client/candidat/agenda'
-      preLoaderRoute: typeof ClientCandidatAgendaRouteImport
-      parentRoute: typeof ClientCandidatRoute
-    }
-    '/client/apprenant/formations': {
-      id: '/client/apprenant/formations'
-      path: '/formations'
-      fullPath: '/client/apprenant/formations'
-      preLoaderRoute: typeof ClientApprenantFormationsRouteImport
-      parentRoute: typeof ClientApprenantRoute
-    }
-    '/client/apprenant/documents': {
-      id: '/client/apprenant/documents'
-      path: '/documents'
-      fullPath: '/client/apprenant/documents'
-      preLoaderRoute: typeof ClientApprenantDocumentsRouteImport
-      parentRoute: typeof ClientApprenantRoute
-    }
-    '/client/apprenant/agenda': {
-      id: '/client/apprenant/agenda'
-      path: '/agenda'
-      fullPath: '/client/apprenant/agenda'
-      preLoaderRoute: typeof ClientApprenantAgendaRouteImport
-      parentRoute: typeof ClientApprenantRoute
-    }
-    '/auth/google/callback': {
-      id: '/auth/google/callback'
-      path: '/auth/google/callback'
-      fullPath: '/auth/google/callback'
-      preLoaderRoute: typeof AuthGoogleCallbackRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/_admin/training/$id': {
-      id: '/_admin/training/$id'
-      path: '/training/$id'
-      fullPath: '/training/$id'
-      preLoaderRoute: typeof AdminTrainingIdRouteImport
+    '/_admin/candidates/$id': {
+      id: '/_admin/candidates/$id'
+      path: '/candidates/$id'
+      fullPath: '/candidates/$id'
+      preLoaderRoute: typeof AdminCandidatesIdRouteImport
       parentRoute: typeof AdminRoute
     }
-    '/_admin/learners/$id': {
-      id: '/_admin/learners/$id'
-      path: '/learners/$id'
-      fullPath: '/learners/$id'
-      preLoaderRoute: typeof AdminLearnersIdRouteImport
+    '/_admin/companies/': {
+      id: '/_admin/companies/'
+      path: '/companies'
+      fullPath: '/companies/'
+      preLoaderRoute: typeof AdminCompaniesIndexRouteImport
       parentRoute: typeof AdminRoute
     }
     '/_admin/companies/$id': {
@@ -935,12 +795,152 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminCompaniesIdRouteImport
       parentRoute: typeof AdminRoute
     }
-    '/_admin/candidates/$id': {
-      id: '/_admin/candidates/$id'
-      path: '/candidates/$id'
-      fullPath: '/candidates/$id'
-      preLoaderRoute: typeof AdminCandidatesIdRouteImport
+    '/_admin/documents/': {
+      id: '/_admin/documents/'
+      path: '/documents'
+      fullPath: '/documents/'
+      preLoaderRoute: typeof AdminDocumentsIndexRouteImport
       parentRoute: typeof AdminRoute
+    }
+    '/_admin/learners/': {
+      id: '/_admin/learners/'
+      path: '/learners'
+      fullPath: '/learners/'
+      preLoaderRoute: typeof AdminLearnersIndexRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/_admin/learners/$id': {
+      id: '/_admin/learners/$id'
+      path: '/learners/$id'
+      fullPath: '/learners/$id'
+      preLoaderRoute: typeof AdminLearnersIdRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/_admin/quotes/': {
+      id: '/_admin/quotes/'
+      path: '/quotes'
+      fullPath: '/quotes/'
+      preLoaderRoute: typeof AdminQuotesIndexRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/_admin/settings/': {
+      id: '/_admin/settings/'
+      path: '/settings'
+      fullPath: '/settings/'
+      preLoaderRoute: typeof AdminSettingsIndexRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/_admin/training/': {
+      id: '/_admin/training/'
+      path: '/training'
+      fullPath: '/training/'
+      preLoaderRoute: typeof AdminTrainingIndexRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/_admin/training/$id': {
+      id: '/_admin/training/$id'
+      path: '/training/$id'
+      fullPath: '/training/$id'
+      preLoaderRoute: typeof AdminTrainingIdRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/auth/google/callback': {
+      id: '/auth/google/callback'
+      path: '/auth/google/callback'
+      fullPath: '/auth/google/callback'
+      preLoaderRoute: typeof AuthGoogleCallbackRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/client/apprenant/': {
+      id: '/client/apprenant/'
+      path: '/'
+      fullPath: '/client/apprenant/'
+      preLoaderRoute: typeof ClientApprenantIndexRouteImport
+      parentRoute: typeof ClientApprenantRoute
+    }
+    '/client/apprenant/agenda': {
+      id: '/client/apprenant/agenda'
+      path: '/agenda'
+      fullPath: '/client/apprenant/agenda'
+      preLoaderRoute: typeof ClientApprenantAgendaRouteImport
+      parentRoute: typeof ClientApprenantRoute
+    }
+    '/client/apprenant/documents': {
+      id: '/client/apprenant/documents'
+      path: '/documents'
+      fullPath: '/client/apprenant/documents'
+      preLoaderRoute: typeof ClientApprenantDocumentsRouteImport
+      parentRoute: typeof ClientApprenantRoute
+    }
+    '/client/apprenant/formations': {
+      id: '/client/apprenant/formations'
+      path: '/formations'
+      fullPath: '/client/apprenant/formations'
+      preLoaderRoute: typeof ClientApprenantFormationsRouteImport
+      parentRoute: typeof ClientApprenantRoute
+    }
+    '/client/candidat/': {
+      id: '/client/candidat/'
+      path: '/'
+      fullPath: '/client/candidat/'
+      preLoaderRoute: typeof ClientCandidatIndexRouteImport
+      parentRoute: typeof ClientCandidatRoute
+    }
+    '/client/candidat/agenda': {
+      id: '/client/candidat/agenda'
+      path: '/agenda'
+      fullPath: '/client/candidat/agenda'
+      preLoaderRoute: typeof ClientCandidatAgendaRouteImport
+      parentRoute: typeof ClientCandidatRoute
+    }
+    '/client/candidat/documents': {
+      id: '/client/candidat/documents'
+      path: '/documents'
+      fullPath: '/client/candidat/documents'
+      preLoaderRoute: typeof ClientCandidatDocumentsRouteImport
+      parentRoute: typeof ClientCandidatRoute
+    }
+    '/client/entreprise/': {
+      id: '/client/entreprise/'
+      path: '/'
+      fullPath: '/client/entreprise/'
+      preLoaderRoute: typeof ClientEntrepriseIndexRouteImport
+      parentRoute: typeof ClientEntrepriseRoute
+    }
+    '/client/entreprise/agenda': {
+      id: '/client/entreprise/agenda'
+      path: '/agenda'
+      fullPath: '/client/entreprise/agenda'
+      preLoaderRoute: typeof ClientEntrepriseAgendaRouteImport
+      parentRoute: typeof ClientEntrepriseRoute
+    }
+    '/client/entreprise/documents': {
+      id: '/client/entreprise/documents'
+      path: '/documents'
+      fullPath: '/client/entreprise/documents'
+      preLoaderRoute: typeof ClientEntrepriseDocumentsRouteImport
+      parentRoute: typeof ClientEntrepriseRoute
+    }
+    '/client/outils/analyse': {
+      id: '/client/outils/analyse'
+      path: '/analyse'
+      fullPath: '/client/outils/analyse'
+      preLoaderRoute: typeof ClientOutilsAnalyseRouteImport
+      parentRoute: typeof ClientOutilsRoute
+    }
+    '/client/outils/cv': {
+      id: '/client/outils/cv'
+      path: '/cv'
+      fullPath: '/client/outils/cv'
+      preLoaderRoute: typeof ClientOutilsCvRouteImport
+      parentRoute: typeof ClientOutilsRoute
+    }
+    '/client/outils/lettre': {
+      id: '/client/outils/lettre'
+      path: '/lettre'
+      fullPath: '/client/outils/lettre'
+      preLoaderRoute: typeof ClientOutilsLettreRouteImport
+      parentRoute: typeof ClientOutilsRoute
     }
   }
 }
@@ -1103,3 +1103,12 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { createStart } from '@tanstack/react-start'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+  }
+}
