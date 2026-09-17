@@ -44,7 +44,71 @@ export function useTrainingCourses() {
     return { error }
   }
 
-  return { courses, loading, refresh: fetch, create, update, remove }
+  async function duplicate(id: string) {
+    const course = courses.find(c => c.id === id)
+    if (!course) return { error: 'not_found' }
+
+    const { data: newCourse, error } = await supabase
+      .from('training_courses')
+      .insert({ title: `${course.title} (copie)`, description: course.description } as never)
+      .select('*, companies(name)')
+      .single() as { data: (Course & { companies: { name: string } | null }) | null; error: unknown }
+
+    if (error || !newCourse) return { error }
+
+    const { data: sessions } = await supabase
+      .from('training_sessions')
+      .select('*')
+      .eq('course_id', id)
+      .order('created_at', { ascending: true }) as { data: Session[] | null }
+
+    if (sessions?.length) {
+      // created_at/uploaded_at are set explicitly and spaced: a multi-row insert
+      // would give every copy the same now(), scrambling the display order.
+      const base = Date.now()
+      const sessionCopies = sessions.map((s, i) => ({
+        id: crypto.randomUUID(),
+        course_id: newCourse.id,
+        title: s.title,
+        session_date: s.session_date,
+        duration_hours: s.duration_hours,
+        location: s.location,
+        notes: s.notes,
+        created_at: new Date(base + i).toISOString(),
+      }))
+
+      await supabase.from('training_sessions').insert(sessionCopies as never)
+
+      const { data: docs } = await supabase
+        .from('documents')
+        .select('*')
+        .eq('entity_type', 'session')
+        .in('entity_id', sessions.map(s => s.id))
+        .order('uploaded_at', { ascending: true }) as { data: Database['public']['Tables']['documents']['Row'][] | null }
+
+      if (docs?.length) {
+        const newSessionId = new Map(sessions.map((s, i) => [s.id, sessionCopies[i].id]))
+        await supabase.from('documents').insert(
+          docs.map((doc, i) => ({
+            entity_type: 'session',
+            entity_id: newSessionId.get(doc.entity_id ?? '') ?? null,
+            name: doc.name,
+            file_url: doc.file_url,
+            mime_type: doc.mime_type,
+            file_size: doc.file_size,
+            category: doc.category,
+            client_visible: doc.client_visible,
+            uploaded_at: new Date(base + i).toISOString(),
+          })) as never
+        )
+      }
+    }
+
+    setCourses(prev => [newCourse, ...prev])
+    return { data: newCourse, error: null }
+  }
+
+  return { courses, loading, refresh: fetch, create, update, remove, duplicate }
 }
 
 export function useTrainingCourse(id: string) {

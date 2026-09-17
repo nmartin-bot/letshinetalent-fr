@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from '@tanstack/react-router'
 import { useState } from 'react'
-import { Plus, Search, BookOpen, Filter, ArrowUpDown, Check, X, Trash2 } from 'lucide-react'
+import { Plus, Search, BookOpen, Filter, ArrowUpDown, Check, X, Trash2, Copy } from 'lucide-react'
 import PageHeader from '@/components/layout/PageHeader'
 import EmptyState from '@/components/shared/EmptyState'
 import ConfirmDialog from '@/components/shared/ConfirmDialog'
@@ -32,7 +32,7 @@ const STATUS_TABS = [
 const ghostBtn = 'flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-gray-200 text-xs text-gray-500 hover:bg-gray-50 transition-colors'
 
 function TrainingPage() {
-  const { courses, loading, create, remove } = useTrainingCourses()
+  const { courses, loading, create, remove, duplicate } = useTrainingCourses()
   const [search, setSearch] = useState('')
   const [filterStatus, setFilterStatus] = useState('all')
   const [sortBy, setSortBy] = useState<'title_asc' | 'title_desc' | 'date_desc' | 'date_asc'>('title_asc')
@@ -233,6 +233,12 @@ function TrainingPage() {
                     </td>
                     <td className="pr-6 py-3">
                       <div className="flex items-center gap-1 justify-end opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button
+                          onClick={() => duplicate(course.id)}
+                          title="Dupliquer"
+                          className="p-1.5 text-gray-300 hover:text-gray-600 rounded-lg hover:bg-gray-100 transition-colors">
+                          <Copy className="w-3.5 h-3.5" />
+                        </button>
                         <button
                           onClick={() => setConfirmDeleteSingle({ id: course.id, title: course.title })}
                           className="p-1.5 text-gray-300 hover:text-red-500 rounded-lg hover:bg-red-50 transition-colors">
