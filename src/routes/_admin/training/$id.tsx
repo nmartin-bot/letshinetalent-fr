@@ -22,7 +22,9 @@ type SidebarView = 'session' | 'groupes' | 'apprenants' | 'infos'
 
 function TrainingCoursePage() {
   const { id } = Route.useParams()
-  const { course, sessions, learners, loading, addSession, removeSession, updateSession, getAttendance, updateCourse, refresh } = useTrainingCourse(id)
+  const { course, sessions, learners, loading, addSession, removeSession, updateSession, moveSession, getAttendance, updateCourse, refresh } = useTrainingCourse(id)
+  const [dragId, setDragId] = useState<string | null>(null)
+  const [dropIndex, setDropIndex] = useState<number | null>(null)
   const groups = useLearnerGroups(id)
   const [editing, setEditing] = useState(false)
   const [selectedSessionId, setSelectedSessionId] = useState<string | null>(null)
@@ -159,8 +161,21 @@ function TrainingCoursePage() {
                 sessions.map((s, i) => {
                   const isSelected = selectedSessionId === s.id
                   return (
-                    <div key={s.id} className={cn('group flex items-center gap-2.5 px-3 py-2.5 transition-colors', isSelected ? 'bg-gray-50' : 'hover:bg-gray-50/60')}>
-                      <button onClick={() => setSelectedSessionId(s.id)} className="flex items-center gap-2.5 flex-1 min-w-0 text-left">
+                    <div key={s.id}
+                      draggable={renamingId !== s.id}
+                      onDragStart={() => setDragId(s.id)}
+                      onDragEnd={() => { setDragId(null); setDropIndex(null) }}
+                      onDragOver={e => { e.preventDefault(); if (dragId && dragId !== s.id) setDropIndex(i) }}
+                      onDrop={e => {
+                        e.preventDefault()
+                        if (dragId) moveSession(dragId, i)
+                        setDragId(null); setDropIndex(null)
+                      }}
+                      className={cn('group flex items-center gap-2.5 px-3 py-2.5 transition-colors',
+                        isSelected ? 'bg-gray-50' : 'hover:bg-gray-50/60',
+                        dragId === s.id && 'opacity-40',
+                        dropIndex === i && dragId !== s.id && 'border-t-2 border-blue-400')}>
+                      <button onClick={() => setSelectedSessionId(s.id)} className="flex items-center gap-2.5 flex-1 min-w-0 text-left cursor-grab active:cursor-grabbing">
                         <div className={cn('w-6 h-6 rounded-md flex items-center justify-center shrink-0 text-[10px] font-bold',
                           isSelected ? 'bg-gray-900 text-white' : 'bg-gray-100 text-gray-500')}>
                           {i + 1}

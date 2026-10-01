@@ -124,6 +124,24 @@ export function useDocuments(entityType?: string, entityId?: string) {
     return { error }
   }
 
+  // parent_id n'était défini qu'à la création : déplacer un dossier imposait
+  // de le supprimer et de le recréer au bon endroit.
+  async function moveFolder(id: string, parentId: string | null) {
+    if (id === parentId) return { error: 'self' }
+
+    // Un dossier ne peut pas descendre dans sa propre descendance.
+    let cursor = parentId
+    while (cursor) {
+      if (cursor === id) return { error: 'cycle' }
+      cursor = folders.find(f => f.id === cursor)?.parent_id ?? null
+    }
+
+    const { data, error } = await supabase.from('document_folders')
+      .update({ parent_id: parentId } as never).eq('id', id).select().single() as { data: Folder | null; error: unknown }
+    if (!error && data) setFolders(prev => prev.map(f => f.id === id ? data : f))
+    return { data, error }
+  }
+
   async function moveDocument(id: string, folderId: string | null) {
     const { data, error } = await supabase.from('documents').update({ folder_id: folderId } as never).eq('id', id).select().single() as { data: Document | null; error: unknown }
     if (!error && data) setDocuments(prev => prev.map(d => d.id === id ? data : d))
@@ -140,7 +158,7 @@ export function useDocuments(entityType?: string, entityId?: string) {
     return data?.id ?? null
   }
 
-  return { documents, folders, loading, uploading, upload, updateDoc, remove, createFolder, renameFolder, removeFolder, moveDocument, ensureClientFolder, refresh: fetch }
+  return { documents, folders, loading, uploading, upload, updateDoc, remove, createFolder, renameFolder, removeFolder, moveFolder, moveDocument, ensureClientFolder, refresh: fetch }
 }
 
 export type EntityOption = { id: string; label: string; type: string }

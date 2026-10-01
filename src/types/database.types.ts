@@ -442,6 +442,7 @@ export interface Database {
           duration_hours: number | null
           location: string | null
           notes: string | null
+          position: number | null
         }
         Insert: {
           id?: string
@@ -451,6 +452,7 @@ export interface Database {
           duration_hours?: number | null
           location?: string | null
           notes?: string | null
+          position?: number | null
         }
         Update: {
           id?: string
@@ -460,6 +462,7 @@ export interface Database {
           duration_hours?: number | null
           location?: string | null
           notes?: string | null
+          position?: number | null
         }
       }
       attendance: {

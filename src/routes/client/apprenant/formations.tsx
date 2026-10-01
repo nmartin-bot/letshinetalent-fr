@@ -143,7 +143,7 @@ function ApprenantFormations() {
       const { data: allSessions } = await supabase.from('training_sessions')
         .select('id, title, session_date, duration_hours, location, notes')
         .eq('course_id', learner.training_course_id)
-        .order('created_at', { ascending: true }) as { data: Omit<Session, 'accessible'>[] | null }
+        .order('position', { ascending: true }) as { data: Omit<Session, 'accessible'>[] | null }
 
       const list = allSessions ?? []
       const currentIndex = learner.current_session_id ? list.findIndex(s => s.id === learner.current_session_id) : -1

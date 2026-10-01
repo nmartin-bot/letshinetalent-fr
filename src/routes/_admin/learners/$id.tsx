@@ -47,7 +47,7 @@ function LearnerPage() {
     createClient().from('training_sessions')
       .select('id, title, session_date')
       .eq('course_id', learner.training_course_id)
-      .order('session_date', { ascending: true })
+      .order('position', { ascending: true })
       .then(({ data }) => setCourseSessions((data ?? []) as { id: string; title: string | null; session_date: string | null }[]))
   }, [learner?.training_course_id])
 

@@ -62,11 +62,9 @@ export function useTrainingCourses() {
       .from('training_sessions')
       .select('*')
       .eq('course_id', id)
-      .order('created_at', { ascending: true }) as { data: Session[] | null }
+      .order('position', { ascending: true }) as { data: Session[] | null }
 
     if (sessions?.length) {
-      // created_at/uploaded_at are set explicitly and spaced: a multi-row insert
-      // would give every copy the same now(), scrambling the display order.
       const base = Date.now()
       const sessionCopies = sessions.map((s, i) => ({
         id: crypto.randomUUID(),
@@ -76,7 +74,7 @@ export function useTrainingCourses() {
         duration_hours: s.duration_hours,
         location: s.location,
         notes: s.notes,
-        created_at: new Date(base + i).toISOString(),
+        position: i,
       }))
 
       await supabase.from('training_sessions').insert(sessionCopies as never)
@@ -126,7 +124,7 @@ export function useTrainingCourse(id: string) {
     if (!silent) setLoading(true)
     const [{ data: c }, { data: s }, { data: l }] = await Promise.all([
       supabase.from('training_courses').select('*, companies(name)').eq('id', id).single(),
-      supabase.from('training_sessions').select('*').eq('course_id', id).order('created_at', { ascending: true }),
+      supabase.from('training_sessions').select('*').eq('course_id', id).order('position', { ascending: true }),
       supabase.from('learners').select('*').eq('training_course_id', id).order('last_name'),
     ])
     setCourse(c as (Course & { companies: { name: string } | null }) | null)
@@ -138,9 +136,30 @@ export function useTrainingCourse(id: string) {
   useEffect(() => { fetch() }, [fetch])
 
   async function addSession(values: Omit<SessionInsert, 'course_id' | 'session_date'> & { session_date?: string | null }) {
-    const { data, error } = await supabase.from('training_sessions').insert({ ...values, course_id: id } as never).select().single() as { data: Session | null; error: unknown }
+    const position = sessions.reduce((max, s) => Math.max(max, s.position ?? 0), -1) + 1
+    const { data, error } = await supabase.from('training_sessions').insert({ ...values, course_id: id, position } as never).select().single() as { data: Session | null; error: unknown }
     if (!error && data) setSessions(prev => [...prev, data])
     return { data, error }
+  }
+
+  // Déplace un module à un nouveau rang et renumérote la formation.
+  async function moveSession(sessionId: string, toIndex: number) {
+    const from = sessions.findIndex(s => s.id === sessionId)
+    if (from === -1 || from === toIndex) return
+
+    const reordered = [...sessions]
+    const [moved] = reordered.splice(from, 1)
+    reordered.splice(toIndex, 0, moved)
+
+    setSessions(reordered.map((s, i) => ({ ...s, position: i })))
+
+    const changed = reordered
+      .map((s, i) => ({ id: s.id, position: i }))
+      .filter(({ id, position }) => sessions.find(s => s.id === id)?.position !== position)
+
+    await Promise.all(changed.map(({ id, position }) =>
+      supabase.from('training_sessions').update({ position } as never).eq('id', id)
+    ))
   }
 
   async function removeSession(sessionId: string) {
@@ -170,7 +189,7 @@ export function useTrainingCourse(id: string) {
     return { data, error }
   }
 
-  return { course, sessions, learners, loading, addSession, removeSession, updateSession, getAttendance, toggleAttendance, updateCourse, refresh: fetch }
+  return { course, sessions, learners, loading, addSession, removeSession, updateSession, moveSession, getAttendance, toggleAttendance, updateCourse, refresh: fetch }
 }
 
 export function useLearnerGroups(courseId: string) {

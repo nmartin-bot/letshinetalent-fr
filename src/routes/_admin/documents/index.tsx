@@ -143,7 +143,19 @@ function isNativeFolder(folder: FolderType, allFolders: FolderType[]): boolean {
 }
 
 function DocumentsPage() {
-  const { documents, folders, loading, uploading, upload, updateDoc, remove, createFolder, renameFolder, removeFolder } = useDocuments()
+  const { documents, folders, loading, uploading, upload, updateDoc, remove, createFolder, renameFolder, removeFolder, moveFolder } = useDocuments()
+  const [dragFolderId, setDragFolderId] = useState<string | null>(null)
+  const [dropTarget, setDropTarget] = useState<string | null>(null)
+
+  // Un dossier natif est structurel : on ne le déplace pas.
+  async function handleDropOn(targetId: string | null) {
+    const id = dragFolderId
+    setDragFolderId(null); setDropTarget(null)
+    if (!id || id === targetId) return
+    const folder = folders.find(f => f.id === id)
+    if (!folder || folder.parent_id === targetId) return
+    await moveFolder(id, targetId)
+  }
   const [search, setSearch] = useState('')
   const [filterCategory, setFilterCategory] = useState<string | null>(null)
   const [showFilter, setShowFilter] = useState(false)
@@ -381,15 +393,24 @@ function DocumentsPage() {
           <div className="flex items-center gap-2 px-6 h-12 border-b border-gray-100 shrink-0">
             <div className="flex items-center gap-1 flex-1">
               <button onClick={() => setCurrentFolderId(null)}
-                className={cn('text-xs px-1.5 py-0.5 rounded hover:bg-gray-100 transition-colors', !currentFolderId ? 'text-gray-900 font-medium' : 'text-gray-400 hover:text-gray-600')}>
+                onDragOver={e => { if (dragFolderId) { e.preventDefault(); setDropTarget('__root__') } }}
+                onDragLeave={() => setDropTarget(t => t === '__root__' ? null : t)}
+                onDrop={e => { e.preventDefault(); handleDropOn(null) }}
+                className={cn('text-xs px-1.5 py-0.5 rounded hover:bg-gray-100 transition-colors',
+                  !currentFolderId ? 'text-gray-900 font-medium' : 'text-gray-400 hover:text-gray-600',
+                  dropTarget === '__root__' && 'ring-2 ring-blue-400 bg-blue-50')}>
                 Accueil
               </button>
               {breadcrumb.map(f => (
                 <div key={f.id} className="flex items-center gap-1">
                   <ChevronRight className="w-3 h-3 text-gray-300" />
                   <button onClick={() => setCurrentFolderId(f.id)}
+                    onDragOver={e => { if (dragFolderId && dragFolderId !== f.id) { e.preventDefault(); setDropTarget(f.id) } }}
+                    onDragLeave={() => setDropTarget(t => t === f.id ? null : t)}
+                    onDrop={e => { e.preventDefault(); handleDropOn(f.id) }}
                     className={cn('text-xs px-1.5 py-0.5 rounded hover:bg-gray-100 transition-colors',
-                      currentFolderId === f.id ? 'text-gray-900 font-medium' : 'text-gray-400 hover:text-gray-600')}>
+                      currentFolderId === f.id ? 'text-gray-900 font-medium' : 'text-gray-400 hover:text-gray-600',
+                      dropTarget === f.id && 'ring-2 ring-blue-400 bg-blue-50')}>
                     {f.name}
                   </button>
                 </div>
@@ -410,7 +431,20 @@ function DocumentsPage() {
           ) : view === 'grid' ? (
             <div className="flex flex-wrap gap-6 px-6 pt-8 pb-4 content-start items-start">
               {!search && currentFolders.map(folder => (
-                <div key={folder.id} className="relative group flex flex-col items-center gap-1.5" style={{ width: 80 }}>
+                <div key={folder.id}
+                  draggable={!isNativeFolder(folder, folders) && renamingFolder?.id !== folder.id}
+                  onDragStart={() => setDragFolderId(folder.id)}
+                  onDragEnd={() => { setDragFolderId(null); setDropTarget(null) }}
+                  onDragOver={e => {
+                    if (!dragFolderId || dragFolderId === folder.id) return
+                    e.preventDefault(); setDropTarget(folder.id)
+                  }}
+                  onDragLeave={() => setDropTarget(t => t === folder.id ? null : t)}
+                  onDrop={e => { e.preventDefault(); handleDropOn(folder.id) }}
+                  className={cn('relative group flex flex-col items-center gap-1.5 rounded-lg transition-all',
+                    dragFolderId === folder.id && 'opacity-40',
+                    dropTarget === folder.id && 'ring-2 ring-blue-400 ring-offset-2')}
+                  style={{ width: 80 }}>
                   <button onClick={() => setCurrentFolderId(folder.id)} className="hover:opacity-80 transition-opacity relative">
                     <MacFolder size={72} />
                     {!isNativeFolder(folder, folders) && (
