@@ -433,7 +433,11 @@ function DocumentsPage() {
               {!search && currentFolders.map(folder => (
                 <div key={folder.id}
                   draggable={!isNativeFolder(folder, folders) && renamingFolder?.id !== folder.id}
-                  onDragStart={() => setDragFolderId(folder.id)}
+                  onDragStart={e => {
+                    e.dataTransfer.effectAllowed = 'move'
+                    e.dataTransfer.setData('text/plain', folder.id)
+                    setDragFolderId(folder.id)
+                  }}
                   onDragEnd={() => { setDragFolderId(null); setDropTarget(null) }}
                   onDragOver={e => {
                     if (!dragFolderId || dragFolderId === folder.id) return
@@ -445,7 +449,12 @@ function DocumentsPage() {
                     dragFolderId === folder.id && 'opacity-40',
                     dropTarget === folder.id && 'ring-2 ring-blue-400 ring-offset-2')}
                   style={{ width: 80 }}>
-                  <button onClick={() => setCurrentFolderId(folder.id)} className="hover:opacity-80 transition-opacity relative">
+                  {/* div et non button : un <button> absorbe le mousedown et empêche
+                      le parent draggable de démarrer le glissement (Chrome, Safari). */}
+                  <div role="button" tabIndex={0}
+                    onClick={() => setCurrentFolderId(folder.id)}
+                    onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setCurrentFolderId(folder.id) } }}
+                    className="hover:opacity-80 transition-opacity relative cursor-pointer">
                     <MacFolder size={72} />
                     {!isNativeFolder(folder, folders) && (
                       <button
@@ -454,7 +463,7 @@ function DocumentsPage() {
                         <Trash2 className="w-2.5 h-2.5" />
                       </button>
                     )}
-                  </button>
+                  </div>
                   {renamingFolder?.id === folder.id ? (
                     <input autoFocus value={renameFolderValue}
                       onChange={e => setRenameFolderValue(e.target.value)}
