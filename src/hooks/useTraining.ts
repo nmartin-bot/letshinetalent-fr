@@ -9,6 +9,25 @@ type SessionInsert = Database['public']['Tables']['training_sessions']['Insert']
 type Attendance = Database['public']['Tables']['attendance']['Row']
 type Learner = Database['public']['Tables']['learners']['Row']
 type LearnerGroup = Database['public']['Tables']['learner_groups']['Row']
+type TrainingModule = Database['public']['Tables']['training_modules']['Row']
+
+const byPosition = <T extends { position: number | null }>(a: T, b: T) => (a.position ?? 0) - (b.position ?? 0)
+
+/**
+ * Ordre à plat d'une formation : contenus restés à la racine, puis le contenu
+ * de chaque module. Le portail déverrouille par rang dans cette liste, donc
+ * l'admin et le portail doivent l'un comme l'autre passer par ici.
+ */
+export function flattenCourse<S extends { id: string; position: number | null; module_id: string | null }>(
+  modules: { id: string; position: number }[],
+  sessions: S[],
+): S[] {
+  const loose = sessions.filter(s => !s.module_id).sort(byPosition)
+  const grouped = [...modules]
+    .sort((a, b) => a.position - b.position)
+    .flatMap(m => sessions.filter(s => s.module_id === m.id).sort(byPosition))
+  return [...loose, ...grouped]
+}
 type LearnerGroupInsert = Database['public']['Tables']['learner_groups']['Insert']
 
 export function useTrainingCourses() {
@@ -115,6 +134,7 @@ export function useTrainingCourse(id: string) {
   const supabase = createClient()
   const [course, setCourse] = useState<(Course & { companies: { name: string } | null }) | null>(null)
   const [sessions, setSessions] = useState<Session[]>([])
+  const [modules, setModules] = useState<TrainingModule[]>([])
   const [learners, setLearners] = useState<Learner[]>([])
   const [loading, setLoading] = useState(true)
 
@@ -122,13 +142,15 @@ export function useTrainingCourse(id: string) {
   // les panneaux ouverts (et leur état local) à chaque mise à jour.
   const fetch = useCallback(async (silent = false) => {
     if (!silent) setLoading(true)
-    const [{ data: c }, { data: s }, { data: l }] = await Promise.all([
+    const [{ data: c }, { data: s }, { data: m }, { data: l }] = await Promise.all([
       supabase.from('training_courses').select('*, companies(name)').eq('id', id).single(),
       supabase.from('training_sessions').select('*').eq('course_id', id).order('position', { ascending: true }),
+      supabase.from('training_modules').select('*').eq('course_id', id).order('position', { ascending: true }),
       supabase.from('learners').select('*').eq('training_course_id', id).order('last_name'),
     ])
     setCourse(c as (Course & { companies: { name: string } | null }) | null)
     setSessions((s as Session[] | null) ?? [])
+    setModules((m as TrainingModule[] | null) ?? [])
     setLearners((l as Learner[] | null) ?? [])
     setLoading(false)
   }, [id])
@@ -142,24 +164,94 @@ export function useTrainingCourse(id: string) {
     return { data, error }
   }
 
-  // Déplace un module à un nouveau rang et renumérote la formation.
-  async function moveSession(sessionId: string, toIndex: number) {
-    const from = sessions.findIndex(s => s.id === sessionId)
-    if (from === -1 || from === toIndex) return
+  // Place un contenu dans un module (ou à la racine si moduleId est null) au rang
+  // voulu, et renumérote ce seul conteneur. Le conteneur d'origine garde des trous
+  // dans sa numérotation, sans effet sur l'ordre affiché.
+  async function moveSession(sessionId: string, moduleId: string | null, toIndex: number) {
+    const session = sessions.find(s => s.id === sessionId)
+    if (!session) return { error: 'not_found' }
 
-    const reordered = [...sessions]
-    const [moved] = reordered.splice(from, 1)
+    const target = sessions
+      .filter(s => s.module_id === moduleId && s.id !== sessionId)
+      .sort(byPosition)
+    target.splice(toIndex, 0, session)
+
+    const updates = target.map((s, i) => ({ id: s.id, position: i }))
+    const unchanged = updates.every(u => {
+      const s = sessions.find(x => x.id === u.id)!
+      return s.position === u.position && s.module_id === moduleId
+    })
+    if (unchanged) return { error: null }
+
+    const previous = sessions
+    setSessions(prev => prev.map(s => {
+      const u = updates.find(u => u.id === s.id)
+      return u ? { ...s, position: u.position, module_id: moduleId } : s
+    }))
+
+    const results = await Promise.all(updates.map(u =>
+      supabase.from('training_sessions').update({ position: u.position, module_id: moduleId } as never).eq('id', u.id)
+    ))
+
+    // Sans ça un échec d'écriture laisse le nouvel ordre à l'écran, comme s'il
+    // était enregistré, et il disparaît au rechargement suivant.
+    const failed = results.find(r => r.error)
+    if (failed) {
+      setSessions(previous)
+      return { error: failed.error }
+    }
+    return { error: null }
+  }
+
+  async function addModule(name: string) {
+    const position = modules.reduce((max, m) => Math.max(max, m.position), -1) + 1
+    const { data, error } = await supabase.from('training_modules')
+      .insert({ course_id: id, name, position } as never).select().single() as { data: TrainingModule | null; error: unknown }
+    if (!error && data) setModules(prev => [...prev, data])
+    return { data, error }
+  }
+
+  async function renameModule(moduleId: string, name: string) {
+    const { data, error } = await supabase.from('training_modules')
+      .update({ name } as never).eq('id', moduleId).select().single() as { data: TrainingModule | null; error: unknown }
+    if (!error && data) setModules(prev => prev.map(m => m.id === moduleId ? data : m))
+    return { data, error }
+  }
+
+  // Les contenus du module retournent à la racine (ON DELETE SET NULL).
+  async function removeModule(moduleId: string) {
+    const { error } = await supabase.from('training_modules').delete().eq('id', moduleId)
+    if (!error) {
+      setModules(prev => prev.filter(m => m.id !== moduleId))
+      setSessions(prev => prev.map(s => s.module_id === moduleId ? { ...s, module_id: null } : s))
+    }
+    return { error }
+  }
+
+  async function moveModule(moduleId: string, toIndex: number) {
+    const from = modules.findIndex(m => m.id === moduleId)
+    if (from === -1 || from === toIndex) return { error: null }
+
+    const reordered = [...modules].sort((a, b) => a.position - b.position)
+    const [moved] = reordered.splice(reordered.findIndex(m => m.id === moduleId), 1)
     reordered.splice(toIndex, 0, moved)
 
-    setSessions(reordered.map((s, i) => ({ ...s, position: i })))
+    const previous = modules
+    setModules(reordered.map((m, i) => ({ ...m, position: i })))
 
-    const changed = reordered
-      .map((s, i) => ({ id: s.id, position: i }))
-      .filter(({ id, position }) => sessions.find(s => s.id === id)?.position !== position)
+    const results = await Promise.all(
+      reordered
+        .map((m, i) => ({ id: m.id, position: i }))
+        .filter(u => previous.find(m => m.id === u.id)?.position !== u.position)
+        .map(u => supabase.from('training_modules').update({ position: u.position } as never).eq('id', u.id))
+    )
 
-    await Promise.all(changed.map(({ id, position }) =>
-      supabase.from('training_sessions').update({ position } as never).eq('id', id)
-    ))
+    const failed = results.find(r => r.error)
+    if (failed) {
+      setModules(previous)
+      return { error: failed.error }
+    }
+    return { error: null }
   }
 
   async function removeSession(sessionId: string) {
@@ -189,7 +281,12 @@ export function useTrainingCourse(id: string) {
     return { data, error }
   }
 
-  return { course, sessions, learners, loading, addSession, removeSession, updateSession, moveSession, getAttendance, toggleAttendance, updateCourse, refresh: fetch }
+  return {
+    course, sessions, modules, learners, loading,
+    addSession, removeSession, updateSession, moveSession,
+    addModule, renameModule, removeModule, moveModule,
+    getAttendance, toggleAttendance, updateCourse, refresh: fetch,
+  }
 }
 
 export function useLearnerGroups(courseId: string) {

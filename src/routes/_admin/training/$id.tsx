@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from '@tanstack/react-router'
 import { useState, useEffect } from 'react'
-import { Plus, Trash2, Pencil, Users, BookOpen, Check, ChevronDown } from 'lucide-react'
-import { useTrainingCourse, useLearnerGroups } from '@/hooks/useTraining'
+import { Plus, Trash2, Pencil, Users, BookOpen, Check, ChevronDown, ChevronRight, Folder, FolderPlus } from 'lucide-react'
+import { useTrainingCourse, useLearnerGroups, flattenCourse } from '@/hooks/useTraining'
 import { CourseForm } from '@/routes/_admin/training/index'
 import PageHeader from '@/components/layout/PageHeader'
 import DocumentManager from '@/components/shared/DocumentManager'
@@ -18,13 +18,20 @@ type Attendance = Database['public']['Tables']['attendance']['Row']
 type Learner = Database['public']['Tables']['learners']['Row']
 type LearnerGroup = Database['public']['Tables']['learner_groups']['Row']
 type Session = Database['public']['Tables']['training_sessions']['Row']
+type TrainingModule = Database['public']['Tables']['training_modules']['Row']
 type SidebarView = 'session' | 'groupes' | 'apprenants' | 'infos'
 
 function TrainingCoursePage() {
   const { id } = Route.useParams()
-  const { course, sessions, learners, loading, addSession, removeSession, updateSession, moveSession, getAttendance, updateCourse, refresh } = useTrainingCourse(id)
-  const [dragId, setDragId] = useState<string | null>(null)
-  const [dropIndex, setDropIndex] = useState<number | null>(null)
+  const {
+    course, sessions, modules, learners, loading,
+    addSession, removeSession, updateSession, moveSession,
+    addModule, renameModule, removeModule, moveModule,
+    getAttendance, updateCourse, refresh,
+  } = useTrainingCourse(id)
+  const [showAddModule, setShowAddModule] = useState(false)
+  const [newModuleName, setNewModuleName] = useState('')
+  const [confirmDeleteModule, setConfirmDeleteModule] = useState<TrainingModule | null>(null)
   const groups = useLearnerGroups(id)
   const [editing, setEditing] = useState(false)
   const [selectedSessionId, setSelectedSessionId] = useState<string | null>(null)
@@ -33,8 +40,6 @@ function TrainingCoursePage() {
   const [newSessionTitle, setNewSessionTitle] = useState('')
   const [saving, setSaving] = useState(false)
   const [attendance, setAttendance] = useState<Record<string, Attendance[]>>({} as Record<string, Attendance[]>)
-  const [renamingId, setRenamingId] = useState<string | null>(null)
-  const [renameValue, setRenameValue] = useState('')
   const [confirmDeleteSession, setConfirmDeleteSession] = useState<{ id: string; title: string } | null>(null)
 
   const selectedSession = sessions.find(s => s.id === selectedSessionId) ?? sessions[0] ?? null
@@ -67,11 +72,6 @@ function TrainingCoursePage() {
     setSaving(false)
   }
 
-  async function handleRename(sessionId: string) {
-    if (!renameValue.trim()) return
-    await updateSession(sessionId, { title: renameValue.trim() })
-    setRenamingId(null)
-  }
 
   if (loading) return <div className="p-8 text-gray-400">Chargement...</div>
   if (!course) return <div className="p-8 text-gray-500">Formation introuvable.</div>
@@ -129,6 +129,36 @@ function TrainingCoursePage() {
         </Modal>
       )}
 
+      {showAddModule && (
+        <Modal title="Nouveau module" subtitle="Un module regroupe son cours, ses cas et leurs corrections." icon={Folder} onClose={() => setShowAddModule(false)} size="sm">
+          <form onSubmit={async e => {
+            e.preventDefault()
+            if (!newModuleName.trim()) return
+            setSaving(true)
+            await addModule(newModuleName.trim())
+            setNewModuleName(''); setShowAddModule(false); setSaving(false)
+          }} className="space-y-4">
+            <div>
+              <label className={fieldLabel}>Nom du module *</label>
+              <input required value={newModuleName} onChange={e => setNewModuleName(e.target.value)}
+                className={fieldInput} autoFocus placeholder="ex : Module 1 — Fondamentaux" />
+            </div>
+            <FormFooter onCancel={() => setShowAddModule(false)} saving={saving} label="Créer" />
+          </form>
+        </Modal>
+      )}
+
+      {confirmDeleteModule && (
+        <ConfirmDialog
+          title={`Supprimer le module "${confirmDeleteModule.name}" ?`}
+          description="Son contenu n'est pas supprimé : il remonte à la racine de la formation."
+          confirmLabel="Supprimer"
+          icon={Trash2}
+          onConfirm={async () => { await removeModule(confirmDeleteModule.id); setConfirmDeleteModule(null) }}
+          onCancel={() => setConfirmDeleteModule(null)}
+        />
+      )}
+
       {confirmDeleteSession && (
         <ConfirmDialog
           title={`Supprimer "${confirmDeleteSession.title}" ?`}
@@ -146,72 +176,20 @@ function TrainingCoursePage() {
 
       {sideView === 'session' ? (
         <div className="flex h-full overflow-hidden">
-          {/* Sessions sidebar */}
-          <div className="w-60 shrink-0 border-r border-gray-100 bg-white flex flex-col">
-            <div className="h-12 px-3 border-b border-gray-100 flex items-center">
-              <button onClick={() => setShowAddSession(true)}
-                className="flex items-center gap-1.5 w-full px-3 py-2 rounded-lg bg-gray-900 hover:bg-gray-800 text-white text-xs font-medium transition-colors">
-                <Plus className="w-3.5 h-3.5" />Nouvelle session
-              </button>
-            </div>
-            <div className="flex-1 overflow-y-auto py-1">
-              {sessions.length === 0 ? (
-                <p className="text-xs text-gray-400 text-center py-6 px-4">Aucune session</p>
-              ) : (
-                sessions.map((s, i) => {
-                  const isSelected = selectedSessionId === s.id
-                  return (
-                    <div key={s.id}
-                      draggable={renamingId !== s.id}
-                      onDragStart={() => setDragId(s.id)}
-                      onDragEnd={() => { setDragId(null); setDropIndex(null) }}
-                      onDragOver={e => { e.preventDefault(); if (dragId && dragId !== s.id) setDropIndex(i) }}
-                      onDrop={e => {
-                        e.preventDefault()
-                        if (dragId) moveSession(dragId, i)
-                        setDragId(null); setDropIndex(null)
-                      }}
-                      className={cn('group flex items-center gap-2.5 px-3 py-2.5 transition-colors',
-                        isSelected ? 'bg-gray-50' : 'hover:bg-gray-50/60',
-                        dragId === s.id && 'opacity-40',
-                        dropIndex === i && dragId !== s.id && 'border-t-2 border-blue-400')}>
-                      <button onClick={() => setSelectedSessionId(s.id)} className="flex items-center gap-2.5 flex-1 min-w-0 text-left cursor-grab active:cursor-grabbing">
-                        <div className={cn('w-6 h-6 rounded-md flex items-center justify-center shrink-0 text-[10px] font-bold',
-                          isSelected ? 'bg-gray-900 text-white' : 'bg-gray-100 text-gray-500')}>
-                          {i + 1}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          {renamingId === s.id ? (
-                            <input autoFocus value={renameValue}
-                              onChange={e => setRenameValue(e.target.value)}
-                              onBlur={() => handleRename(s.id)}
-                              onKeyDown={e => { if (e.key === 'Enter') handleRename(s.id); if (e.key === 'Escape') setRenamingId(null) }}
-                              className="text-xs font-medium bg-white border border-blue-300 rounded px-1 py-0.5 outline-none w-full"
-                              onClick={e => e.stopPropagation()}
-                            />
-                          ) : (
-                            <p className={cn('text-xs font-medium truncate', isSelected ? 'text-gray-900' : 'text-gray-600')}>
-                              {s.title ?? `Session ${i + 1}`}
-                            </p>
-                          )}
-                        </div>
-                      </button>
-                      <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
-                        <button onClick={() => { setRenamingId(s.id); setRenameValue(s.title ?? '') }}
-                          className="p-1 text-gray-400 hover:text-gray-600 rounded transition-colors">
-                          <Pencil className="w-3 h-3" />
-                        </button>
-                        <button onClick={() => setConfirmDeleteSession({ id: s.id, title: s.title ?? `Session ${i + 1}` })}
-                          className="p-1 text-gray-300 hover:text-red-500 rounded transition-colors">
-                          <Trash2 className="w-3 h-3" />
-                        </button>
-                      </div>
-                    </div>
-                  )
-                })
-              )}
-            </div>
-          </div>
+          <SessionTree
+            sessions={sessions}
+            modules={modules}
+            selectedId={selectedSessionId}
+            onSelect={setSelectedSessionId}
+            onAddSession={() => setShowAddSession(true)}
+            onAddModule={() => setShowAddModule(true)}
+            onMoveSession={moveSession}
+            onMoveModule={moveModule}
+            onRenameSession={(sid, title) => updateSession(sid, { title })}
+            onRenameModule={renameModule}
+            onDeleteSession={s => setConfirmDeleteSession({ id: s.id, title: s.title ?? 'ce contenu' })}
+            onDeleteModule={m => setConfirmDeleteModule(m)}
+          />
 
           {/* Session detail — documents */}
           {selectedSession ? (
@@ -228,11 +206,6 @@ function TrainingCoursePage() {
                     </span>
                   )}
                 </div>
-                <button
-                  onClick={() => { setRenamingId(selectedSession.id); setRenameValue(selectedSession.title ?? '') }}
-                  className="p-1.5 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100 transition-colors">
-                  <Pencil className="w-3.5 h-3.5" />
-                </button>
               </div>
 
               {/* Documents */}
@@ -264,6 +237,200 @@ function TrainingCoursePage() {
         </div>
       )}
     </>
+  )
+}
+
+function SessionTree({ sessions, modules, selectedId, onSelect, onAddSession, onAddModule, onMoveSession, onMoveModule, onRenameSession, onRenameModule, onDeleteSession, onDeleteModule }: {
+  sessions: Session[]
+  modules: TrainingModule[]
+  selectedId: string | null
+  onSelect: (id: string) => void
+  onAddSession: () => void
+  onAddModule: () => void
+  onMoveSession: (sessionId: string, moduleId: string | null, toIndex: number) => Promise<unknown>
+  onMoveModule: (moduleId: string, toIndex: number) => Promise<unknown>
+  onRenameSession: (id: string, title: string) => Promise<unknown>
+  onRenameModule: (id: string, name: string) => Promise<unknown>
+  onDeleteSession: (s: Session) => void
+  onDeleteModule: (m: TrainingModule) => void
+}) {
+  const [drag, setDrag] = useState<{ kind: 'session' | 'module'; id: string } | null>(null)
+  const [over, setOver] = useState<string | null>(null)
+  const [collapsed, setCollapsed] = useState<Set<string>>(new Set())
+  const [renaming, setRenaming] = useState<{ kind: 'session' | 'module'; id: string } | null>(null)
+  const [renameValue, setRenameValue] = useState('')
+
+  const ordered = [...modules].sort((a, b) => a.position - b.position)
+  const loose = sessions.filter(s => !s.module_id).sort((a, b) => (a.position ?? 0) - (b.position ?? 0))
+  const rank = new Map(flattenCourse(ordered, sessions).map((s, i) => [s.id, i + 1]))
+
+  function startRename(kind: 'session' | 'module', id: string, value: string) {
+    setRenaming({ kind, id }); setRenameValue(value)
+  }
+  async function commitRename() {
+    if (!renaming) return
+    const value = renameValue.trim()
+    if (value) {
+      if (renaming.kind === 'session') await onRenameSession(renaming.id, value)
+      else await onRenameModule(renaming.id, value)
+    }
+    setRenaming(null)
+  }
+  const renameInput = (
+    <input autoFocus value={renameValue}
+      onChange={e => setRenameValue(e.target.value)}
+      onBlur={commitRename}
+      onKeyDown={e => { if (e.key === 'Enter') commitRename(); if (e.key === 'Escape') setRenaming(null) }}
+      onClick={e => e.stopPropagation()}
+      className="text-xs font-medium bg-white border border-blue-300 rounded px-1 py-0.5 outline-none w-full" />
+  )
+
+  // Déposer sur un contenu = s'insérer juste avant lui, dans son conteneur.
+  async function dropOnSession(target: Session) {
+    if (drag?.kind !== 'session' || drag.id === target.id) return
+    const siblings = sessions
+      .filter(s => s.module_id === target.module_id && s.id !== drag.id)
+      .sort((a, b) => (a.position ?? 0) - (b.position ?? 0))
+    await onMoveSession(drag.id, target.module_id, siblings.findIndex(s => s.id === target.id))
+  }
+
+  function sessionRow(s: Session, indented: boolean) {
+    const isSelected = selectedId === s.id
+    const isRenaming = renaming?.kind === 'session' && renaming.id === s.id
+    return (
+      <div key={s.id}
+        draggable={!isRenaming}
+        onDragStart={() => setDrag({ kind: 'session', id: s.id })}
+        onDragEnd={() => { setDrag(null); setOver(null) }}
+        onDragOver={e => { if (drag?.kind === 'session' && drag.id !== s.id) { e.preventDefault(); setOver(s.id) } }}
+        onDragLeave={() => setOver(o => o === s.id ? null : o)}
+        onDrop={e => { e.preventDefault(); dropOnSession(s); setDrag(null); setOver(null) }}
+        className={cn('group flex items-center gap-2 py-2 pr-2 transition-colors',
+          indented ? 'pl-7' : 'pl-3',
+          isSelected ? 'bg-gray-50' : 'hover:bg-gray-50/60',
+          drag?.id === s.id && 'opacity-40',
+          over === s.id && 'border-t-2 border-blue-400')}>
+        <button onClick={() => onSelect(s.id)} className="flex items-center gap-2 flex-1 min-w-0 text-left cursor-grab active:cursor-grabbing">
+          <div className={cn('w-5 h-5 rounded flex items-center justify-center shrink-0 text-[9px] font-bold',
+            isSelected ? 'bg-gray-900 text-white' : 'bg-gray-100 text-gray-500')}>
+            {rank.get(s.id)}
+          </div>
+          <div className="flex-1 min-w-0">
+            {isRenaming ? renameInput : (
+              <p className={cn('text-xs font-medium truncate', isSelected ? 'text-gray-900' : 'text-gray-600')}>
+                {s.title ?? `Contenu ${rank.get(s.id)}`}
+              </p>
+            )}
+          </div>
+        </button>
+        <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
+          <button onClick={() => startRename('session', s.id, s.title ?? '')}
+            className="p-1 text-gray-400 hover:text-gray-600 rounded transition-colors">
+            <Pencil className="w-3 h-3" />
+          </button>
+          <button onClick={() => onDeleteSession(s)}
+            className="p-1 text-gray-300 hover:text-red-500 rounded transition-colors">
+            <Trash2 className="w-3 h-3" />
+          </button>
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <div className="w-60 shrink-0 border-r border-gray-100 bg-white flex flex-col">
+      <div className="h-12 px-2 border-b border-gray-100 flex items-center gap-1">
+        <button onClick={onAddModule} title="Nouveau module"
+          className="flex items-center justify-center gap-1 px-2 py-2 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 text-xs font-medium transition-colors shrink-0">
+          <FolderPlus className="w-3.5 h-3.5" />
+        </button>
+        <button onClick={onAddSession}
+          className="flex items-center justify-center gap-1.5 flex-1 px-2 py-2 rounded-lg bg-gray-900 hover:bg-gray-800 text-white text-xs font-medium transition-colors">
+          <Plus className="w-3.5 h-3.5" />Contenu
+        </button>
+      </div>
+
+      <div className="flex-1 overflow-y-auto py-1">
+        {sessions.length === 0 && modules.length === 0 ? (
+          <p className="text-xs text-gray-400 text-center py-6 px-4">Aucun contenu</p>
+        ) : (
+          <>
+            {loose.map(s => sessionRow(s, false))}
+
+            {/* Zone de dépôt pour sortir un contenu de son module */}
+            {drag?.kind === 'session' && sessions.find(s => s.id === drag.id)?.module_id && (
+              <div
+                onDragOver={e => { e.preventDefault(); setOver('__root__') }}
+                onDragLeave={() => setOver(o => o === '__root__' ? null : o)}
+                onDrop={async e => {
+                  e.preventDefault()
+                  await onMoveSession(drag.id, null, loose.length)
+                  setDrag(null); setOver(null)
+                }}
+                className={cn('mx-3 my-1.5 py-2 rounded-lg border border-dashed text-center text-[10px] transition-colors',
+                  over === '__root__' ? 'border-blue-400 bg-blue-50 text-blue-600' : 'border-gray-200 text-gray-400')}>
+                Sortir du module
+              </div>
+            )}
+
+            {ordered.map((m, mi) => {
+              const children = sessions.filter(s => s.module_id === m.id).sort((a, b) => (a.position ?? 0) - (b.position ?? 0))
+              const isOpen = !collapsed.has(m.id)
+              const isRenaming = renaming?.kind === 'module' && renaming.id === m.id
+              return (
+                <div key={m.id}>
+                  <div
+                    draggable={!isRenaming}
+                    onDragStart={() => setDrag({ kind: 'module', id: m.id })}
+                    onDragEnd={() => { setDrag(null); setOver(null) }}
+                    onDragOver={e => { if (drag && drag.id !== m.id) { e.preventDefault(); setOver(m.id) } }}
+                    onDragLeave={() => setOver(o => o === m.id ? null : o)}
+                    onDrop={async e => {
+                      e.preventDefault()
+                      if (drag?.kind === 'module') await onMoveModule(drag.id, mi)
+                      else if (drag?.kind === 'session') await onMoveSession(drag.id, m.id, children.length)
+                      setDrag(null); setOver(null)
+                    }}
+                    className={cn('group flex items-center gap-1.5 px-2 py-2 mt-0.5 transition-colors hover:bg-gray-50/60',
+                      drag?.id === m.id && 'opacity-40',
+                      over === m.id && (drag?.kind === 'module' ? 'border-t-2 border-blue-400' : 'ring-1 ring-inset ring-blue-400 bg-blue-50/50'))}>
+                    <button onClick={() => setCollapsed(prev => {
+                      const next = new Set(prev)
+                      next.has(m.id) ? next.delete(m.id) : next.add(m.id)
+                      return next
+                    })} className="p-0.5 text-gray-400 hover:text-gray-600 shrink-0">
+                      {isOpen ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
+                    </button>
+                    <Folder className="w-3.5 h-3.5 text-violet-500 shrink-0" />
+                    <div className="flex-1 min-w-0 cursor-grab active:cursor-grabbing">
+                      {isRenaming ? renameInput : (
+                        <p className="text-xs font-semibold text-gray-700 truncate">{m.name}</p>
+                      )}
+                    </div>
+                    <span className="text-[10px] text-gray-400 shrink-0">{children.length}</span>
+                    <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
+                      <button onClick={() => startRename('module', m.id, m.name)}
+                        className="p-1 text-gray-400 hover:text-gray-600 rounded transition-colors">
+                        <Pencil className="w-3 h-3" />
+                      </button>
+                      <button onClick={() => onDeleteModule(m)}
+                        className="p-1 text-gray-300 hover:text-red-500 rounded transition-colors">
+                        <Trash2 className="w-3 h-3" />
+                      </button>
+                    </div>
+                  </div>
+                  {isOpen && (
+                    children.length === 0
+                      ? <p className="pl-7 pr-3 py-1.5 text-[10px] text-gray-300">Module vide</p>
+                      : children.map(s => sessionRow(s, true))
+                  )}
+                </div>
+              )
+            })}
+          </>
+        )}
+      </div>
+    </div>
   )
 }
 

@@ -6,7 +6,7 @@ import { createClient } from '@/lib/supabase/client'
 import Modal from '@/components/shared/Modal'
 import EmptyState from '@/components/shared/EmptyState'
 import { useLearner } from '@/hooks/useLearners'
-import { useAllTrainingCourses } from '@/hooks/useTraining'
+import { useAllTrainingCourses, flattenCourse } from '@/hooks/useTraining'
 import LearnerForm from '@/components/learners/LearnerForm'
 import EntityTimeline from '@/components/shared/EntityTimeline'
 
@@ -44,11 +44,16 @@ function LearnerPage() {
 
   useEffect(() => {
     if (!learner?.training_course_id) { setCourseSessions([]); return }
-    createClient().from('training_sessions')
-      .select('id, title, session_date')
-      .eq('course_id', learner.training_course_id)
-      .order('position', { ascending: true })
-      .then(({ data }) => setCourseSessions((data ?? []) as { id: string; title: string | null; session_date: string | null }[]))
+    const supabase = createClient()
+    const courseId = learner.training_course_id
+    // Même ordre à plat que le portail : ce menu choisit le rang d'accès.
+    Promise.all([
+      supabase.from('training_sessions').select('id, title, session_date, position, module_id').eq('course_id', courseId),
+      supabase.from('training_modules').select('id, position').eq('course_id', courseId),
+    ]).then(([{ data: s }, { data: m }]) => {
+      const sessions = (s ?? []) as { id: string; title: string | null; session_date: string | null; position: number | null; module_id: string | null }[]
+      setCourseSessions(flattenCourse((m ?? []) as { id: string; position: number }[], sessions))
+    })
   }, [learner?.training_course_id])
 
   if (loading) return <div className="p-8 text-gray-400">Chargement...</div>

@@ -433,6 +433,29 @@ export interface Database {
           created_at?: string
         }
       }
+      training_modules: {
+        Row: {
+          id: string
+          course_id: string
+          name: string
+          position: number
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          course_id: string
+          name: string
+          position?: number
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          course_id?: string
+          name?: string
+          position?: number
+          created_at?: string
+        }
+      }
       training_sessions: {
         Row: {
           id: string
@@ -443,6 +466,7 @@ export interface Database {
           location: string | null
           notes: string | null
           position: number | null
+          module_id: string | null
         }
         Insert: {
           id?: string
@@ -453,6 +477,7 @@ export interface Database {
           location?: string | null
           notes?: string | null
           position?: number | null
+          module_id?: string | null
         }
         Update: {
           id?: string
@@ -463,6 +488,7 @@ export interface Database {
           location?: string | null
           notes?: string | null
           position?: number | null
+          module_id?: string | null
         }
       }
       attendance: {

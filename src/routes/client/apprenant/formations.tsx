@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { BookOpen, Lock, ArrowRight, ChevronLeft, FileText, File, Image } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { DocViewer, DocPreview, formatSize, type PreviewDoc } from '@/components/shared/DocPreview'
+import { flattenCourse } from '@/hooks/useTraining'
 
 type Session = {
   id: string
@@ -140,12 +141,17 @@ function ApprenantFormations() {
       if (!learner?.training_course_id) { setLoading(false); return }
 
       const { data: course } = await supabase.from('training_courses').select('title').eq('id', learner.training_course_id).single() as { data: { title: string } | null }
-      const { data: allSessions } = await supabase.from('training_sessions')
-        .select('id, title, session_date, duration_hours, location, notes')
-        .eq('course_id', learner.training_course_id)
-        .order('position', { ascending: true }) as { data: Omit<Session, 'accessible'>[] | null }
+      const [{ data: allSessions }, { data: allModules }] = await Promise.all([
+        supabase.from('training_sessions')
+          .select('id, title, session_date, duration_hours, location, notes, position, module_id')
+          .eq('course_id', learner.training_course_id) as unknown as Promise<{ data: (Omit<Session, 'accessible'> & { position: number | null; module_id: string | null })[] | null }>,
+        supabase.from('training_modules')
+          .select('id, position')
+          .eq('course_id', learner.training_course_id) as unknown as Promise<{ data: { id: string; position: number }[] | null }>,
+      ])
 
-      const list = allSessions ?? []
+      // Même ordre que l'admin : c'est le rang qui détermine l'accès.
+      const list = flattenCourse(allModules ?? [], allSessions ?? [])
       const currentIndex = learner.current_session_id ? list.findIndex(s => s.id === learner.current_session_id) : -1
 
       setCourseTitle(course?.title ?? null)
