@@ -182,6 +182,20 @@ export interface Database {
           created_at?: string
         }
       }
+      document_hidden_groups: {
+        Row: {
+          document_id: string
+          group_id: string
+        }
+        Insert: {
+          document_id: string
+          group_id: string
+        }
+        Update: {
+          document_id?: string
+          group_id?: string
+        }
+      }
       learner_groups: {
         Row: {
           id: string

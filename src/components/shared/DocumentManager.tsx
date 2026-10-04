@@ -5,6 +5,7 @@ import {
   Grid3X3, List, Pencil, X, MoreHorizontal, ChevronRight, Home,
 } from 'lucide-react'
 import { useDocuments, type Folder as FolderType, type Document as DocumentType } from '@/hooks/useDocuments'
+import { createClient } from '@/lib/supabase/client'
 import ConfirmDialog from '@/components/shared/ConfirmDialog'
 import EmptyState from '@/components/shared/EmptyState'
 import Modal, { fieldLabel, fieldInput, fieldSelect, FormFooter } from '@/components/shared/Modal'
@@ -95,7 +96,13 @@ function MacFolder({ size = 72 }: { size?: number }) {
   )
 }
 
-export default function DocumentManager({ entityType, entityId, clientMode }: { entityType: string; entityId: string; clientMode?: boolean }) {
+export default function DocumentManager({ entityType, entityId, clientMode, groups }: {
+  entityType: string
+  entityId: string
+  clientMode?: boolean
+  /** Promos de la formation : active le réglage de visibilité par groupe. */
+  groups?: { id: string; name: string }[]
+}) {
   const { documents, folders, loading, uploading, upload, updateDoc, remove, ensureClientFolder } = useDocuments(entityType, entityId)
 
   const [currentFolderId, setCurrentFolderId] = useState<string | null>(null)
@@ -395,6 +402,7 @@ export default function DocumentManager({ entityType, entityId, clientMode }: { 
           doc={editingDoc}
           entityType={entityType}
           folders={flattenFolders()}
+          groups={groups}
           onClose={() => setEditingDoc(null)}
           onSave={async fields => { await updateDoc(editingDoc.id, fields); setEditingDoc(null) }}
         />
@@ -639,7 +647,8 @@ function GridDocMenu({ doc, onClose, onEdit, onDelete }: {
   )
 }
 
-function EditDocModal({ doc, entityType, folders, onClose, onSave }: {
+function EditDocModal({ doc, entityType, folders, groups, onClose, onSave }: {
+  groups?: { id: string; name: string }[]
   doc: DocumentType
   entityType: string
   folders: { folder: FolderType; depth: number }[]
@@ -652,12 +661,31 @@ function EditDocModal({ doc, entityType, folders, onClose, onSave }: {
   const [category, setCategory] = useState(doc.category ?? 'autre')
   const [saving, setSaving] = useState(false)
   const isSession = entityType === 'session'
+  const showGroups = isSession && !!groups?.length
+  // Ensemble des promos pour lesquelles ce document est masqué.
+  const [hidden, setHidden] = useState<Set<string>>(new Set())
+
+  useEffect(() => {
+    if (!showGroups) return
+    createClient().from('document_hidden_groups').select('group_id').eq('document_id', doc.id)
+      .then(({ data }) => setHidden(new Set(((data ?? []) as { group_id: string }[]).map(r => r.group_id))))
+  }, [doc.id, showGroups])
+
+  async function saveHiddenGroups() {
+    const supabase = createClient()
+    await supabase.from('document_hidden_groups').delete().eq('document_id', doc.id)
+    if (hidden.size) {
+      await supabase.from('document_hidden_groups')
+        .insert([...hidden].map(group_id => ({ document_id: doc.id, group_id })) as never)
+    }
+  }
 
   return (
     <Modal title="Modifier le document" onClose={onClose}>
       <form onSubmit={async e => {
         e.preventDefault()
         setSaving(true)
+        if (showGroups) await saveHiddenGroups()
         await onSave({ name, folder_id: isSession ? null : (folderId || null), client_visible: isSession ? false : clientVisible, category: isSession ? 'autre' : category })
         setSaving(false)
       }} className="space-y-4">
@@ -665,6 +693,31 @@ function EditDocModal({ doc, entityType, folders, onClose, onSave }: {
           <label className={fieldLabel}>Nom du document</label>
           <input value={name} onChange={e => setName(e.target.value)} className={fieldInput} autoFocus required />
         </div>
+        {showGroups && (
+          <div>
+            <label className={fieldLabel}>Visible par</label>
+            <div className="border border-gray-200 rounded-lg divide-y divide-gray-50 max-h-44 overflow-y-auto">
+              {groups!.map(g => {
+                const visible = !hidden.has(g.id)
+                return (
+                  <label key={g.id} className="flex items-center gap-2.5 px-3 py-2 hover:bg-gray-50/60 cursor-pointer transition-colors">
+                    <input type="checkbox" checked={visible}
+                      onChange={() => setHidden(prev => {
+                        const next = new Set(prev)
+                        visible ? next.add(g.id) : next.delete(g.id)
+                        return next
+                      })}
+                      className="w-3.5 h-3.5 rounded border-gray-300 accent-gray-900 cursor-pointer shrink-0" />
+                    <span className="text-xs text-gray-700 truncate">{g.name}</span>
+                  </label>
+                )
+              })}
+            </div>
+            <p className="text-[11px] text-gray-400 mt-1.5">
+              Décochez une promotion pour lui masquer ce document. Les apprenants sans promotion voient tout.
+            </p>
+          </div>
+        )}
         {!isSession && (
           <>
             <div>

@@ -210,7 +210,7 @@ function TrainingCoursePage() {
 
               {/* Documents */}
               <div className="flex-1 overflow-hidden">
-                <DocumentManager entityType="session" entityId={selectedSession.id} />
+                <DocumentManager entityType="session" entityId={selectedSession.id} groups={groups.groups} />
               </div>
             </div>
           ) : (

@@ -42,17 +42,33 @@ function fileIcon(mime: string | null) {
   return <FileText className="w-5 h-5 text-violet-400" />
 }
 
-function SessionDetail({ session, index, onBack }: { session: Session; index: number; onBack: () => void }) {
+function SessionDetail({ session, index, groupId, onBack }: { session: Session; index: number; groupId: string | null; onBack: () => void }) {
   const [docs, setDocs] = useState<PreviewDoc[]>([])
   const [loading, setLoading] = useState(true)
   const [previewing, setPreviewing] = useState<PreviewDoc | null>(null)
 
   useEffect(() => {
     const supabase = createClient()
-    supabase.from('documents').select('id, name, file_url, mime_type, file_size')
-      .eq('entity_type', 'session').eq('entity_id', session.id)
-      .then(({ data }) => { setDocs((data ?? []).filter(d => d.file_url) as PreviewDoc[]); setLoading(false) })
-  }, [session.id])
+    const load = async () => {
+      // Les documents masqués pour cette promo sont écartés de la requête, et
+      // non filtrés après coup : leur URL ne doit pas atteindre le navigateur.
+      let hidden: string[] = []
+      if (groupId) {
+        const { data } = await supabase.from('document_hidden_groups')
+          .select('document_id').eq('group_id', groupId) as { data: { document_id: string }[] | null }
+        hidden = (data ?? []).map(r => r.document_id)
+      }
+
+      let q = supabase.from('documents').select('id, name, file_url, mime_type, file_size')
+        .eq('entity_type', 'session').eq('entity_id', session.id)
+      if (hidden.length) q = q.not('id', 'in', `(${hidden.join(',')})`)
+
+      const { data } = await q
+      setDocs((data ?? []).filter(d => d.file_url) as PreviewDoc[])
+      setLoading(false)
+    }
+    load()
+  }, [session.id, groupId])
 
   return (
     <div className="flex-1 overflow-auto">
@@ -128,6 +144,7 @@ function ApprenantFormations() {
   const [sessions, setSessions] = useState<Session[]>([])
   const [loading, setLoading] = useState(true)
   const [selected, setSelected] = useState<{ session: Session; index: number } | null>(null)
+  const [groupId, setGroupId] = useState<string | null>(null)
 
   useEffect(() => {
     const supabase = createClient()
@@ -137,8 +154,9 @@ function ApprenantFormations() {
       const learnerId = profile?.entity_id ?? ''
       if (!learnerId) { setLoading(false); return }
 
-      const { data: learner } = await supabase.from('learners').select('training_course_id, current_session_id').eq('id', learnerId).single() as { data: { training_course_id: string | null; current_session_id: string | null } | null }
+      const { data: learner } = await supabase.from('learners').select('training_course_id, current_session_id, group_id').eq('id', learnerId).single() as { data: { training_course_id: string | null; current_session_id: string | null; group_id: string | null } | null }
       if (!learner?.training_course_id) { setLoading(false); return }
+      setGroupId(learner.group_id)
 
       const { data: course } = await supabase.from('training_courses').select('title').eq('id', learner.training_course_id).single() as { data: { title: string } | null }
       const [{ data: allSessions }, { data: allModules }] = await Promise.all([
@@ -162,7 +180,7 @@ function ApprenantFormations() {
 
   if (loading) return null
 
-  if (selected) return <SessionDetail session={selected.session} index={selected.index} onBack={() => setSelected(null)} />
+  if (selected) return <SessionDetail session={selected.session} index={selected.index} groupId={groupId} onBack={() => setSelected(null)} />
 
   if (!courseTitle) {
     return (
