@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from '@tanstack/react-router'
 import { useState, useEffect } from 'react'
-import { Plus, Trash2, Pencil, Users, BookOpen, Check, ChevronDown, ChevronRight, Folder, FolderPlus } from 'lucide-react'
+import { Plus, Trash2, Pencil, Users, BookOpen, Check, ChevronDown, ChevronRight, Folder, FolderPlus, CornerLeftUp } from 'lucide-react'
 import { useTrainingCourse, useLearnerGroups, flattenCourse } from '@/hooks/useTraining'
 import { CourseForm } from '@/routes/_admin/training/index'
 import PageHeader from '@/components/layout/PageHeader'
@@ -333,6 +333,12 @@ function SessionTree({ sessions, modules, selectedId, onSelect, onAddSession, on
           </div>
         </div>
         <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
+          {s.module_id && (
+            <button onClick={() => onMoveSession(s.id, null, loose.length)} title="Sortir du module"
+              className="p-1 text-gray-400 hover:text-gray-600 rounded transition-colors">
+              <CornerLeftUp className="w-3 h-3" />
+            </button>
+          )}
           <button onClick={() => startRename('session', s.id, s.title ?? '')}
             className="p-1 text-gray-400 hover:text-gray-600 rounded transition-colors">
             <Pencil className="w-3 h-3" />
@@ -366,7 +372,8 @@ function SessionTree({ sessions, modules, selectedId, onSelect, onAddSession, on
           <>
             {loose.map(s => sessionRow(s, false))}
 
-            {/* Zone de dépôt pour sortir un contenu de son module */}
+            {/* Collante : sans défilement automatique pendant un glissement natif,
+                une zone en flux serait hors d'atteinte dans une longue liste. */}
             {drag?.kind === 'session' && sessions.find(s => s.id === drag.id)?.module_id && (
               <div
                 onDragOver={e => { e.preventDefault(); setOver('__root__') }}
@@ -376,8 +383,8 @@ function SessionTree({ sessions, modules, selectedId, onSelect, onAddSession, on
                   await onMoveSession(drag.id, null, loose.length)
                   setDrag(null); setOver(null)
                 }}
-                className={cn('mx-3 my-1.5 py-2 rounded-lg border border-dashed text-center text-[10px] transition-colors',
-                  over === '__root__' ? 'border-blue-400 bg-blue-50 text-blue-600' : 'border-gray-200 text-gray-400')}>
+                className={cn('sticky top-0 z-10 mx-3 my-1.5 py-2 rounded-lg border border-dashed text-center text-[10px] shadow-sm transition-colors',
+                  over === '__root__' ? 'border-blue-400 bg-blue-50 text-blue-600' : 'border-gray-300 bg-white text-gray-400')}>
                 Sortir du module
               </div>
             )}
