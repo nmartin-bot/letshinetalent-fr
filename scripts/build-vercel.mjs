@@ -197,7 +197,7 @@ await unlink('_vercel_entry_tmp.mjs')
 
 // 7. Function config
 await writeFile('.vercel/output/functions/index.func/.vc-config.json', JSON.stringify({
-  runtime: 'nodejs20.x',
+  runtime: 'nodejs22.x',
   handler: 'index.js',
   launcherType: 'Nodejs'
 }))
