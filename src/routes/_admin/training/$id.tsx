@@ -300,7 +300,11 @@ function SessionTree({ sessions, modules, selectedId, onSelect, onAddSession, on
     return (
       <div key={s.id}
         draggable={!isRenaming}
-        onDragStart={() => setDrag({ kind: 'session', id: s.id })}
+        onDragStart={e => {
+          e.dataTransfer.effectAllowed = 'move'
+          e.dataTransfer.setData('text/plain', s.id)
+          setDrag({ kind: 'session', id: s.id })
+        }}
         onDragEnd={() => { setDrag(null); setOver(null) }}
         onDragOver={e => { if (drag?.kind === 'session' && drag.id !== s.id) { e.preventDefault(); setOver(s.id) } }}
         onDragLeave={() => setOver(o => o === s.id ? null : o)}
@@ -310,7 +314,12 @@ function SessionTree({ sessions, modules, selectedId, onSelect, onAddSession, on
           isSelected ? 'bg-gray-50' : 'hover:bg-gray-50/60',
           drag?.id === s.id && 'opacity-40',
           over === s.id && 'border-t-2 border-blue-400')}>
-        <button onClick={() => onSelect(s.id)} className="flex items-center gap-2 flex-1 min-w-0 text-left cursor-grab active:cursor-grabbing">
+        {/* div et non button : un <button> absorbe le mousedown et empêche le
+            parent draggable de démarrer le glissement (Chrome, Safari). */}
+        <div role="button" tabIndex={0}
+          onClick={() => onSelect(s.id)}
+          onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onSelect(s.id) } }}
+          className="flex items-center gap-2 flex-1 min-w-0 text-left cursor-grab active:cursor-grabbing">
           <div className={cn('w-5 h-5 rounded flex items-center justify-center shrink-0 text-[9px] font-bold',
             isSelected ? 'bg-gray-900 text-white' : 'bg-gray-100 text-gray-500')}>
             {rank.get(s.id)}
@@ -322,7 +331,7 @@ function SessionTree({ sessions, modules, selectedId, onSelect, onAddSession, on
               </p>
             )}
           </div>
-        </button>
+        </div>
         <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
           <button onClick={() => startRename('session', s.id, s.title ?? '')}
             className="p-1 text-gray-400 hover:text-gray-600 rounded transition-colors">
@@ -381,7 +390,11 @@ function SessionTree({ sessions, modules, selectedId, onSelect, onAddSession, on
                 <div key={m.id}>
                   <div
                     draggable={!isRenaming}
-                    onDragStart={() => setDrag({ kind: 'module', id: m.id })}
+                    onDragStart={e => {
+                      e.dataTransfer.effectAllowed = 'move'
+                      e.dataTransfer.setData('text/plain', m.id)
+                      setDrag({ kind: 'module', id: m.id })
+                    }}
                     onDragEnd={() => { setDrag(null); setOver(null) }}
                     onDragOver={e => { if (drag && drag.id !== m.id) { e.preventDefault(); setOver(m.id) } }}
                     onDragLeave={() => setOver(o => o === m.id ? null : o)}
