@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { BookOpen, Lock, ArrowRight, ChevronLeft, FileText, File, Image } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { DocViewer, DocPreview, formatSize, type PreviewDoc } from '@/components/shared/DocPreview'
-import { flattenCourse } from '@/hooks/useTraining'
+import { flattenCourse, resolveAccess } from '@/hooks/useTraining'
 
 type Session = {
   id: string
@@ -32,7 +32,7 @@ function FileIcon({ mime }: { mime: string | null }) {
 }
 
 export const Route = createFileRoute('/client/apprenant/formations')({
-  component: ApprenantFormations,
+  component: () => <ClientFormations subjectType="learner" />,
 })
 
 function fileIcon(mime: string | null) {
@@ -139,61 +139,117 @@ function SessionDetail({ session, index, groupId, onBack }: { session: Session; 
   )
 }
 
-function ApprenantFormations() {
-  const [courseTitle, setCourseTitle] = useState<string | null>(null)
+type CourseEntry = { id: string; title: string; currentSessionId: string | null }
+
+export function ClientFormations({ subjectType }: { subjectType: 'learner' | 'candidate' }) {
+  const [courses, setCourses] = useState<CourseEntry[]>([])
+  const [courseId, setCourseId] = useState<string | null>(null)
   const [sessions, setSessions] = useState<Session[]>([])
   const [loading, setLoading] = useState(true)
   const [selected, setSelected] = useState<{ session: Session; index: number } | null>(null)
   const [groupId, setGroupId] = useState<string | null>(null)
 
+  // 1. Quelles formations cette personne a-t-elle le droit de voir ?
   useEffect(() => {
     const supabase = createClient()
     supabase.auth.getUser().then(async ({ data: { user } }) => {
       if (!user) { setLoading(false); return }
       const { data: profile } = await supabase.from('profiles').select('entity_id').eq('id', user.id).single() as { data: { entity_id: string } | null }
-      const learnerId = profile?.entity_id ?? ''
-      if (!learnerId) { setLoading(false); return }
+      const subjectId = profile?.entity_id ?? ''
+      if (!subjectId) { setLoading(false); return }
 
-      const { data: learner } = await supabase.from('learners').select('training_course_id, current_session_id, group_id').eq('id', learnerId).single() as { data: { training_course_id: string | null; current_session_id: string | null; group_id: string | null } | null }
-      if (!learner?.training_course_id) { setLoading(false); return }
-      setGroupId(learner.group_id)
+      let group: string | null = null
+      if (subjectType === 'learner') {
+        const { data } = await supabase.from('learners').select('group_id').eq('id', subjectId).single() as { data: { group_id: string | null } | null }
+        group = data?.group_id ?? null
+        setGroupId(group)
+      }
 
-      const { data: course } = await supabase.from('training_courses').select('title').eq('id', learner.training_course_id).single() as { data: { title: string } | null }
-      const [{ data: allSessions }, { data: allModules }] = await Promise.all([
-        supabase.from('training_sessions')
-          .select('id, title, session_date, duration_hours, location, notes, position, module_id')
-          .eq('course_id', learner.training_course_id) as unknown as Promise<{ data: (Omit<Session, 'accessible'> & { position: number | null; module_id: string | null })[] | null }>,
-        supabase.from('training_modules')
-          .select('id, position')
-          .eq('course_id', learner.training_course_id) as unknown as Promise<{ data: { id: string; position: number }[] | null }>,
-      ])
+      const { data: access } = await supabase.from('course_access')
+        .select('course_id, subject_type, subject_id, current_session_id') as {
+          data: { course_id: string; subject_type: 'candidate' | 'learner' | 'group' | 'all_candidates' | 'all_learners'; subject_id: string | null; current_session_id: string | null }[] | null
+        }
 
-      // Même ordre que l'admin : c'est le rang qui détermine l'accès.
-      const list = flattenCourse(allModules ?? [], allSessions ?? [])
-      const currentIndex = learner.current_session_id ? list.findIndex(s => s.id === learner.current_session_id) : -1
+      const granted = resolveAccess(access ?? [], { type: subjectType, id: subjectId, groupId: group })
+      if (granted.length === 0) { setCourses([]); setLoading(false); return }
 
-      setCourseTitle(course?.title ?? null)
-      setSessions(list.map((s, i) => ({ ...s, accessible: currentIndex >= 0 && i <= currentIndex })))
+      const { data: titles } = await supabase.from('training_courses')
+        .select('id, title').in('id', granted.map(g => g.courseId)).order('title') as { data: { id: string; title: string }[] | null }
+
+      const list = (titles ?? []).map(t => ({
+        id: t.id,
+        title: t.title,
+        currentSessionId: granted.find(g => g.courseId === t.id)?.currentSessionId ?? null,
+      }))
+      setCourses(list)
+      // Une seule formation : on entre directement, comme avant.
+      if (list.length === 1) setCourseId(list[0].id)
       setLoading(false)
     })
-  }, [])
+  }, [subjectType])
+
+  // 2. Contenu de la formation ouverte
+  useEffect(() => {
+    if (!courseId) { setSessions([]); return }
+    const course = courses.find(c => c.id === courseId)
+    if (!course) return
+    const supabase = createClient()
+    Promise.all([
+      supabase.from('training_sessions')
+        .select('id, title, session_date, duration_hours, location, notes, position, module_id')
+        .eq('course_id', courseId) as unknown as Promise<{ data: (Omit<Session, 'accessible'> & { position: number | null; module_id: string | null })[] | null }>,
+      supabase.from('training_modules')
+        .select('id, position')
+        .eq('course_id', courseId) as unknown as Promise<{ data: { id: string; position: number }[] | null }>,
+    ]).then(([{ data: allSessions }, { data: allModules }]) => {
+      // Même ordre que l'admin : c'est le rang qui détermine l'accès.
+      const list = flattenCourse(allModules ?? [], allSessions ?? [])
+      const currentIndex = course.currentSessionId ? list.findIndex(s => s.id === course.currentSessionId) : -1
+      setSessions(list.map((s, i) => ({ ...s, accessible: currentIndex >= 0 && i <= currentIndex })))
+    })
+  }, [courseId, courses])
 
   if (loading) return null
 
   if (selected) return <SessionDetail session={selected.session} index={selected.index} groupId={groupId} onBack={() => setSelected(null)} />
 
-  if (!courseTitle) {
+  if (courses.length === 0) {
     return (
       <div className="flex-1 flex items-center justify-center p-8">
         <div className="text-center">
           <BookOpen className="w-10 h-10 text-gray-300 mx-auto mb-3" />
-          <p className="text-sm font-medium text-gray-500">Aucune formation assignée</p>
-          <p className="text-xs text-gray-400 mt-1">Votre formateur n'a pas encore associé de formation à votre profil.</p>
+          <p className="text-sm font-medium text-gray-500">Aucune formation</p>
+          <p className="text-xs text-gray-400 mt-1">Aucune formation ne vous a encore été attribuée.</p>
         </div>
       </div>
     )
   }
 
+  // Plusieurs formations et aucune ouverte : on laisse choisir.
+  if (!courseId) {
+    return (
+      <div className="flex-1 overflow-auto">
+        <div className="p-8">
+          <h1 className="text-xl font-bold text-gray-900 mb-1">Mes formations</h1>
+          <p className="text-sm text-gray-500 mb-6">{courses.length} formations vous sont attribuées.</p>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {courses.map(c => (
+              <button key={c.id} onClick={() => setCourseId(c.id)}
+                className="flex items-center gap-4 bg-white border border-gray-200 rounded-2xl p-5 hover:border-violet-300 hover:shadow-md transition-all group text-left">
+                <div className="w-11 h-11 rounded-xl bg-violet-50 flex items-center justify-center shrink-0">
+                  <BookOpen className="w-5 h-5 text-violet-600" />
+                </div>
+                <span className="flex-1 min-w-0 font-semibold text-gray-900 text-sm leading-tight">{c.title}</span>
+                <ArrowRight className="w-4 h-4 text-gray-300 group-hover:text-violet-400 transition-colors shrink-0" />
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  const courseTitle = courses.find(c => c.id === courseId)?.title ?? ''
   const accessibleSessions = sessions.filter(s => s.accessible)
   const lockedSessions = sessions.filter(s => !s.accessible)
 
@@ -202,6 +258,11 @@ function ApprenantFormations() {
       <div className="p-8">
         {/* Bandeau carte */}
         <div className="bg-gradient-to-br from-violet-600 to-violet-400 rounded-2xl border border-violet-500 px-8 py-8 mb-8">
+          {courses.length > 1 && (
+            <button onClick={() => setCourseId(null)} className="flex items-center gap-1.5 text-sm text-white/70 hover:text-white mb-3 transition-colors">
+              <ChevronLeft className="w-4 h-4" />Toutes mes formations
+            </button>
+          )}
           <h1 className="text-2xl font-bold text-white mb-1">{courseTitle}</h1>
           <p className="text-white/70 text-sm">
             {accessibleSessions.length} module{accessibleSessions.length !== 1 ? 's' : ''} débloqué{accessibleSessions.length !== 1 ? 's' : ''} · {sessions.length} au total

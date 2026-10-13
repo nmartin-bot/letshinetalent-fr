@@ -51,6 +51,7 @@ import { Route as ClientApprenantFormationsRouteImport } from './routes/client/a
 import { Route as ClientCandidatIndexRouteImport } from './routes/client/candidat/index'
 import { Route as ClientCandidatAgendaRouteImport } from './routes/client/candidat/agenda'
 import { Route as ClientCandidatDocumentsRouteImport } from './routes/client/candidat/documents'
+import { Route as ClientCandidatFormationsRouteImport } from './routes/client/candidat/formations'
 import { Route as ClientEntrepriseIndexRouteImport } from './routes/client/entreprise/index'
 import { Route as ClientEntrepriseAgendaRouteImport } from './routes/client/entreprise/agenda'
 import { Route as ClientEntrepriseDocumentsRouteImport } from './routes/client/entreprise/documents'
@@ -269,6 +270,12 @@ const ClientCandidatDocumentsRoute = ClientCandidatDocumentsRouteImport.update({
   path: '/documents',
   getParentRoute: () => ClientCandidatRoute,
 } as any)
+const ClientCandidatFormationsRoute =
+  ClientCandidatFormationsRouteImport.update({
+    id: '/formations',
+    path: '/formations',
+    getParentRoute: () => ClientCandidatRoute,
+  } as any)
 const ClientEntrepriseIndexRoute = ClientEntrepriseIndexRouteImport.update({
   id: '/',
   path: '/',
@@ -332,6 +339,7 @@ export interface FileRoutesByFullPath {
   '/client/apprenant/formations': typeof ClientApprenantFormationsRoute
   '/client/candidat/agenda': typeof ClientCandidatAgendaRoute
   '/client/candidat/documents': typeof ClientCandidatDocumentsRoute
+  '/client/candidat/formations': typeof ClientCandidatFormationsRoute
   '/client/entreprise/agenda': typeof ClientEntrepriseAgendaRoute
   '/client/entreprise/documents': typeof ClientEntrepriseDocumentsRoute
   '/client/outils/analyse': typeof ClientOutilsAnalyseRoute
@@ -377,6 +385,7 @@ export interface FileRoutesByTo {
   '/client/apprenant/formations': typeof ClientApprenantFormationsRoute
   '/client/candidat/agenda': typeof ClientCandidatAgendaRoute
   '/client/candidat/documents': typeof ClientCandidatDocumentsRoute
+  '/client/candidat/formations': typeof ClientCandidatFormationsRoute
   '/client/entreprise/agenda': typeof ClientEntrepriseAgendaRoute
   '/client/entreprise/documents': typeof ClientEntrepriseDocumentsRoute
   '/client/outils/analyse': typeof ClientOutilsAnalyseRoute
@@ -428,6 +437,7 @@ export interface FileRoutesById {
   '/client/apprenant/formations': typeof ClientApprenantFormationsRoute
   '/client/candidat/agenda': typeof ClientCandidatAgendaRoute
   '/client/candidat/documents': typeof ClientCandidatDocumentsRoute
+  '/client/candidat/formations': typeof ClientCandidatFormationsRoute
   '/client/entreprise/agenda': typeof ClientEntrepriseAgendaRoute
   '/client/entreprise/documents': typeof ClientEntrepriseDocumentsRoute
   '/client/outils/analyse': typeof ClientOutilsAnalyseRoute
@@ -479,6 +489,7 @@ export interface FileRouteTypes {
     | '/client/apprenant/formations'
     | '/client/candidat/agenda'
     | '/client/candidat/documents'
+    | '/client/candidat/formations'
     | '/client/entreprise/agenda'
     | '/client/entreprise/documents'
     | '/client/outils/analyse'
@@ -524,6 +535,7 @@ export interface FileRouteTypes {
     | '/client/apprenant/formations'
     | '/client/candidat/agenda'
     | '/client/candidat/documents'
+    | '/client/candidat/formations'
     | '/client/entreprise/agenda'
     | '/client/entreprise/documents'
     | '/client/outils/analyse'
@@ -574,6 +586,7 @@ export interface FileRouteTypes {
     | '/client/apprenant/formations'
     | '/client/candidat/agenda'
     | '/client/candidat/documents'
+    | '/client/candidat/formations'
     | '/client/entreprise/agenda'
     | '/client/entreprise/documents'
     | '/client/outils/analyse'
@@ -900,6 +913,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ClientCandidatDocumentsRouteImport
       parentRoute: typeof ClientCandidatRoute
     }
+    '/client/candidat/formations': {
+      id: '/client/candidat/formations'
+      path: '/formations'
+      fullPath: '/client/candidat/formations'
+      preLoaderRoute: typeof ClientCandidatFormationsRouteImport
+      parentRoute: typeof ClientCandidatRoute
+    }
     '/client/entreprise/': {
       id: '/client/entreprise/'
       path: '/'
@@ -1002,12 +1022,14 @@ const ClientApprenantRouteWithChildren = ClientApprenantRoute._addFileChildren(
 interface ClientCandidatRouteChildren {
   ClientCandidatAgendaRoute: typeof ClientCandidatAgendaRoute
   ClientCandidatDocumentsRoute: typeof ClientCandidatDocumentsRoute
+  ClientCandidatFormationsRoute: typeof ClientCandidatFormationsRoute
   ClientCandidatIndexRoute: typeof ClientCandidatIndexRoute
 }
 
 const ClientCandidatRouteChildren: ClientCandidatRouteChildren = {
   ClientCandidatAgendaRoute: ClientCandidatAgendaRoute,
   ClientCandidatDocumentsRoute: ClientCandidatDocumentsRoute,
+  ClientCandidatFormationsRoute: ClientCandidatFormationsRoute,
   ClientCandidatIndexRoute: ClientCandidatIndexRoute,
 }
 

@@ -11,7 +11,37 @@ type Learner = Database['public']['Tables']['learners']['Row']
 type LearnerGroup = Database['public']['Tables']['learner_groups']['Row']
 type TrainingModule = Database['public']['Tables']['training_modules']['Row']
 
+type CourseAccess = Database['public']['Tables']['course_access']['Row']
+
 const byPosition = <T extends { position: number | null }>(a: T, b: T) => (a.position ?? 0) - (b.position ?? 0)
+
+/**
+ * Formations auxquelles une personne a droit, avec le curseur qui s'applique.
+ *
+ * Une même formation peut être attribuée à la personne, à sa promo et à toute sa
+ * catégorie à la fois. La plus précise l'emporte, pour qu'une attribution
+ * nominative puisse toujours corriger une attribution large.
+ */
+export function resolveAccess(
+  rows: Pick<CourseAccess, 'course_id' | 'subject_type' | 'subject_id' | 'current_session_id'>[],
+  who: { type: 'candidate' | 'learner'; id: string; groupId?: string | null },
+): { courseId: string; currentSessionId: string | null }[] {
+  const precision = (r: typeof rows[number]): number => {
+    if (r.subject_type === who.type && r.subject_id === who.id) return 3
+    if (r.subject_type === 'group' && who.groupId && r.subject_id === who.groupId) return 2
+    if (r.subject_type === (who.type === 'learner' ? 'all_learners' : 'all_candidates')) return 1
+    return 0
+  }
+
+  const best = new Map<string, { rank: number; currentSessionId: string | null }>()
+  for (const r of rows) {
+    const rank = precision(r)
+    if (rank === 0) continue
+    const seen = best.get(r.course_id)
+    if (!seen || rank > seen.rank) best.set(r.course_id, { rank, currentSessionId: r.current_session_id })
+  }
+  return [...best].map(([courseId, { currentSessionId }]) => ({ courseId, currentSessionId }))
+}
 
 /**
  * Ordre à plat d'une formation : contenus restés à la racine, puis le contenu
@@ -373,6 +403,56 @@ export function useLearnerGroups(courseId: string) {
   }
 
   return { groups, loading, create, update, remove, assignLearner, setMembers, setGroupSession, refresh: fetch }
+}
+
+export type AccessSubject = CourseAccess['subject_type']
+
+export function useCourseAccess(courseId: string) {
+  const supabase = createClient()
+  const [rows, setRows] = useState<CourseAccess[]>([])
+  const [candidates, setCandidates] = useState<{ id: string; label: string }[]>([])
+  const [learners, setLearners] = useState<{ id: string; label: string }[]>([])
+  const [loading, setLoading] = useState(true)
+
+  const fetch = useCallback(async () => {
+    const [{ data: a }, { data: c }, { data: l }] = await Promise.all([
+      supabase.from('course_access').select('*').eq('course_id', courseId),
+      supabase.from('candidates').select('id, first_name, last_name').order('last_name'),
+      supabase.from('learners').select('id, first_name, last_name').order('last_name'),
+    ])
+    setRows((a as CourseAccess[] | null) ?? [])
+    const name = (p: { id: string; first_name: string; last_name: string }) => ({ id: p.id, label: `${p.first_name} ${p.last_name}` })
+    setCandidates(((c as { id: string; first_name: string; last_name: string }[] | null) ?? []).map(name))
+    setLearners(((l as { id: string; first_name: string; last_name: string }[] | null) ?? []).map(name))
+    setLoading(false)
+  }, [courseId])
+
+  useEffect(() => { fetch() }, [fetch])
+
+  async function grant(subjectType: AccessSubject, subjectId: string | null) {
+    const { data, error } = await supabase.from('course_access')
+      .insert({ course_id: courseId, subject_type: subjectType, subject_id: subjectId } as never)
+      .select().single() as { data: CourseAccess | null; error: unknown }
+    if (!error && data) setRows(prev => [...prev, data])
+    return { error }
+  }
+
+  async function revoke(rowId: string) {
+    const { error } = await supabase.from('course_access').delete().eq('id', rowId)
+    if (!error) setRows(prev => prev.filter(r => r.id !== rowId))
+    return { error }
+  }
+
+  async function setCursor(rowId: string, sessionId: string | null) {
+    const previous = rows
+    setRows(prev => prev.map(r => r.id === rowId ? { ...r, current_session_id: sessionId } : r))
+    const { error } = await supabase.from('course_access')
+      .update({ current_session_id: sessionId } as never).eq('id', rowId)
+    if (error) { setRows(previous); return { error } }
+    return { error: null }
+  }
+
+  return { rows, candidates, learners, loading, grant, revoke, setCursor, refresh: fetch }
 }
 
 export function useAllTrainingCourses() {

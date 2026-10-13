@@ -78,6 +78,7 @@ const NAV: Record<EntityType, { href: string; label: string; icon: React.Compone
     { href: '/client/outils/cv', label: 'Mon CV', icon: FileText },
     { href: '/client/outils/lettre', label: 'Ma lettre', icon: Mail },
     { href: '/client/outils/analyse', label: 'Analyse ATS', icon: ScanSearch },
+    { href: '/client/candidat/formations', label: 'Mes formations', icon: BookOpen },
     { href: '/client/candidat/documents', label: 'Mes documents', icon: FolderOpen },
     { href: '/client/candidat/agenda', label: 'Mon agenda', icon: Calendar },
   ],

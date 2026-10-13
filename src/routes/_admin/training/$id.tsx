@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from '@tanstack/react-router'
 import { useState, useEffect } from 'react'
-import { Plus, Trash2, Pencil, Users, BookOpen, Check, ChevronDown, ChevronRight, Folder, FolderPlus, CornerLeftUp } from 'lucide-react'
-import { useTrainingCourse, useLearnerGroups, flattenCourse } from '@/hooks/useTraining'
+import { Plus, Trash2, Pencil, Users, BookOpen, Check, ChevronDown, ChevronRight, Folder, FolderPlus, CornerLeftUp, Lock } from 'lucide-react'
+import { useTrainingCourse, useLearnerGroups, useCourseAccess, flattenCourse, type AccessSubject } from '@/hooks/useTraining'
 import { CourseForm } from '@/routes/_admin/training/index'
 import PageHeader from '@/components/layout/PageHeader'
 import DocumentManager from '@/components/shared/DocumentManager'
@@ -19,7 +19,7 @@ type Learner = Database['public']['Tables']['learners']['Row']
 type LearnerGroup = Database['public']['Tables']['learner_groups']['Row']
 type Session = Database['public']['Tables']['training_sessions']['Row']
 type TrainingModule = Database['public']['Tables']['training_modules']['Row']
-type SidebarView = 'session' | 'groupes' | 'apprenants' | 'infos'
+type SidebarView = 'session' | 'groupes' | 'acces' | 'apprenants' | 'infos'
 
 function TrainingCoursePage() {
   const { id } = Route.useParams()
@@ -88,11 +88,11 @@ function TrainingCoursePage() {
         ]}
         secondBarLeft={
           <div className="flex items-center gap-1">
-            {(['session', 'groupes', 'apprenants', 'infos'] as SidebarView[]).map(v => (
+            {(['session', 'groupes', 'acces', 'apprenants', 'infos'] as SidebarView[]).map(v => (
               <button key={v} onClick={() => setSideView(v)}
                 className={cn('px-3 py-1 rounded-full text-xs font-medium transition-colors',
                   sideView === v ? 'bg-gray-900 text-white' : 'text-gray-500 hover:text-gray-700')}>
-                {v === 'session' ? 'Sessions' : v === 'groupes' ? 'Groupes' : v === 'apprenants' ? 'Apprenants' : 'Infos'}
+                {v === 'session' ? 'Sessions' : v === 'groupes' ? 'Groupes' : v === 'acces' ? 'Accès' : v === 'apprenants' ? 'Apprenants' : 'Infos'}
               </button>
             ))}
           </div>
@@ -223,6 +223,10 @@ function TrainingCoursePage() {
         <div className="h-full overflow-y-auto bg-white">
           <GroupsPanel groups={groups} learners={learners} sessions={sessions} onChanged={() => refresh(true)} />
         </div>
+      ) : sideView === 'acces' ? (
+        <div className="h-full overflow-y-auto bg-white">
+          <AccessPanel courseId={id} sessions={sessions} groups={groups.groups} />
+        </div>
       ) : sideView === 'apprenants' ? (
         <div className="h-full overflow-y-auto bg-white">
           <ApprenantsList
@@ -237,6 +241,131 @@ function TrainingCoursePage() {
         </div>
       )}
     </>
+  )
+}
+
+const SUBJECT_LABELS: Record<string, string> = {
+  all_candidates: 'Tous les candidats',
+  all_learners: 'Tous les apprenants',
+}
+
+function AccessPanel({ courseId, sessions, groups }: {
+  courseId: string
+  sessions: Session[]
+  groups: LearnerGroup[]
+}) {
+  const { rows, candidates, learners, loading, grant, revoke, setCursor } = useCourseAccess(courseId)
+  const [adding, setAdding] = useState(false)
+  const [openCursor, setOpenCursor] = useState<string | null>(null)
+
+  const labelFor = (r: typeof rows[number]) => {
+    if (r.subject_type === 'group') return groups.find(g => g.id === r.subject_id)?.name ?? 'Promotion supprimée'
+    if (r.subject_type === 'candidate') return candidates.find(c => c.id === r.subject_id)?.label ?? 'Candidat inconnu'
+    if (r.subject_type === 'learner') return learners.find(l => l.id === r.subject_id)?.label ?? 'Apprenant inconnu'
+    return SUBJECT_LABELS[r.subject_type] ?? r.subject_type
+  }
+  const kindFor = (r: typeof rows[number]) =>
+    r.subject_type === 'group' ? 'Promotion'
+      : r.subject_type === 'candidate' ? 'Candidat'
+        : r.subject_type === 'learner' ? 'Apprenant'
+          : 'Catégorie'
+
+  // Déjà attribué : on ne propose pas deux fois le même bénéficiaire.
+  const taken = new Set(rows.map(r => `${r.subject_type}:${r.subject_id ?? ''}`))
+  const options: { type: AccessSubject; id: string | null; label: string; kind: string }[] = [
+    ...(['all_candidates', 'all_learners'] as const).map(t => ({ type: t as AccessSubject, id: null, label: SUBJECT_LABELS[t], kind: 'Catégorie' })),
+    ...groups.map(g => ({ type: 'group' as AccessSubject, id: g.id, label: g.name, kind: 'Promotion' })),
+    ...candidates.map(c => ({ type: 'candidate' as AccessSubject, id: c.id, label: c.label, kind: 'Candidat' })),
+    ...learners.map(l => ({ type: 'learner' as AccessSubject, id: l.id, label: l.label, kind: 'Apprenant' })),
+  ].filter(o => !taken.has(`${o.type}:${o.id ?? ''}`))
+
+  return (
+    <div className="p-6">
+      <div className="flex items-center justify-between mb-5">
+        <div>
+          <h2 className="text-sm font-semibold text-gray-900">Qui a accès à cette formation</h2>
+          <p className="text-xs text-gray-500 mt-0.5">
+            Attribuez-la à une personne, à une promotion, ou à toute une catégorie. Chaque ligne a son propre curseur de modules.
+          </p>
+        </div>
+        <button onClick={() => setAdding(v => !v)}
+          className="flex items-center gap-1.5 bg-gray-900 hover:bg-gray-800 text-white px-3 py-1.5 rounded-lg text-xs font-medium transition-colors shrink-0">
+          <Plus className="w-3.5 h-3.5" />Attribuer
+        </button>
+      </div>
+
+      {adding && (
+        <div className="border border-gray-200 rounded-xl mb-4 max-w-2xl max-h-64 overflow-y-auto divide-y divide-gray-50">
+          {options.length === 0 ? (
+            <p className="text-xs text-gray-400 px-4 py-3">Tout le monde a déjà accès.</p>
+          ) : options.map(o => (
+            <button key={`${o.type}:${o.id}`}
+              onClick={async () => { await grant(o.type, o.id); setAdding(false) }}
+              className="flex items-center gap-3 w-full px-4 py-2 hover:bg-gray-50 text-left transition-colors">
+              <span className="text-[10px] font-semibold text-gray-400 uppercase tracking-wide w-20 shrink-0">{o.kind}</span>
+              <span className="text-xs text-gray-800 truncate">{o.label}</span>
+            </button>
+          ))}
+        </div>
+      )}
+
+      {loading ? (
+        <p className="text-sm text-gray-400">Chargement...</p>
+      ) : rows.length === 0 ? (
+        <div className="text-center py-16 border border-dashed border-gray-200 rounded-xl max-w-2xl">
+          <Lock className="w-8 h-8 text-gray-200 mx-auto mb-3" />
+          <p className="text-sm text-gray-500 mb-1">Personne n'a accès à cette formation.</p>
+          <p className="text-xs text-gray-400">Elle reste invisible dans les espaces clients tant que rien n'est attribué.</p>
+        </div>
+      ) : (
+        <div className="space-y-2 max-w-2xl">
+          {rows.map(r => {
+            const current = sessions.find(s => s.id === r.current_session_id)
+            return (
+              <div key={r.id} className="group flex items-center gap-3 border border-gray-200 rounded-xl px-4 py-3 hover:bg-gray-50/60 transition-colors">
+                <span className="text-[10px] font-semibold text-gray-400 uppercase tracking-wide w-20 shrink-0">{kindFor(r)}</span>
+                <span className="flex-1 min-w-0 text-sm font-medium text-gray-900 truncate">{labelFor(r)}</span>
+
+                <div className="relative shrink-0">
+                  <button onClick={() => setOpenCursor(openCursor === r.id ? null : r.id)}
+                    className={cn('flex items-center gap-1 px-2 py-1 rounded-lg border text-xs transition-colors',
+                      current ? 'border-violet-200 bg-violet-50 text-violet-700' : 'border-gray-200 text-gray-400 hover:bg-gray-50')}>
+                    <span className="truncate max-w-[170px]">{current ? `Jusqu'à « ${current.title ?? 'module'} »` : 'Aucun accès ouvert'}</span>
+                    <ChevronDown className="w-3 h-3 shrink-0" />
+                  </button>
+                  {openCursor === r.id && (
+                    <>
+                      <div className="fixed inset-0 z-10" onClick={() => setOpenCursor(null)} />
+                      <div className="absolute top-full mt-1 right-0 z-20 bg-white border border-gray-200 rounded-xl shadow-lg p-1 w-64 max-h-56 overflow-y-auto">
+                        <button onClick={async () => { await setCursor(r.id, null); setOpenCursor(null) }}
+                          className={cn('flex items-center justify-between w-full px-3 py-1.5 rounded-lg text-xs hover:bg-gray-50 text-left transition-colors',
+                            !r.current_session_id ? 'text-gray-900 font-medium' : 'text-gray-500')}>
+                          Aucun accès
+                          {!r.current_session_id && <Check className="w-3 h-3 shrink-0 ml-1" />}
+                        </button>
+                        {sessions.map((s, i) => (
+                          <button key={s.id} onClick={async () => { await setCursor(r.id, s.id); setOpenCursor(null) }}
+                            className={cn('flex items-center justify-between w-full px-3 py-1.5 rounded-lg text-xs hover:bg-gray-50 text-left transition-colors',
+                              r.current_session_id === s.id ? 'text-gray-900 font-medium' : 'text-gray-600')}>
+                            <span className="truncate">{s.title ?? `Module ${i + 1}`}</span>
+                            {r.current_session_id === s.id && <Check className="w-3 h-3 shrink-0 ml-1" />}
+                          </button>
+                        ))}
+                      </div>
+                    </>
+                  )}
+                </div>
+
+                <button onClick={() => revoke(r.id)} title="Retirer l'accès"
+                  className="p-1.5 text-gray-300 hover:text-red-500 rounded-lg hover:bg-red-50 transition-colors opacity-0 group-hover:opacity-100 shrink-0">
+                  <Trash2 className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            )
+          })}
+        </div>
+      )}
+    </div>
   )
 }
 

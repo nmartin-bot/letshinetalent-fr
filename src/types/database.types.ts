@@ -182,6 +182,32 @@ export interface Database {
           created_at?: string
         }
       }
+      course_access: {
+        Row: {
+          id: string
+          course_id: string
+          subject_type: 'candidate' | 'learner' | 'group' | 'all_candidates' | 'all_learners'
+          subject_id: string | null
+          current_session_id: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          course_id: string
+          subject_type: 'candidate' | 'learner' | 'group' | 'all_candidates' | 'all_learners'
+          subject_id?: string | null
+          current_session_id?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          course_id?: string
+          subject_type?: 'candidate' | 'learner' | 'group' | 'all_candidates' | 'all_learners'
+          subject_id?: string | null
+          current_session_id?: string | null
+          created_at?: string
+        }
+      }
       document_hidden_groups: {
         Row: {
           document_id: string
