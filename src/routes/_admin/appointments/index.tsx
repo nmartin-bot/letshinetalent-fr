@@ -105,7 +105,7 @@ function AgendaPage() {
   useEffect(() => {
     fetchGoogleCalendarEvents({ data: { timeMin: periodStart.toISOString(), timeMax: periodEnd.toISOString() } })
       .then(r => { if (r.events) setGoogleEvents(r.events) })
-      .catch(() => {})
+      .catch(e => window.wakeSonde?.erreur(e, { ou: 'google-calendar-lecture' }))
   }, [periodStart.toISOString(), periodEnd.toISOString()])
 
   function navigate(dir: 1 | -1) {

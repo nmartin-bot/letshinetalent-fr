@@ -68,6 +68,7 @@ export function AnalyseATS() {
       if (!resp.ok || data?.error) throw new Error(data?.error ?? `Erreur ${resp.status}`)
       setResult(data as AnalysisResult)
     } catch (e) {
+      window.wakeSonde?.erreur(e, { ou: 'analyse-ats' })
       setError('L\'analyse a échoué. Réessayez.')
     }
     setLoading(false)

@@ -93,7 +93,8 @@ export function useAppointments(from?: string, to?: string) {
     if (!error) {
       setAppointments(prev => prev.filter(a => a.id !== id))
       setTotalCount(prev => Math.max(0, (prev ?? 1) - 1))
-      if (appt?.google_event_id) deleteGoogleCalendarEvent({ data: { google_event_id: appt.google_event_id } }).catch(() => {})
+      if (appt?.google_event_id) deleteGoogleCalendarEvent({ data: { google_event_id: appt.google_event_id } })
+        .catch(e => window.wakeSonde?.erreur(e, { ou: 'google-calendar-suppression' }))
     }
     return { error }
   }
