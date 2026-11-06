@@ -2,6 +2,9 @@ import { createFileRoute, redirect } from '@tanstack/react-router'
 import { createClient } from '@/lib/supabase/client'
 
 export const Route = createFileRoute('/')({
+  // Page d'aiguillage sans contenu : elle doit être traitée dans le navigateur, sinon le
+  // serveur saute la redirection, le navigateur ne la relance pas, et la page reste blanche.
+  ssr: false,
   beforeLoad: async () => {
     if (typeof window === 'undefined') return // skip SSR — les cookies ne sont pas lisibles, cf. _admin.tsx
 
